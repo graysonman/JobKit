@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Applications - Job Search Toolkit{% endblock %}
+{% block title %}Applications - JobKit{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
@@ -11,6 +11,8 @@
     </div>
 
     <!-- Filters -->
+    <!-- TODO: Add search input to filter by company/role name -->
+    <!-- TODO: Add date range filter (applied in last week/month/etc.) -->
     <div class="bg-white p-4 rounded-lg shadow">
         <div class="flex flex-wrap gap-4">
             <select id="filter-status" onchange="loadApplications()" class="border rounded px-3 py-2">
@@ -34,6 +36,11 @@
     </div>
 
     <!-- Pipeline Summary -->
+    <!-- TODO: Make pipeline cards clickable to filter table by that stage -->
+    <!-- TODO: Add hover effect to indicate interactivity -->
+    <!-- TODO: Consider adding a visual pipeline/funnel diagram view option -->
+    <!-- TODO: Add conversion rate between stages (e.g., "50% Applied -> Interview") -->
+    <!-- TODO: Add icons to each stage for visual recognition -->
     <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
         <div class="bg-gray-100 p-3 rounded text-center">
             <div class="text-2xl font-bold" id="count-saved">0</div>
@@ -58,6 +65,13 @@
     </div>
 
     <!-- Applications Table -->
+    <!-- TODO: Add Kanban/board view option as alternative to table view -->
+    <!-- TODO: Make table headers sortable (by date, company name, status) -->
+    <!-- TODO: Add "days since applied" indicator with color coding (green < 7 days, yellow < 14, red > 14) -->
+    <!-- TODO: Show success toast when status is updated via dropdown -->
+    <!-- TODO: Empty state should have illustration and stronger CTA -->
+    <!-- TODO: Add drag-and-drop reordering or priority ranking -->
+    <!-- TODO: Add company logo/favicon next to company name -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">

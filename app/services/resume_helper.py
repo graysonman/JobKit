@@ -1,10 +1,21 @@
 """
-Resume and cover letter assistance service.
+JobKit - Resume and cover letter assistance service.
+
+Provides job description analysis, resume matching, and cover letter generation
+using keyword extraction and template-based generation.
 """
 import re
 from typing import List, Dict, Optional
 
+# TODO: Add PDF/DOCX parsing for resume upload (use python-docx, PyPDF2)
+# TODO: Add job posting URL scraper (requests + BeautifulSoup)
+# TODO: Add OpenAI integration for AI-powered analysis and generation
+# TODO: Add industry-specific skill databases (beyond just tech)
+# TODO: Add ATS compatibility scoring
+# TODO: Add LinkedIn profile parsing for auto-populating user profile
+
 # Common technical skills to look for
+# TODO: Expand this list and make it configurable/extensible
 TECH_SKILLS = {
     'languages': ['python', 'javascript', 'typescript', 'java', 'c++', 'c#', 'go', 'rust', 'ruby', 'php', 'swift', 'kotlin', 'scala'],
     'frontend': ['react', 'vue', 'angular', 'svelte', 'html', 'css', 'sass', 'tailwind', 'bootstrap', 'jquery'],

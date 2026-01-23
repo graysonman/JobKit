@@ -1,9 +1,17 @@
 """
-Message generation service - creates personalized outreach messages.
+JobKit - Message generation service.
+
+Creates personalized outreach messages for networking contacts
+using templates with placeholder substitution.
 """
 from ..models import MessageTemplate, Contact, UserProfile
-from typing import Optional
+from typing import Optional, List
 import re
+
+# TODO: Add OpenAI integration for AI-powered message generation
+# TODO: Add message length validation (LinkedIn connection request = 300 chars)
+# TODO: Add A/B testing support for template variations
+# TODO: Add sentiment analysis for generated messages
 
 def generate_message(
     template: MessageTemplate,
@@ -188,8 +196,14 @@ Best regards,
     ]
 
 
-# TODO Phase 3: Add function to analyze which templates get best response rates
-# TODO Phase 5: Add AI message generation function
+# TODO: Add function to analyze which templates get best response rates
+# TODO: Add function to generate multiple message variations for A/B testing
+# TODO: Add function to validate message length for different platforms (LinkedIn, email, etc.)
+# TODO: Add AI message generation function using OpenAI
 # def generate_ai_message(contact: Contact, user_profile: UserProfile, context: str) -> str:
 #     """Use OpenAI to generate a highly personalized message."""
 #     pass
+
+# TODO: Add function to detect and warn about overused phrases
+# TODO: Add function to suggest improvements to user-written messages
+# TODO: Add function to generate follow-up sequence (day 3, day 7, day 14 messages)

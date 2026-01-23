@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Messages - Job Search Toolkit{% endblock %}
+{% block title %}Messages - JobKit{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
@@ -7,6 +7,10 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Message Generator -->
+        <!-- TODO: Add preview of selected contact's details (company, role) below dropdown -->
+        <!-- TODO: Show character count limit warning for connection requests (300 char LinkedIn limit) -->
+        <!-- TODO: Add "Open in LinkedIn" button after generating message -->
+        <!-- TODO: Add tone selector (formal, casual, enthusiastic) -->
         <div class="bg-white p-6 rounded-lg shadow">
             <h2 class="text-xl font-bold mb-4">Generate Message</h2>
             <form id="generate-form" class="space-y-4">
@@ -57,6 +61,10 @@
         </div>
 
         <!-- Templates Management -->
+        <!-- TODO: Add ability to edit existing templates (currently only delete) -->
+        <!-- TODO: Add "duplicate template" option -->
+        <!-- TODO: Show preview modal when clicking on a template -->
+        <!-- TODO: Add template usage count/stats -->
         <div class="bg-white p-6 rounded-lg shadow">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold">Message Templates</h2>
@@ -69,6 +77,12 @@
     </div>
 
     <!-- Message History -->
+    <!-- TODO: Add filter by contact or message type -->
+    <!-- TODO: Add search functionality -->
+    <!-- TODO: Show response received indicator (if contact responded) -->
+    <!-- TODO: Add pagination for long history -->
+    <!-- TODO: Add "resend" or "follow up" quick action -->
+    <!-- TODO: Empty state needs illustration -->
     <div class="bg-white p-6 rounded-lg shadow">
         <h2 class="text-xl font-bold mb-4">Message History</h2>
         <div id="message-history" class="space-y-2">

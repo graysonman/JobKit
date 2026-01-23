@@ -1,10 +1,17 @@
 """
-SQLAlchemy ORM models - mirrors docs/schema.sql
+JobKit - SQLAlchemy ORM models
+
+Database models for contacts, companies, applications, messages, and user profile.
 """
 from sqlalchemy import Column, Integer, String, Boolean, Date, DateTime, Float, Text, ForeignKey, CheckConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from .database import Base
+
+# TODO: Add Tag model for tagging contacts/companies/applications
+# TODO: Add Reminder model for scheduled follow-up notifications
+# TODO: Add ResumeVersion model to store different resume versions
+# TODO: Add InterviewNote model to track interview feedback per application
 
 class Contact(Base):
     __tablename__ = "contacts"
@@ -26,10 +33,17 @@ class Contact(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    # TODO: Add phone_number field
+    # TODO: Add profile_photo_url field (for LinkedIn profile pic caching)
+    # TODO: Add company_id foreign key to link to Company model
+    # TODO: Add location field (city/region)
+    # TODO: Add tags relationship for custom categorization
+    # TODO: Add response_rate computed field (messages sent vs responses received)
+
     # Relationships
     messages = relationship("MessageHistory", back_populates="contact")
     interactions = relationship("Interaction", back_populates="contact")
-    # TODO Phase 2: Add referrals relationship to applications
+    # TODO: Add referrals relationship to applications
 
 
 class Company(Base):
@@ -50,6 +64,15 @@ class Company(Base):
     notes = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # TODO: Add logo_url field (fetch from Clearbit or similar API)
+    # TODO: Add headquarters_location field
+    # TODO: Add careers_page_url field
+    # TODO: Add levels_fyi_url field for salary data
+    # TODO: Add blind_rating field (teamblind.com)
+    # TODO: Add funding_stage field (for startups: seed, series A, etc.)
+    # TODO: Add employee_count field (more specific than size category)
+    # TODO: Add contacts relationship to show contacts at this company
 
     # Relationships
     applications = relationship("Application", back_populates="company")
@@ -77,10 +100,19 @@ class Application(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    # TODO: Add location field (remote/hybrid/onsite + city)
+    # TODO: Add salary_min and salary_max fields (numeric) for filtering
+    # TODO: Add source field (LinkedIn, company site, Indeed, referral, etc.)
+    # TODO: Add excitement_level field (1-5 how excited about this role)
+    # TODO: Add rejection_reason field (for learning from rejections)
+    # TODO: Add cover_letter_text field to store the actual cover letter used
+    # TODO: Add interview_notes relationship for per-round interview tracking
+    # TODO: Add timeline/status_history relationship to track status changes over time
+
     # Relationships
     company = relationship("Company", back_populates="applications")
     referral = relationship("Contact")
-    # TODO Phase 5: Add relationship to resume versions
+    # TODO: Add relationship to resume versions
 
 
 class MessageTemplate(Base):

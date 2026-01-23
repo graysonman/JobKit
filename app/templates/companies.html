@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Companies - Job Search Toolkit{% endblock %}
+{% block title %}Companies - JobKit{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
@@ -11,6 +11,10 @@
     </div>
 
     <!-- Filters -->
+    <!-- TODO: Add search input to filter companies by name -->
+    <!-- TODO: Add industry filter dropdown -->
+    <!-- TODO: Add tech stack filter (multi-select for technologies) -->
+    <!-- TODO: Show result count (e.g., "Showing 5 companies") -->
     <div class="bg-white p-4 rounded-lg shadow">
         <div class="flex flex-wrap gap-4">
             <select id="filter-size" onchange="loadCompanies()" class="border rounded px-3 py-2">
@@ -31,6 +35,13 @@
     </div>
 
     <!-- Company Cards -->
+    <!-- TODO: Add hover effect on cards (shadow lift or border highlight) -->
+    <!-- TODO: Add company logo/favicon display -->
+    <!-- TODO: Make priority stars clickable directly from card (inline edit) -->
+    <!-- TODO: Add "Applied" badge if there's a linked application -->
+    <!-- TODO: Empty state needs illustration and better CTA -->
+    <!-- TODO: Consider adding list view option as alternative to cards -->
+    <!-- TODO: Add quick "Apply Now" button that links to Applications page -->
     <div id="companies-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
     </div>
 </div>

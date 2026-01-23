@@ -1,4 +1,33 @@
-/* Job Search Toolkit - Custom Styles */
+/* JobKit - Custom Styles */
+
+/* =============================================================================
+   TODO: GLOBAL UI/UX IMPROVEMENTS
+   =============================================================================
+
+   COLOR SYSTEM:
+   - TODO: Define a consistent color palette with CSS custom properties (--primary, --secondary, etc.)
+   - TODO: Use semantic colors consistently (success=green, warning=yellow, error=red, info=blue)
+   - TODO: Add dark mode support with CSS custom properties
+
+   TYPOGRAPHY:
+   - TODO: Define consistent heading sizes and spacing
+   - TODO: Add font-weight variables for consistency
+
+   COMPONENTS:
+   - TODO: Create consistent button variants (primary, secondary, outline, danger)
+   - TODO: Add consistent card component styles with hover states
+   - TODO: Create badge/pill component for status indicators
+   - TODO: Add skeleton loading states for async content
+
+   ACCESSIBILITY:
+   - TODO: Ensure focus states are visible for all interactive elements
+   - TODO: Add reduced-motion media query for animations
+   - TODO: Ensure color contrast meets WCAG AA standards
+
+   EMPTY STATES:
+   - TODO: Create a consistent empty state component with illustration placeholder
+
+   ============================================================================= */
 
 /* Highlight active nav link */
 .nav-link.active {

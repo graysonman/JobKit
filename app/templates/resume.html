@@ -1,12 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Resume Helper - Job Search Toolkit{% endblock %}
+{% block title %}Resume Helper - JobKit{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
     <h1 class="text-3xl font-bold text-gray-900">Resume & Cover Letter Helper</h1>
 
+    <!-- TODO: Add step indicators (1. Analyze Job -> 2. Check Match -> 3. Generate Cover Letter) -->
+    <!-- TODO: Consider adding "Save to Applications" button after analysis to create application entry -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Job Description Analysis -->
+        <!-- TODO: Add "Paste from clipboard" button for convenience -->
+        <!-- TODO: Add URL input option to fetch job description automatically -->
+        <!-- TODO: Show loading spinner during analysis -->
         <div class="bg-white p-6 rounded-lg shadow">
             <h2 class="text-xl font-bold mb-4">Analyze Job Description</h2>
             <form id="analyze-form" class="space-y-4">
@@ -52,6 +57,10 @@
         </div>
 
         <!-- Resume Match Analysis -->
+        <!-- TODO: Add file upload option (.pdf, .docx) instead of just text paste -->
+        <!-- TODO: Pre-fill with resume from Settings/Profile if available -->
+        <!-- TODO: Add "Save resume" option to store for future use -->
+        <!-- TODO: Disable this section until job description is analyzed (show visual indication) -->
         <div class="bg-white p-6 rounded-lg shadow">
             <h2 class="text-xl font-bold mb-4">Check Resume Match</h2>
             <form id="match-form" class="space-y-4">
@@ -98,6 +107,12 @@
     </div>
 
     <!-- Cover Letter Generator -->
+    <!-- TODO: Auto-fill company/role from analyzed job description -->
+    <!-- TODO: Add tone/style selector (formal, conversational, enthusiastic) -->
+    <!-- TODO: Add length option (short, medium, detailed) -->
+    <!-- TODO: Show word count on generated letter -->
+    <!-- TODO: Add "Download as PDF" option -->
+    <!-- TODO: Add "Save to application" to attach cover letter to an application entry -->
     <div class="bg-white p-6 rounded-lg shadow">
         <h2 class="text-xl font-bold mb-4">Generate Cover Letter</h2>
         <form id="cover-letter-form" class="space-y-4">

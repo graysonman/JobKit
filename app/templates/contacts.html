@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Contacts - Job Search Toolkit{% endblock %}
+{% block title %}Contacts - JobKit{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
@@ -44,6 +44,12 @@
     </div>
 
     <!-- Contacts Table -->
+    <!-- TODO: Make table headers sortable (click to sort by column) -->
+    <!-- TODO: Add row hover effect for better visual feedback -->
+    <!-- TODO: Empty state should include an illustration and clearer CTA button -->
+    <!-- TODO: Consider adding bulk actions (select multiple, bulk delete/update status) -->
+    <!-- TODO: Add pagination or infinite scroll for large contact lists -->
+    <!-- TODO: Show "Last contacted" date column -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
@@ -63,6 +69,11 @@
 </div>
 
 <!-- Add/Edit Contact Modal -->
+<!-- TODO: Add close button (X) in top-right corner of modal -->
+<!-- TODO: Add keyboard support (Escape to close, Tab to navigate fields) -->
+<!-- TODO: Show loading state on Save button while submitting -->
+<!-- TODO: Add form validation feedback (inline errors, not just alerts) -->
+<!-- TODO: Consider breaking form into sections/steps for better UX -->
 <div id="contact-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <h2 id="modal-title" class="text-xl font-bold mb-4">Add Contact</h2>
