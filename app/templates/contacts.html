@@ -4,152 +4,385 @@
 {% block content %}
 <div class="space-y-6">
     <div class="flex justify-between items-center">
-        <h1 class="text-3xl font-bold text-gray-900">Networking Contacts</h1>
-        <button onclick="openAddModal()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-            + Add Contact
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Networking Contacts</h1>
+            <p class="text-gray-600 mt-1" id="results-count">Loading contacts...</p>
+        </div>
+        <button onclick="openAddModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+            </svg>
+            Add Contact
         </button>
     </div>
 
-    <!-- Filters -->
-    <!-- TODO: Add a search input field to filter contacts by name/company -->
-    <!-- TODO: Add a "Clear filters" button when filters are active -->
-    <!-- TODO: Show count of filtered results (e.g., "Showing 5 of 20 contacts") -->
-    <!-- TODO: Style checkboxes with custom design for consistency -->
+    <!-- Search and Filters -->
     <div class="bg-white p-4 rounded-lg shadow">
-        <div class="flex flex-wrap gap-4">
-            <select id="filter-type" onchange="loadContacts()" class="border rounded px-3 py-2">
-                <option value="">All Types</option>
-                <option value="recruiter">Recruiters</option>
-                <option value="junior_dev">Junior Devs</option>
-                <option value="senior_dev">Senior Devs</option>
-                <option value="hiring_manager">Hiring Managers</option>
-                <option value="other">Other</option>
-            </select>
-            <select id="filter-status" onchange="loadContacts()" class="border rounded px-3 py-2">
-                <option value="">All Statuses</option>
+        <div class="flex flex-col md:flex-row gap-4">
+            <!-- Search Input -->
+            <div class="relative flex-1">
+                <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input type="text" id="search-input" placeholder="Search by name or company..."
+                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                       oninput="handleSearch()">
+            </div>
+
+            <!-- Filter Dropdowns -->
+            <div class="flex flex-wrap gap-3 items-center">
+                <select id="filter-type" onchange="loadContacts()" class="border border-gray-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">All Types</option>
+                    <option value="recruiter">Recruiters</option>
+                    <option value="junior_dev">Junior Devs</option>
+                    <option value="senior_dev">Senior Devs</option>
+                    <option value="hiring_manager">Hiring Managers</option>
+                    <option value="other">Other</option>
+                </select>
+                <select id="filter-status" onchange="loadContacts()" class="border border-gray-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">All Statuses</option>
+                    <option value="not_connected">Not Connected</option>
+                    <option value="pending">Pending</option>
+                    <option value="connected">Connected</option>
+                    <option value="messaged">Messaged</option>
+                </select>
+
+                <!-- Custom Styled Checkboxes -->
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <div class="relative">
+                        <input type="checkbox" id="filter-alumni" onchange="loadContacts()" class="sr-only peer">
+                        <div class="w-5 h-5 border-2 border-gray-300 rounded peer-checked:bg-blue-600 peer-checked:border-blue-600 transition-colors">
+                            <svg class="w-5 h-5 text-white opacity-0 peer-checked:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <span class="text-sm text-gray-700">Alumni Only</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <div class="relative">
+                        <input type="checkbox" id="filter-followup" onchange="loadContacts()" class="sr-only peer">
+                        <div class="w-5 h-5 border-2 border-gray-300 rounded peer-checked:bg-yellow-500 peer-checked:border-yellow-500 transition-colors">
+                            <svg class="w-5 h-5 text-white opacity-0 peer-checked:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <span class="text-sm text-gray-700">Needs Follow-up</span>
+                </label>
+
+                <!-- Clear Filters Button -->
+                <button id="clear-filters-btn" onclick="clearFilters()" class="hidden px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    Clear
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Actions Bar (shown when items selected) -->
+    <div id="bulk-actions-bar" class="hidden bg-blue-50 border border-blue-200 p-4 rounded-lg flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <span class="text-blue-800 font-medium"><span id="selected-count">0</span> selected</span>
+            <button onclick="selectAllContacts()" class="text-sm text-blue-600 hover:text-blue-800 hover:underline">Select all</button>
+            <button onclick="deselectAllContacts()" class="text-sm text-blue-600 hover:text-blue-800 hover:underline">Deselect all</button>
+        </div>
+        <div class="flex items-center gap-3">
+            <select id="bulk-status-select" class="border border-blue-300 rounded px-3 py-1 text-sm bg-white">
+                <option value="">Update Status...</option>
                 <option value="not_connected">Not Connected</option>
                 <option value="pending">Pending</option>
                 <option value="connected">Connected</option>
                 <option value="messaged">Messaged</option>
             </select>
-            <label class="flex items-center gap-2">
-                <input type="checkbox" id="filter-alumni" onchange="loadContacts()">
-                <span>Alumni Only</span>
-            </label>
-            <label class="flex items-center gap-2">
-                <input type="checkbox" id="filter-followup" onchange="loadContacts()">
-                <span>Needs Follow-up</span>
-            </label>
+            <button onclick="bulkUpdateStatus()" class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">Apply</button>
+            <button onclick="bulkDelete()" class="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700">Delete Selected</button>
         </div>
     </div>
 
     <!-- Contacts Table -->
-    <!-- TODO: Make table headers sortable (click to sort by column) -->
-    <!-- TODO: Add row hover effect for better visual feedback -->
-    <!-- TODO: Empty state should include an illustration and clearer CTA button -->
-    <!-- TODO: Consider adding bulk actions (select multiple, bulk delete/update status) -->
-    <!-- TODO: Add pagination or infinite scroll for large contact lists -->
-    <!-- TODO: Show "Last contacted" date column -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                </tr>
-            </thead>
-            <tbody id="contacts-table-body" class="bg-white divide-y divide-gray-200">
-            </tbody>
-        </table>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left">
+                            <input type="checkbox" id="select-all-checkbox" onchange="toggleSelectAll()" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 transition-colors select-none" onclick="sortTable('name')">
+                            <div class="flex items-center gap-1">
+                                Name
+                                <svg id="sort-icon-name" class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                                </svg>
+                            </div>
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 transition-colors select-none" onclick="sortTable('company')">
+                            <div class="flex items-center gap-1">
+                                Company
+                                <svg id="sort-icon-company" class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                                </svg>
+                            </div>
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 transition-colors select-none" onclick="sortTable('connection_status')">
+                            <div class="flex items-center gap-1">
+                                Status
+                                <svg id="sort-icon-connection_status" class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                                </svg>
+                            </div>
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 transition-colors select-none" onclick="sortTable('last_contacted')">
+                            <div class="flex items-center gap-1">
+                                Last Contact
+                                <svg id="sort-icon-last_contacted" class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                                </svg>
+                            </div>
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="contacts-table-body" class="bg-white divide-y divide-gray-200">
+                    <tr>
+                        <td colspan="7" class="px-6 py-12 text-center">
+                            <svg class="animate-spin h-8 w-8 text-gray-400 mx-auto" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div id="pagination" class="hidden bg-gray-50 px-6 py-3 border-t border-gray-200">
+            <div class="flex items-center justify-between">
+                <div class="text-sm text-gray-700">
+                    Showing <span id="page-start">1</span> to <span id="page-end">25</span> of <span id="total-count">0</span> contacts
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="prevPage()" id="prev-btn" class="px-3 py-1 border rounded text-sm hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
+                    <span id="page-numbers" class="flex gap-1"></span>
+                    <button onclick="nextPage()" id="next-btn" class="px-3 py-1 border rounded text-sm hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <!-- Add/Edit Contact Modal -->
-<!-- TODO: Add close button (X) in top-right corner of modal -->
-<!-- TODO: Add keyboard support (Escape to close, Tab to navigate fields) -->
-<!-- TODO: Show loading state on Save button while submitting -->
-<!-- TODO: Add form validation feedback (inline errors, not just alerts) -->
-<!-- TODO: Consider breaking form into sections/steps for better UX -->
-<div id="contact-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <h2 id="modal-title" class="text-xl font-bold mb-4">Add Contact</h2>
-        <form id="contact-form" class="space-y-4">
-            <input type="hidden" id="contact-id">
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Name *</label>
-                <input type="text" id="contact-name" required class="mt-1 block w-full border rounded px-3 py-2">
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Company</label>
-                    <input type="text" id="contact-company" class="mt-1 block w-full border rounded px-3 py-2">
+<div id="contact-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick="handleModalBackdropClick(event)">
+    <div class="bg-white rounded-lg w-full max-w-lg max-h-[90vh] overflow-hidden shadow-xl" onclick="event.stopPropagation()">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            <h2 id="modal-title" class="text-xl font-bold text-gray-900">Add Contact</h2>
+            <button onclick="closeModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="px-6 py-4 max-h-[calc(90vh-130px)] overflow-y-auto">
+            <form id="contact-form" class="space-y-6" novalidate>
+                <input type="hidden" id="contact-id">
+
+                <!-- Section: Basic Info -->
+                <div class="space-y-4">
+                    <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                        Basic Information
+                    </h3>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Name <span class="text-red-500">*</span></label>
+                        <input type="text" id="contact-name" required
+                               class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                        <p id="error-name" class="hidden mt-1 text-sm text-red-600">Name is required</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Company</label>
+                            <input type="text" id="contact-company" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Role</label>
+                            <input type="text" id="contact-role" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Type</label>
+                            <select id="contact-type" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Select...</option>
+                                <option value="recruiter">Recruiter</option>
+                                <option value="junior_dev">Junior Developer</option>
+                                <option value="senior_dev">Senior Developer</option>
+                                <option value="hiring_manager">Hiring Manager</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Location</label>
+                            <input type="text" id="contact-location" placeholder="City, State" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Role</label>
-                    <input type="text" id="contact-role" class="mt-1 block w-full border rounded px-3 py-2">
+
+                <!-- Section: Contact Details -->
+                <div class="space-y-4 pt-4 border-t border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        Contact Details
+                    </h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Email</label>
+                            <input type="email" id="contact-email" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <p id="error-email" class="hidden mt-1 text-sm text-red-600">Please enter a valid email</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Phone</label>
+                            <input type="tel" id="contact-phone" placeholder="(555) 123-4567" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">LinkedIn URL</label>
+                        <input type="url" id="contact-linkedin" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="https://linkedin.com/in/...">
+                        <p id="error-linkedin" class="hidden mt-1 text-sm text-red-600">Please enter a valid LinkedIn URL</p>
+                    </div>
                 </div>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Type</label>
-                    <select id="contact-type" class="mt-1 block w-full border rounded px-3 py-2">
-                        <option value="">Select...</option>
-                        <option value="recruiter">Recruiter</option>
-                        <option value="junior_dev">Junior Developer</option>
-                        <option value="senior_dev">Senior Developer</option>
-                        <option value="hiring_manager">Hiring Manager</option>
-                        <option value="other">Other</option>
-                    </select>
+
+                <!-- Section: Alumni Connection -->
+                <div class="space-y-4 pt-4 border-t border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
+                        </svg>
+                        Alumni Connection
+                    </h3>
+                    <div class="flex items-center gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <div class="relative">
+                                <input type="checkbox" id="contact-alumni" class="sr-only peer" onchange="toggleSchoolField()">
+                                <div class="w-5 h-5 border-2 border-gray-300 rounded peer-checked:bg-blue-600 peer-checked:border-blue-600 transition-colors flex items-center justify-center">
+                                    <svg class="w-3 h-3 text-white hidden peer-checked:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <span class="text-sm text-gray-700">This is an alumni connection</span>
+                        </label>
+                    </div>
+                    <div id="school-field" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700">School Name</label>
+                        <input type="text" id="contact-school" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="University name">
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Email</label>
-                    <input type="email" id="contact-email" class="mt-1 block w-full border rounded px-3 py-2">
+
+                <!-- Section: Relationship Status -->
+                <div class="space-y-4 pt-4 border-t border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        Relationship Status
+                    </h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Connection Status</label>
+                            <select id="contact-status" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="not_connected">Not Connected</option>
+                                <option value="pending">Pending</option>
+                                <option value="connected">Connected</option>
+                                <option value="messaged">Messaged</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Next Follow-up</label>
+                            <input type="date" id="contact-followup" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">LinkedIn URL</label>
-                <input type="url" id="contact-linkedin" class="mt-1 block w-full border rounded px-3 py-2" placeholder="https://linkedin.com/in/...">
-            </div>
-            <div class="flex items-center gap-4">
-                <label class="flex items-center gap-2">
-                    <input type="checkbox" id="contact-alumni">
-                    <span>Alumni</span>
-                </label>
-                <input type="text" id="contact-school" placeholder="School name" class="border rounded px-3 py-2 flex-1">
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Connection Status</label>
-                    <select id="contact-status" class="mt-1 block w-full border rounded px-3 py-2">
-                        <option value="not_connected">Not Connected</option>
-                        <option value="pending">Pending</option>
-                        <option value="connected">Connected</option>
-                        <option value="messaged">Messaged</option>
-                    </select>
+
+                <!-- Section: Notes -->
+                <div class="space-y-4 pt-4 border-t border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        Notes
+                    </h3>
+                    <div>
+                        <textarea id="contact-notes" rows="3" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Add any notes about this contact..."></textarea>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Next Follow-up</label>
-                    <input type="date" id="contact-followup" class="mt-1 block w-full border rounded px-3 py-2">
-                </div>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Notes</label>
-                <textarea id="contact-notes" rows="3" class="mt-1 block w-full border rounded px-3 py-2"></textarea>
-            </div>
-            <div class="flex justify-end gap-4">
-                <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded hover:bg-gray-50">Cancel</button>
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
-            </div>
-        </form>
+            </form>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
+            <button type="button" onclick="closeModal()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors">
+                Cancel
+            </button>
+            <button type="button" onclick="submitForm()" id="save-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-2 min-w-[100px] justify-center">
+                <span id="save-btn-text">Save</span>
+                <svg id="save-btn-spinner" class="hidden animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </button>
+        </div>
     </div>
 </div>
 
 <script>
 let allContacts = [];
+let filteredContacts = [];
+let selectedContacts = new Set();
+let currentPage = 1;
+const pageSize = 25;
+let currentSort = { field: 'name', direction: 'asc' };
+let searchTimeout = null;
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    loadContacts();
+    setupKeyboardShortcuts();
+    setupURLParams();
+});
+
+function setupURLParams() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('needs_follow_up') === 'true') {
+        document.getElementById('filter-followup').checked = true;
+    }
+}
+
+function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', function(e) {
+        // Escape to close modal
+        if (e.key === 'Escape') {
+            closeModal();
+        }
+        // Ctrl/Cmd + K for search focus
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            document.getElementById('search-input').focus();
+        }
+    });
+}
 
 async function loadContacts() {
     const type = document.getElementById('filter-type').value;
@@ -165,36 +398,354 @@ async function loadContacts() {
 
     const response = await fetch(url);
     allContacts = await response.json();
-    renderContacts(allContacts);
+
+    // Apply search filter if exists
+    applySearchFilter();
+
+    // Update clear filters button visibility
+    updateClearFiltersButton();
 }
 
-function renderContacts(contacts) {
+function handleSearch() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        applySearchFilter();
+    }, 300);
+}
+
+function applySearchFilter() {
+    const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+
+    if (searchTerm) {
+        filteredContacts = allContacts.filter(c =>
+            (c.name && c.name.toLowerCase().includes(searchTerm)) ||
+            (c.company && c.company.toLowerCase().includes(searchTerm)) ||
+            (c.role && c.role.toLowerCase().includes(searchTerm)) ||
+            (c.email && c.email.toLowerCase().includes(searchTerm))
+        );
+    } else {
+        filteredContacts = [...allContacts];
+    }
+
+    // Apply sorting
+    sortContacts();
+
+    // Reset to page 1
+    currentPage = 1;
+
+    // Render
+    renderContacts();
+    updateResultsCount();
+    updateClearFiltersButton();
+}
+
+function sortContacts() {
+    const { field, direction } = currentSort;
+    filteredContacts.sort((a, b) => {
+        let aVal = a[field] || '';
+        let bVal = b[field] || '';
+
+        if (field === 'last_contacted') {
+            aVal = aVal ? new Date(aVal).getTime() : 0;
+            bVal = bVal ? new Date(bVal).getTime() : 0;
+        } else {
+            aVal = aVal.toString().toLowerCase();
+            bVal = bVal.toString().toLowerCase();
+        }
+
+        if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    // Update sort icons
+    document.querySelectorAll('[id^="sort-icon-"]').forEach(icon => {
+        icon.classList.remove('text-blue-600');
+        icon.classList.add('text-gray-400');
+    });
+    const activeIcon = document.getElementById(`sort-icon-${field}`);
+    if (activeIcon) {
+        activeIcon.classList.remove('text-gray-400');
+        activeIcon.classList.add('text-blue-600');
+    }
+}
+
+function sortTable(field) {
+    if (currentSort.field === field) {
+        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSort.field = field;
+        currentSort.direction = 'asc';
+    }
+    sortContacts();
+    renderContacts();
+}
+
+function updateResultsCount() {
+    const total = allContacts.length;
+    const filtered = filteredContacts.length;
+    const countEl = document.getElementById('results-count');
+
+    if (total === 0) {
+        countEl.textContent = 'No contacts yet';
+    } else if (filtered === total) {
+        countEl.textContent = `${total} contact${total !== 1 ? 's' : ''}`;
+    } else {
+        countEl.textContent = `Showing ${filtered} of ${total} contacts`;
+    }
+}
+
+function updateClearFiltersButton() {
+    const hasFilters =
+        document.getElementById('filter-type').value ||
+        document.getElementById('filter-status').value ||
+        document.getElementById('filter-alumni').checked ||
+        document.getElementById('filter-followup').checked ||
+        document.getElementById('search-input').value.trim();
+
+    document.getElementById('clear-filters-btn').classList.toggle('hidden', !hasFilters);
+}
+
+function clearFilters() {
+    document.getElementById('filter-type').value = '';
+    document.getElementById('filter-status').value = '';
+    document.getElementById('filter-alumni').checked = false;
+    document.getElementById('filter-followup').checked = false;
+    document.getElementById('search-input').value = '';
+    loadContacts();
+}
+
+function renderContacts() {
     const tbody = document.getElementById('contacts-table-body');
-    if (contacts.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No contacts found. Add your first contact!</td></tr>';
+    const start = (currentPage - 1) * pageSize;
+    const end = start + pageSize;
+    const pageContacts = filteredContacts.slice(start, end);
+
+    if (filteredContacts.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="px-6 py-12 text-center">
+                    <div class="flex flex-col items-center">
+                        <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                        <p class="text-gray-500 mb-4">${allContacts.length === 0 ? 'No contacts yet. Start building your network!' : 'No contacts match your filters.'}</p>
+                        <button onclick="${allContacts.length === 0 ? 'openAddModal()' : 'clearFilters()'}"
+                                class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                ${allContacts.length === 0
+                                    ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>'
+                                    : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>'}
+                            </svg>
+                            ${allContacts.length === 0 ? 'Add Your First Contact' : 'Clear Filters'}
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+        document.getElementById('pagination').classList.add('hidden');
         return;
     }
-    tbody.innerHTML = contacts.map(c => `
-        <tr>
-            <td class="px-6 py-4">
-                <div class="font-medium text-gray-900">${c.name}</div>
-                ${c.is_alumni ? '<span class="text-xs text-blue-600">Alumni</span>' : ''}
-                ${c.linkedin_url ? `<a href="${c.linkedin_url}" target="_blank" class="text-xs text-blue-500 hover:underline ml-2">LinkedIn</a>` : ''}
-            </td>
-            <td class="px-6 py-4 text-gray-500">${c.company || '-'}</td>
-            <td class="px-6 py-4 text-gray-500">${c.role || '-'}</td>
-            <td class="px-6 py-4">
-                <span class="px-2 py-1 text-xs rounded bg-gray-100">${formatType(c.contact_type)}</span>
+
+    tbody.innerHTML = pageContacts.map(c => `
+        <tr class="hover:bg-gray-50 transition-colors ${selectedContacts.has(c.id) ? 'bg-blue-50' : ''}">
+            <td class="px-4 py-4">
+                <input type="checkbox" ${selectedContacts.has(c.id) ? 'checked' : ''} onchange="toggleContactSelection(${c.id})"
+                       class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
             </td>
             <td class="px-6 py-4">
-                <span class="px-2 py-1 text-xs rounded ${getStatusColor(c.connection_status)}">${formatStatus(c.connection_status)}</span>
+                <div class="flex items-center gap-2">
+                    <div class="font-medium text-gray-900">${escapeHtml(c.name)}</div>
+                    ${c.is_alumni ? '<span class="px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">Alumni</span>' : ''}
+                </div>
+                <div class="flex items-center gap-2 mt-1">
+                    ${c.linkedin_url ? `<a href="${escapeHtml(c.linkedin_url)}" target="_blank" class="text-xs text-blue-500 hover:underline inline-flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                        LinkedIn
+                    </a>` : ''}
+                    ${c.email ? `<a href="mailto:${escapeHtml(c.email)}" class="text-xs text-gray-500 hover:underline">${escapeHtml(c.email)}</a>` : ''}
+                </div>
             </td>
             <td class="px-6 py-4">
-                <button onclick="editContact(${c.id})" class="text-blue-600 hover:underline mr-2">Edit</button>
-                <button onclick="deleteContact(${c.id})" class="text-red-600 hover:underline">Delete</button>
+                <div class="text-gray-900">${escapeHtml(c.company) || '-'}</div>
+                <div class="text-sm text-gray-500">${escapeHtml(c.role) || ''}</div>
+            </td>
+            <td class="px-6 py-4">
+                <span class="px-2 py-1 text-xs rounded-full ${getTypeColor(c.contact_type)}">${formatType(c.contact_type)}</span>
+            </td>
+            <td class="px-6 py-4">
+                <span class="px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(c.connection_status)}">${formatStatus(c.connection_status)}</span>
+            </td>
+            <td class="px-6 py-4">
+                <div class="text-sm text-gray-900">${c.last_contacted ? formatDate(c.last_contacted) : '-'}</div>
+                ${c.next_follow_up ? `<div class="text-xs ${isOverdue(c.next_follow_up) ? 'text-red-600 font-medium' : 'text-gray-500'}">
+                    Follow-up: ${formatDate(c.next_follow_up)}
+                </div>` : ''}
+            </td>
+            <td class="px-6 py-4">
+                <div class="flex items-center gap-2">
+                    <button onclick="editContact(${c.id})" class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Edit">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                    </button>
+                    <a href="/messages?contact=${c.id}" class="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors" title="Send message">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                        </svg>
+                    </a>
+                    <button onclick="deleteContact(${c.id})" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors" title="Delete">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                    </button>
+                </div>
             </td>
         </tr>
     `).join('');
+
+    // Update pagination
+    updatePagination();
+    updateBulkActionsBar();
+}
+
+function updatePagination() {
+    const totalPages = Math.ceil(filteredContacts.length / pageSize);
+
+    if (totalPages <= 1) {
+        document.getElementById('pagination').classList.add('hidden');
+        return;
+    }
+
+    document.getElementById('pagination').classList.remove('hidden');
+
+    const start = (currentPage - 1) * pageSize + 1;
+    const end = Math.min(currentPage * pageSize, filteredContacts.length);
+
+    document.getElementById('page-start').textContent = start;
+    document.getElementById('page-end').textContent = end;
+    document.getElementById('total-count').textContent = filteredContacts.length;
+
+    document.getElementById('prev-btn').disabled = currentPage === 1;
+    document.getElementById('next-btn').disabled = currentPage === totalPages;
+
+    // Page numbers
+    const pageNumbers = document.getElementById('page-numbers');
+    let pages = [];
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+            pages.push(i);
+        } else if (pages[pages.length - 1] !== '...') {
+            pages.push('...');
+        }
+    }
+
+    pageNumbers.innerHTML = pages.map(p =>
+        p === '...'
+            ? '<span class="px-2 py-1 text-gray-500">...</span>'
+            : `<button onclick="goToPage(${p})" class="px-3 py-1 border rounded text-sm ${p === currentPage ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-gray-100'}">${p}</button>`
+    ).join('');
+}
+
+function prevPage() {
+    if (currentPage > 1) {
+        currentPage--;
+        renderContacts();
+    }
+}
+
+function nextPage() {
+    const totalPages = Math.ceil(filteredContacts.length / pageSize);
+    if (currentPage < totalPages) {
+        currentPage++;
+        renderContacts();
+    }
+}
+
+function goToPage(page) {
+    currentPage = page;
+    renderContacts();
+}
+
+// Bulk selection
+function toggleContactSelection(id) {
+    if (selectedContacts.has(id)) {
+        selectedContacts.delete(id);
+    } else {
+        selectedContacts.add(id);
+    }
+    renderContacts();
+}
+
+function toggleSelectAll() {
+    const checkbox = document.getElementById('select-all-checkbox');
+    const start = (currentPage - 1) * pageSize;
+    const end = start + pageSize;
+    const pageContacts = filteredContacts.slice(start, end);
+
+    if (checkbox.checked) {
+        pageContacts.forEach(c => selectedContacts.add(c.id));
+    } else {
+        pageContacts.forEach(c => selectedContacts.delete(c.id));
+    }
+    renderContacts();
+}
+
+function selectAllContacts() {
+    filteredContacts.forEach(c => selectedContacts.add(c.id));
+    renderContacts();
+}
+
+function deselectAllContacts() {
+    selectedContacts.clear();
+    renderContacts();
+}
+
+function updateBulkActionsBar() {
+    const bar = document.getElementById('bulk-actions-bar');
+    if (selectedContacts.size > 0) {
+        bar.classList.remove('hidden');
+        document.getElementById('selected-count').textContent = selectedContacts.size;
+    } else {
+        bar.classList.add('hidden');
+    }
+}
+
+async function bulkUpdateStatus() {
+    const status = document.getElementById('bulk-status-select').value;
+    if (!status) return;
+
+    const promises = Array.from(selectedContacts).map(id =>
+        fetch(`/api/contacts/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ connection_status: status })
+        })
+    );
+
+    await Promise.all(promises);
+    selectedContacts.clear();
+    loadContacts();
+}
+
+async function bulkDelete() {
+    if (!confirm(`Are you sure you want to delete ${selectedContacts.size} contacts?`)) return;
+
+    const promises = Array.from(selectedContacts).map(id =>
+        fetch(`/api/contacts/${id}`, { method: 'DELETE' })
+    );
+
+    await Promise.all(promises);
+    selectedContacts.clear();
+    loadContacts();
+}
+
+// Helper functions
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 function formatType(type) {
@@ -202,10 +753,21 @@ function formatType(type) {
         'recruiter': 'Recruiter',
         'junior_dev': 'Junior Dev',
         'senior_dev': 'Senior Dev',
-        'hiring_manager': 'Hiring Manager',
+        'hiring_manager': 'Hiring Mgr',
         'other': 'Other'
     };
     return types[type] || type || '-';
+}
+
+function getTypeColor(type) {
+    const colors = {
+        'recruiter': 'bg-purple-100 text-purple-800',
+        'junior_dev': 'bg-blue-100 text-blue-800',
+        'senior_dev': 'bg-indigo-100 text-indigo-800',
+        'hiring_manager': 'bg-green-100 text-green-800',
+        'other': 'bg-gray-100 text-gray-800'
+    };
+    return colors[type] || 'bg-gray-100 text-gray-800';
 }
 
 function formatStatus(status) {
@@ -220,7 +782,7 @@ function formatStatus(status) {
 
 function getStatusColor(status) {
     const colors = {
-        'not_connected': 'bg-gray-100',
+        'not_connected': 'bg-gray-100 text-gray-700',
         'pending': 'bg-yellow-100 text-yellow-800',
         'connected': 'bg-green-100 text-green-800',
         'messaged': 'bg-blue-100 text-blue-800'
@@ -228,16 +790,45 @@ function getStatusColor(status) {
     return colors[status] || 'bg-gray-100';
 }
 
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function isOverdue(dateStr) {
+    const date = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return date < today;
+}
+
+// Modal functions
 function openAddModal() {
     document.getElementById('modal-title').textContent = 'Add Contact';
     document.getElementById('contact-form').reset();
     document.getElementById('contact-id').value = '';
     document.getElementById('contact-status').value = 'not_connected';
+    document.getElementById('school-field').classList.add('hidden');
+    clearValidationErrors();
     document.getElementById('contact-modal').classList.remove('hidden');
+    document.getElementById('contact-name').focus();
 }
 
 function closeModal() {
     document.getElementById('contact-modal').classList.add('hidden');
+    clearValidationErrors();
+}
+
+function handleModalBackdropClick(event) {
+    if (event.target === event.currentTarget) {
+        closeModal();
+    }
+}
+
+function toggleSchoolField() {
+    const isAlumni = document.getElementById('contact-alumni').checked;
+    document.getElementById('school-field').classList.toggle('hidden', !isAlumni);
 }
 
 async function editContact(id) {
@@ -250,7 +841,9 @@ async function editContact(id) {
     document.getElementById('contact-company').value = contact.company || '';
     document.getElementById('contact-role').value = contact.role || '';
     document.getElementById('contact-type').value = contact.contact_type || '';
+    document.getElementById('contact-location').value = contact.location || '';
     document.getElementById('contact-email').value = contact.email || '';
+    document.getElementById('contact-phone').value = contact.phone_number || '';
     document.getElementById('contact-linkedin').value = contact.linkedin_url || '';
     document.getElementById('contact-alumni').checked = contact.is_alumni || false;
     document.getElementById('contact-school').value = contact.school_name || '';
@@ -258,6 +851,10 @@ async function editContact(id) {
     document.getElementById('contact-followup').value = contact.next_follow_up || '';
     document.getElementById('contact-notes').value = contact.notes || '';
 
+    // Show/hide school field based on alumni status
+    document.getElementById('school-field').classList.toggle('hidden', !contact.is_alumni);
+
+    clearValidationErrors();
     document.getElementById('contact-modal').classList.remove('hidden');
 }
 
@@ -268,37 +865,104 @@ async function deleteContact(id) {
     loadContacts();
 }
 
-document.getElementById('contact-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
+function clearValidationErrors() {
+    document.querySelectorAll('[id^="error-"]').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('input, select, textarea').forEach(el => el.classList.remove('border-red-500'));
+}
 
-    const id = document.getElementById('contact-id').value;
-    const data = {
-        name: document.getElementById('contact-name').value,
-        company: document.getElementById('contact-company').value || null,
-        role: document.getElementById('contact-role').value || null,
-        contact_type: document.getElementById('contact-type').value || null,
-        email: document.getElementById('contact-email').value || null,
-        linkedin_url: document.getElementById('contact-linkedin').value || null,
-        is_alumni: document.getElementById('contact-alumni').checked,
-        school_name: document.getElementById('contact-school').value || null,
-        connection_status: document.getElementById('contact-status').value,
-        next_follow_up: document.getElementById('contact-followup').value || null,
-        notes: document.getElementById('contact-notes').value || null
-    };
+function showValidationError(field, message) {
+    const errorEl = document.getElementById(`error-${field}`);
+    const inputEl = document.getElementById(`contact-${field}`);
+    if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.classList.remove('hidden');
+    }
+    if (inputEl) {
+        inputEl.classList.add('border-red-500');
+    }
+}
 
-    const url = id ? `/api/contacts/${id}` : '/api/contacts/';
-    const method = id ? 'PATCH' : 'POST';
+function validateForm() {
+    clearValidationErrors();
+    let isValid = true;
 
-    await fetch(url, {
-        method: method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    });
+    // Name is required
+    const name = document.getElementById('contact-name').value.trim();
+    if (!name) {
+        showValidationError('name', 'Name is required');
+        isValid = false;
+    }
 
-    closeModal();
-    loadContacts();
-});
+    // Email format
+    const email = document.getElementById('contact-email').value.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showValidationError('email', 'Please enter a valid email address');
+        isValid = false;
+    }
 
-document.addEventListener('DOMContentLoaded', loadContacts);
+    // LinkedIn URL format
+    const linkedin = document.getElementById('contact-linkedin').value.trim();
+    if (linkedin && !linkedin.includes('linkedin.com')) {
+        showValidationError('linkedin', 'Please enter a valid LinkedIn URL');
+        isValid = false;
+    }
+
+    return isValid;
+}
+
+async function submitForm() {
+    if (!validateForm()) return;
+
+    // Show loading state
+    const saveBtn = document.getElementById('save-btn');
+    const saveBtnText = document.getElementById('save-btn-text');
+    const saveBtnSpinner = document.getElementById('save-btn-spinner');
+
+    saveBtn.disabled = true;
+    saveBtnText.textContent = 'Saving...';
+    saveBtnSpinner.classList.remove('hidden');
+
+    try {
+        const id = document.getElementById('contact-id').value;
+        const data = {
+            name: document.getElementById('contact-name').value,
+            company: document.getElementById('contact-company').value || null,
+            role: document.getElementById('contact-role').value || null,
+            contact_type: document.getElementById('contact-type').value || null,
+            location: document.getElementById('contact-location').value || null,
+            email: document.getElementById('contact-email').value || null,
+            phone_number: document.getElementById('contact-phone').value || null,
+            linkedin_url: document.getElementById('contact-linkedin').value || null,
+            is_alumni: document.getElementById('contact-alumni').checked,
+            school_name: document.getElementById('contact-school').value || null,
+            connection_status: document.getElementById('contact-status').value,
+            next_follow_up: document.getElementById('contact-followup').value || null,
+            notes: document.getElementById('contact-notes').value || null
+        };
+
+        const url = id ? `/api/contacts/${id}` : '/api/contacts/';
+        const method = id ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to save contact');
+        }
+
+        closeModal();
+        loadContacts();
+    } catch (e) {
+        alert('Error saving contact: ' + e.message);
+    } finally {
+        saveBtn.disabled = false;
+        saveBtnText.textContent = 'Save';
+        saveBtnSpinner.classList.add('hidden');
+    }
+}
 </script>
 {% endblock %}

@@ -3,153 +3,456 @@
 
 {% block content %}
 <div class="space-y-6">
-    <!-- TODO: Add welcome message with user's name (e.g., "Welcome back, [Name]!") -->
-    <!-- TODO: For new users with no data, show an onboarding checklist instead of empty stats -->
-    <!-- TODO: Add a "days since started job search" or "applications this week" motivational stat -->
-    <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
+    <!-- Welcome Section -->
+    <div id="welcome-section">
+        <h1 class="text-3xl font-bold text-gray-900" id="welcome-message">Welcome to JobKit</h1>
+        <p class="text-gray-600 mt-1" id="welcome-subtitle">Track your job search progress</p>
+    </div>
 
-    <!-- Quick Stats -->
-    <!-- TODO: Use consistent color scheme - currently colors seem arbitrary (blue, green, yellow, purple) -->
-    <!-- TODO: Consider using semantic colors: blue=info, green=positive, yellow=attention, red=negative -->
-    <!-- TODO: Add icons to each stat card (briefcase, users, clock, chart) -->
-    <!-- TODO: Make stat cards clickable - link to filtered views (e.g., click "Pending Follow-ups" -> Contacts filtered) -->
-    <!-- TODO: Add hover effect to indicate cards are interactive -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="bg-white p-6 rounded-lg shadow">
-            <h3 class="text-sm font-medium text-gray-500">Active Applications</h3>
-            <p class="text-3xl font-bold text-blue-600" id="stat-applications">-</p>
-        </div>
-        <div class="bg-white p-6 rounded-lg shadow">
-            <h3 class="text-sm font-medium text-gray-500">Contacts</h3>
-            <p class="text-3xl font-bold text-green-600" id="stat-contacts">-</p>
-        </div>
-        <div class="bg-white p-6 rounded-lg shadow">
-            <h3 class="text-sm font-medium text-gray-500">Pending Follow-ups</h3>
-            <p class="text-3xl font-bold text-yellow-600" id="stat-followups">-</p>
-        </div>
-        <div class="bg-white p-6 rounded-lg shadow">
-            <h3 class="text-sm font-medium text-gray-500">Response Rate</h3>
-            <p class="text-3xl font-bold text-purple-600" id="stat-response">-</p>
+    <!-- Onboarding Checklist (shown for new users) -->
+    <div id="onboarding-checklist" class="hidden bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-6 rounded-lg">
+        <h2 class="text-xl font-bold text-gray-900 mb-2">Get Started with JobKit</h2>
+        <p class="text-gray-600 mb-4">Complete these steps to make the most of your job search tracker:</p>
+        <div class="space-y-3">
+            <div class="flex items-center gap-3" id="checklist-profile">
+                <div class="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center" id="check-profile">
+                    <svg class="w-4 h-4 text-green-600 hidden" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <a href="/settings" class="text-gray-700 hover:text-blue-600">Set up your profile</a>
+            </div>
+            <div class="flex items-center gap-3" id="checklist-contact">
+                <div class="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center" id="check-contact">
+                    <svg class="w-4 h-4 text-green-600 hidden" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <a href="/contacts" class="text-gray-700 hover:text-blue-600">Add your first contact</a>
+            </div>
+            <div class="flex items-center gap-3" id="checklist-application">
+                <div class="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center" id="check-application">
+                    <svg class="w-4 h-4 text-green-600 hidden" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <a href="/applications" class="text-gray-700 hover:text-blue-600">Track your first application</a>
+            </div>
+            <div class="flex items-center gap-3" id="checklist-company">
+                <div class="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center" id="check-company">
+                    <svg class="w-4 h-4 text-green-600 hidden" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <a href="/companies" class="text-gray-700 hover:text-blue-600">Research a target company</a>
+            </div>
         </div>
     </div>
 
-    <!-- Quick Actions -->
-    <!-- TODO: Reconsider button colors - currently arbitrary (blue, green, purple, gray) -->
-    <!-- TODO: Use consistent primary color for main actions, secondary for others -->
-    <!-- TODO: "Setup Profile" should be more prominent for new users OR hidden once profile is complete -->
-    <!-- TODO: Add icons to buttons for visual recognition -->
-    <!-- TODO: Consider making these actual modal triggers instead of page redirects -->
+    <!-- Quick Stats - Semantic colors: blue=info, green=positive, yellow=attention, purple=metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <!-- Active Applications - Blue (info) -->
+        <a href="/applications?status=applied,phone_screen,technical,onsite"
+           class="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer border-l-4 border-blue-500 group">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Active Applications</h3>
+                    <p class="text-3xl font-bold text-blue-600" id="stat-applications">-</p>
+                </div>
+                <div class="p-3 bg-blue-100 rounded-full group-hover:bg-blue-200 transition-colors">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+            </div>
+        </a>
+
+        <!-- Contacts - Green (positive/growth) -->
+        <a href="/contacts"
+           class="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer border-l-4 border-green-500 group">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Network Contacts</h3>
+                    <p class="text-3xl font-bold text-green-600" id="stat-contacts">-</p>
+                </div>
+                <div class="p-3 bg-green-100 rounded-full group-hover:bg-green-200 transition-colors">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                </div>
+            </div>
+        </a>
+
+        <!-- Pending Follow-ups - Yellow (attention needed) -->
+        <a href="/contacts?needs_follow_up=true"
+           class="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer border-l-4 border-yellow-500 group">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Pending Follow-ups</h3>
+                    <p class="text-3xl font-bold text-yellow-600" id="stat-followups">-</p>
+                </div>
+                <div class="p-3 bg-yellow-100 rounded-full group-hover:bg-yellow-200 transition-colors">
+                    <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+            </div>
+        </a>
+
+        <!-- Response Rate - Purple (metrics/analytics) -->
+        <a href="/applications"
+           class="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer border-l-4 border-purple-500 group">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Response Rate</h3>
+                    <p class="text-3xl font-bold text-purple-600" id="stat-response">-</p>
+                </div>
+                <div class="p-3 bg-purple-100 rounded-full group-hover:bg-purple-200 transition-colors">
+                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Weekly Progress - Motivational stat -->
+    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 rounded-lg shadow text-white">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-sm font-medium text-indigo-100">This Week's Progress</h3>
+                <p class="text-2xl font-bold mt-1">
+                    <span id="stat-weekly-apps">0</span> applications
+                    <span class="text-indigo-200 mx-2">|</span>
+                    <span id="stat-weekly-contacts">0</span> new contacts
+                </p>
+            </div>
+            <div class="text-right">
+                <p class="text-sm text-indigo-200">Keep up the momentum!</p>
+                <p class="text-lg font-semibold" id="stat-streak">-</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions - Consistent blue primary, gray secondary -->
     <div class="bg-white p-6 rounded-lg shadow">
         <h2 class="text-xl font-bold mb-4">Quick Actions</h2>
         <div class="flex flex-wrap gap-4">
-            <a href="/contacts" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                + Add Contact
+            <a href="/contacts" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                </svg>
+                Add Contact
             </a>
-            <a href="/applications" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-                + Track Application
+            <a href="/applications" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Track Application
             </a>
-            <a href="/messages" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
+            <a href="/messages" class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                </svg>
                 Draft Message
             </a>
-            <a href="/settings" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
-                Setup Profile
+            <a href="/resume" class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                Analyze Job
+            </a>
+            <!-- Setup Profile - shown conditionally based on profile completion -->
+            <a href="/settings" id="setup-profile-btn" class="hidden inline-flex items-center gap-2 px-4 py-2 bg-yellow-100 text-yellow-800 rounded-lg hover:bg-yellow-200 transition-colors border border-yellow-300">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                Complete Profile
             </a>
         </div>
     </div>
 
-    <!-- Upcoming Follow-ups -->
-    <!-- TODO: Add "View All" link in header to go to Contacts page with filter applied -->
-    <!-- TODO: Show follow-up date for each contact -->
-    <!-- TODO: Add quick action buttons (snooze, mark done) inline -->
-    <div class="bg-white p-6 rounded-lg shadow">
-        <h2 class="text-xl font-bold mb-4">Contacts Needing Follow-up</h2>
-        <div id="followup-list">
-            <p class="text-gray-500">Loading...</p>
+    <!-- Two Column Layout for Lists -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Upcoming Follow-ups -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold">Contacts Needing Follow-up</h2>
+                <a href="/contacts?needs_follow_up=true" class="text-sm text-blue-600 hover:text-blue-800 hover:underline">View All</a>
+            </div>
+            <div id="followup-list">
+                <div class="flex items-center justify-center py-8">
+                    <svg class="animate-spin h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <!-- Recent Applications -->
-    <!-- TODO: Add "View All" link in header -->
-    <!-- TODO: Empty state should have an illustration and more encouraging copy -->
-    <!-- TODO: Make "Add one!" link more prominent - use a button instead -->
-    <!-- TODO: Show application date and days since applied -->
-    <div class="bg-white p-6 rounded-lg shadow">
-        <h2 class="text-xl font-bold mb-4">Recent Applications</h2>
-        <div id="recent-applications">
-            <p class="text-gray-500">Loading...</p>
+        <!-- Recent Applications -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold">Recent Applications</h2>
+                <a href="/applications" class="text-sm text-blue-600 hover:text-blue-800 hover:underline">View All</a>
+            </div>
+            <div id="recent-applications">
+                <div class="flex items-center justify-center py-8">
+                    <svg class="animate-spin h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', async function() {
-    // Load stats
+    let hasProfile = false;
+    let hasContacts = false;
+    let hasApplications = false;
+    let hasCompanies = false;
+
     try {
+        // Load user profile for welcome message
+        const profileResp = await fetch('/api/profile/');
+        if (profileResp.ok) {
+            const profile = await profileResp.json();
+            if (profile && profile.name) {
+                hasProfile = true;
+                document.getElementById('welcome-message').textContent = `Welcome back, ${profile.name}!`;
+
+                // Calculate profile completion for showing setup button
+                const fields = ['email', 'linkedin_url', 'school', 'current_title', 'skills', 'target_roles', 'elevator_pitch'];
+                const filled = fields.filter(f => profile[f] && profile[f].trim()).length;
+                const completion = Math.round((filled / fields.length) * 100);
+
+                if (completion < 70) {
+                    document.getElementById('setup-profile-btn').classList.remove('hidden');
+                }
+
+                // Mark checklist
+                document.querySelector('#check-profile').classList.add('border-green-500', 'bg-green-100');
+                document.querySelector('#check-profile svg').classList.remove('hidden');
+            }
+        }
+
         // Get application stats
         const statsResp = await fetch('/api/applications/stats');
         const stats = await statsResp.json();
         document.getElementById('stat-applications').textContent = stats.active || 0;
-        document.getElementById('stat-response').textContent = stats.response_rate + '%' || '-';
+        document.getElementById('stat-response').textContent = (stats.response_rate || 0) + '%';
+        document.getElementById('stat-weekly-apps').textContent = stats.applications_this_week || 0;
 
-        // Get contacts count
+        if (stats.total > 0) {
+            hasApplications = true;
+            document.querySelector('#check-application').classList.add('border-green-500', 'bg-green-100');
+            document.querySelector('#check-application svg').classList.remove('hidden');
+        }
+
+        // Get contacts
         const contactsResp = await fetch('/api/contacts/');
         const contacts = await contactsResp.json();
         document.getElementById('stat-contacts').textContent = contacts.length;
+
+        // Count contacts added this week
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        const weeklyContacts = contacts.filter(c => new Date(c.created_at) > oneWeekAgo).length;
+        document.getElementById('stat-weekly-contacts').textContent = weeklyContacts;
+
+        if (contacts.length > 0) {
+            hasContacts = true;
+            document.querySelector('#check-contact').classList.add('border-green-500', 'bg-green-100');
+            document.querySelector('#check-contact svg').classList.remove('hidden');
+        }
 
         // Get follow-ups
         const followupsResp = await fetch('/api/contacts/?needs_follow_up=true');
         const followups = await followupsResp.json();
         document.getElementById('stat-followups').textContent = followups.length;
 
-        // Render follow-up list
+        // Render follow-up list with dates and actions
         const followupList = document.getElementById('followup-list');
         if (followups.length === 0) {
-            followupList.innerHTML = '<p class="text-gray-500">No pending follow-ups</p>';
+            followupList.innerHTML = `
+                <div class="text-center py-8">
+                    <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <p class="text-gray-500">All caught up! No pending follow-ups.</p>
+                </div>
+            `;
         } else {
             followupList.innerHTML = `
-                <ul class="divide-y">
+                <ul class="divide-y divide-gray-100">
                     ${followups.slice(0, 5).map(c => `
-                        <li class="py-2 flex justify-between items-center">
-                            <div>
-                                <span class="font-medium">${c.name}</span>
-                                <span class="text-gray-500 text-sm ml-2">${c.company || ''}</span>
+                        <li class="py-3 flex justify-between items-center hover:bg-gray-50 -mx-2 px-2 rounded">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-medium text-gray-900 truncate">${escapeHtml(c.name)}</span>
+                                    ${c.is_alumni ? '<span class="px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">Alumni</span>' : ''}
+                                </div>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="text-sm text-gray-500 truncate">${escapeHtml(c.company || 'No company')}</span>
+                                    ${c.next_follow_up ? `
+                                        <span class="text-xs text-gray-400">|</span>
+                                        <span class="text-xs ${isOverdue(c.next_follow_up) ? 'text-red-600 font-medium' : 'text-gray-400'}">
+                                            ${formatFollowUpDate(c.next_follow_up)}
+                                        </span>
+                                    ` : ''}
+                                </div>
                             </div>
-                            <a href="/messages" class="text-purple-600 text-sm hover:underline">Send message</a>
+                            <div class="flex items-center gap-2 ml-4">
+                                <button onclick="snoozeFollowUp(${c.id})" class="p-1.5 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded" title="Snooze 3 days">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </button>
+                                <button onclick="markFollowUpDone(${c.id})" class="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded" title="Mark done">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                </button>
+                                <a href="/messages?contact=${c.id}" class="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200">
+                                    Message
+                                </a>
+                            </div>
                         </li>
                     `).join('')}
                 </ul>
             `;
+        }
+
+        // Get companies for checklist
+        const companiesResp = await fetch('/api/companies/');
+        const companies = await companiesResp.json();
+        if (companies.length > 0) {
+            hasCompanies = true;
+            document.querySelector('#check-company').classList.add('border-green-500', 'bg-green-100');
+            document.querySelector('#check-company svg').classList.remove('hidden');
         }
 
         // Get recent applications
         const appsResp = await fetch('/api/applications/?limit=5');
         const apps = await appsResp.json();
         const recentApps = document.getElementById('recent-applications');
+
         if (apps.length === 0) {
-            recentApps.innerHTML = '<p class="text-gray-500">No applications yet. <a href="/applications" class="text-blue-600 hover:underline">Add one!</a></p>';
+            recentApps.innerHTML = `
+                <div class="text-center py-8">
+                    <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                    <p class="text-gray-500 mb-4">No applications tracked yet.</p>
+                    <a href="/applications" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Add Your First Application
+                    </a>
+                </div>
+            `;
         } else {
             recentApps.innerHTML = `
-                <ul class="divide-y">
+                <ul class="divide-y divide-gray-100">
                     ${apps.map(a => `
-                        <li class="py-2 flex justify-between items-center">
-                            <div>
-                                <span class="font-medium">${a.company_name}</span>
-                                <span class="text-gray-500 text-sm ml-2">${a.role}</span>
+                        <li class="py-3 flex justify-between items-center hover:bg-gray-50 -mx-2 px-2 rounded">
+                            <div class="flex-1 min-w-0">
+                                <div class="font-medium text-gray-900 truncate">${escapeHtml(a.company_name)}</div>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="text-sm text-gray-500 truncate">${escapeHtml(a.role)}</span>
+                                    ${a.applied_date ? `
+                                        <span class="text-xs text-gray-400">|</span>
+                                        <span class="text-xs text-gray-400">${formatDaysSince(a.applied_date)}</span>
+                                    ` : ''}
+                                </div>
                             </div>
-                            <span class="px-2 py-1 text-xs rounded ${getStatusColor(a.status)}">${a.status}</span>
+                            <span class="px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(a.status)}">${formatStatus(a.status)}</span>
                         </li>
                     `).join('')}
                 </ul>
             `;
         }
+
+        // Show onboarding if new user (less than 2 items completed)
+        const completedCount = [hasProfile, hasContacts, hasApplications, hasCompanies].filter(Boolean).length;
+        if (completedCount < 3) {
+            document.getElementById('onboarding-checklist').classList.remove('hidden');
+            document.getElementById('welcome-subtitle').textContent = 'Complete the checklist below to get started';
+        } else {
+            document.getElementById('welcome-subtitle').textContent = `You have ${stats.active || 0} active applications in progress`;
+        }
+
+        // Calculate streak (consecutive days with activity)
+        updateStreakDisplay(apps, contacts);
+
     } catch (e) {
         console.error('Error loading dashboard:', e);
     }
 });
 
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatFollowUpDate(dateStr) {
+    const date = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diff = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
+
+    if (diff < 0) return `${Math.abs(diff)} days overdue`;
+    if (diff === 0) return 'Today';
+    if (diff === 1) return 'Tomorrow';
+    if (diff <= 7) return `In ${diff} days`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function isOverdue(dateStr) {
+    const date = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return date < today;
+}
+
+function formatDaysSince(dateStr) {
+    const date = new Date(dateStr);
+    const today = new Date();
+    const diff = Math.floor((today - date) / (1000 * 60 * 60 * 24));
+
+    if (diff === 0) return 'Applied today';
+    if (diff === 1) return 'Applied yesterday';
+    if (diff < 7) return `Applied ${diff} days ago`;
+    if (diff < 14) return 'Applied last week';
+    return `Applied ${Math.floor(diff / 7)} weeks ago`;
+}
+
+function formatStatus(status) {
+    const labels = {
+        'saved': 'Saved',
+        'applied': 'Applied',
+        'phone_screen': 'Phone Screen',
+        'technical': 'Technical',
+        'onsite': 'Onsite',
+        'offer': 'Offer!',
+        'accepted': 'Accepted',
+        'rejected': 'Rejected',
+        'withdrawn': 'Withdrawn',
+        'ghosted': 'Ghosted'
+    };
+    return labels[status] || status;
+}
+
 function getStatusColor(status) {
     const colors = {
-        'saved': 'bg-gray-100',
+        'saved': 'bg-gray-100 text-gray-700',
         'applied': 'bg-blue-100 text-blue-800',
         'phone_screen': 'bg-yellow-100 text-yellow-800',
         'technical': 'bg-purple-100 text-purple-800',
@@ -160,7 +463,70 @@ function getStatusColor(status) {
         'withdrawn': 'bg-gray-200 text-gray-700',
         'ghosted': 'bg-gray-300 text-gray-600'
     };
-    return colors[status] || 'bg-gray-100';
+    return colors[status] || 'bg-gray-100 text-gray-700';
+}
+
+async function snoozeFollowUp(contactId) {
+    try {
+        const snoozeDate = new Date();
+        snoozeDate.setDate(snoozeDate.getDate() + 3);
+        const dateStr = snoozeDate.toISOString().split('T')[0];
+
+        await fetch(`/api/contacts/${contactId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ next_follow_up: dateStr })
+        });
+
+        // Reload the page to refresh the list
+        window.location.reload();
+    } catch (e) {
+        console.error('Error snoozing follow-up:', e);
+        alert('Failed to snooze follow-up');
+    }
+}
+
+async function markFollowUpDone(contactId) {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+
+        await fetch(`/api/contacts/${contactId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                last_contacted: today,
+                next_follow_up: null
+            })
+        });
+
+        // Reload the page to refresh the list
+        window.location.reload();
+    } catch (e) {
+        console.error('Error marking follow-up done:', e);
+        alert('Failed to mark follow-up as done');
+    }
+}
+
+function updateStreakDisplay(apps, contacts) {
+    // Simple streak calculation based on activity
+    const streakEl = document.getElementById('stat-streak');
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    const recentApps = apps.filter(a => a.applied_date && new Date(a.applied_date) > oneWeekAgo).length;
+    const recentContacts = contacts.filter(c => new Date(c.created_at) > oneWeekAgo).length;
+
+    const totalActivity = recentApps + recentContacts;
+
+    if (totalActivity >= 10) {
+        streakEl.textContent = 'On fire this week!';
+    } else if (totalActivity >= 5) {
+        streakEl.textContent = 'Great progress!';
+    } else if (totalActivity >= 1) {
+        streakEl.textContent = 'Good start!';
+    } else {
+        streakEl.textContent = 'Let\'s get started!';
+    }
 }
 </script>
 {% endblock %}

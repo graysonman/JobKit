@@ -4,209 +4,727 @@
 {% block content %}
 <div class="space-y-6">
     <div class="flex justify-between items-center">
-        <h1 class="text-3xl font-bold text-gray-900">Job Applications</h1>
-        <button onclick="openAddModal()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-            + Track Application
-        </button>
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Job Applications</h1>
+            <p class="text-gray-600 mt-1" id="results-count">Loading applications...</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <!-- View Toggle -->
+            <div class="flex border border-gray-300 rounded-lg overflow-hidden">
+                <button id="view-table-btn" onclick="setView('table')" class="px-3 py-2 bg-blue-600 text-white text-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+                    </svg>
+                </button>
+                <button id="view-kanban-btn" onclick="setView('kanban')" class="px-3 py-2 bg-white text-gray-600 text-sm hover:bg-gray-50">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
+                    </svg>
+                </button>
+            </div>
+            <button onclick="openAddModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Track Application
+            </button>
+        </div>
     </div>
 
-    <!-- Filters -->
-    <!-- TODO: Add search input to filter by company/role name -->
-    <!-- TODO: Add date range filter (applied in last week/month/etc.) -->
+    <!-- Search and Filters -->
     <div class="bg-white p-4 rounded-lg shadow">
-        <div class="flex flex-wrap gap-4">
-            <select id="filter-status" onchange="loadApplications()" class="border rounded px-3 py-2">
-                <option value="">All Statuses</option>
-                <option value="saved">Saved</option>
-                <option value="applied">Applied</option>
-                <option value="phone_screen">Phone Screen</option>
-                <option value="technical">Technical</option>
-                <option value="onsite">Onsite</option>
-                <option value="offer">Offer</option>
-                <option value="accepted">Accepted</option>
-                <option value="rejected">Rejected</option>
-                <option value="withdrawn">Withdrawn</option>
-                <option value="ghosted">Ghosted</option>
-            </select>
-            <label class="flex items-center gap-2">
-                <input type="checkbox" id="filter-active" onchange="loadApplications()" checked>
-                <span>Active Only</span>
-            </label>
+        <div class="flex flex-col md:flex-row gap-4">
+            <!-- Search Input -->
+            <div class="relative flex-1">
+                <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input type="text" id="search-input" placeholder="Search by company or role..."
+                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                       oninput="handleSearch()">
+            </div>
+
+            <!-- Filters -->
+            <div class="flex flex-wrap gap-3 items-center">
+                <select id="filter-status" onchange="loadApplications()" class="border border-gray-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Statuses</option>
+                    <option value="saved">Saved</option>
+                    <option value="applied">Applied</option>
+                    <option value="phone_screen">Phone Screen</option>
+                    <option value="technical">Technical</option>
+                    <option value="onsite">Onsite</option>
+                    <option value="offer">Offer</option>
+                    <option value="accepted">Accepted</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="withdrawn">Withdrawn</option>
+                    <option value="ghosted">Ghosted</option>
+                </select>
+
+                <select id="filter-date-range" onchange="loadApplications()" class="border border-gray-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Time</option>
+                    <option value="week">Last 7 Days</option>
+                    <option value="month">Last 30 Days</option>
+                    <option value="quarter">Last 90 Days</option>
+                </select>
+
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <div class="relative">
+                        <input type="checkbox" id="filter-active" onchange="loadApplications()" checked class="sr-only peer">
+                        <div class="w-5 h-5 border-2 border-gray-300 rounded peer-checked:bg-blue-600 peer-checked:border-blue-600 transition-colors flex items-center justify-center">
+                            <svg class="w-3 h-3 text-white hidden peer-checked:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <span class="text-sm text-gray-700">Active Only</span>
+                </label>
+
+                <button id="clear-filters-btn" onclick="clearFilters()" class="hidden px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    Clear
+                </button>
+            </div>
         </div>
     </div>
 
-    <!-- Pipeline Summary -->
-    <!-- TODO: Make pipeline cards clickable to filter table by that stage -->
-    <!-- TODO: Add hover effect to indicate interactivity -->
-    <!-- TODO: Consider adding a visual pipeline/funnel diagram view option -->
-    <!-- TODO: Add conversion rate between stages (e.g., "50% Applied -> Interview") -->
-    <!-- TODO: Add icons to each stage for visual recognition -->
-    <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
-        <div class="bg-gray-100 p-3 rounded text-center">
-            <div class="text-2xl font-bold" id="count-saved">0</div>
-            <div class="text-xs text-gray-600">Saved</div>
+    <!-- Pipeline Summary with Conversion Rates -->
+    <div class="bg-white p-4 rounded-lg shadow">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">Application Pipeline</h2>
+            <div class="text-xs text-gray-500" id="conversion-summary"></div>
         </div>
-        <div class="bg-blue-100 p-3 rounded text-center">
-            <div class="text-2xl font-bold text-blue-800" id="count-applied">0</div>
-            <div class="text-xs text-blue-600">Applied</div>
-        </div>
-        <div class="bg-yellow-100 p-3 rounded text-center">
-            <div class="text-2xl font-bold text-yellow-800" id="count-interviewing">0</div>
-            <div class="text-xs text-yellow-600">Interviewing</div>
-        </div>
-        <div class="bg-green-100 p-3 rounded text-center">
-            <div class="text-2xl font-bold text-green-800" id="count-offer">0</div>
-            <div class="text-xs text-green-600">Offers</div>
-        </div>
-        <div class="bg-red-100 p-3 rounded text-center">
-            <div class="text-2xl font-bold text-red-800" id="count-closed">0</div>
-            <div class="text-xs text-red-600">Closed</div>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <!-- Saved -->
+            <button onclick="filterByStage('saved')" class="group relative bg-gray-50 hover:bg-gray-100 p-4 rounded-lg text-center transition-all hover:shadow-md cursor-pointer border-2 border-transparent hover:border-gray-300" data-stage="saved">
+                <div class="flex items-center justify-center mb-2">
+                    <div class="p-2 bg-gray-200 rounded-full group-hover:bg-gray-300 transition-colors">
+                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="text-2xl font-bold text-gray-700" id="count-saved">0</div>
+                <div class="text-xs text-gray-500">Saved</div>
+            </button>
+
+            <!-- Applied -->
+            <button onclick="filterByStage('applied')" class="group relative bg-blue-50 hover:bg-blue-100 p-4 rounded-lg text-center transition-all hover:shadow-md cursor-pointer border-2 border-transparent hover:border-blue-300" data-stage="applied">
+                <div class="flex items-center justify-center mb-2">
+                    <div class="p-2 bg-blue-200 rounded-full group-hover:bg-blue-300 transition-colors">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="text-2xl font-bold text-blue-700" id="count-applied">0</div>
+                <div class="text-xs text-blue-600">Applied</div>
+                <div class="text-xs text-blue-400 mt-1" id="rate-applied"></div>
+            </button>
+
+            <!-- Interviewing -->
+            <button onclick="filterByStage('interviewing')" class="group relative bg-yellow-50 hover:bg-yellow-100 p-4 rounded-lg text-center transition-all hover:shadow-md cursor-pointer border-2 border-transparent hover:border-yellow-300" data-stage="interviewing">
+                <div class="flex items-center justify-center mb-2">
+                    <div class="p-2 bg-yellow-200 rounded-full group-hover:bg-yellow-300 transition-colors">
+                        <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="text-2xl font-bold text-yellow-700" id="count-interviewing">0</div>
+                <div class="text-xs text-yellow-600">Interviewing</div>
+                <div class="text-xs text-yellow-400 mt-1" id="rate-interviewing"></div>
+            </button>
+
+            <!-- Offers -->
+            <button onclick="filterByStage('offer')" class="group relative bg-green-50 hover:bg-green-100 p-4 rounded-lg text-center transition-all hover:shadow-md cursor-pointer border-2 border-transparent hover:border-green-300" data-stage="offer">
+                <div class="flex items-center justify-center mb-2">
+                    <div class="p-2 bg-green-200 rounded-full group-hover:bg-green-300 transition-colors">
+                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="text-2xl font-bold text-green-700" id="count-offer">0</div>
+                <div class="text-xs text-green-600">Offers</div>
+                <div class="text-xs text-green-400 mt-1" id="rate-offer"></div>
+            </button>
+
+            <!-- Closed -->
+            <button onclick="filterByStage('closed')" class="group relative bg-red-50 hover:bg-red-100 p-4 rounded-lg text-center transition-all hover:shadow-md cursor-pointer border-2 border-transparent hover:border-red-300" data-stage="closed">
+                <div class="flex items-center justify-center mb-2">
+                    <div class="p-2 bg-red-200 rounded-full group-hover:bg-red-300 transition-colors">
+                        <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="text-2xl font-bold text-red-700" id="count-closed">0</div>
+                <div class="text-xs text-red-600">Closed</div>
+            </button>
         </div>
     </div>
 
-    <!-- Applications Table -->
-    <!-- TODO: Add Kanban/board view option as alternative to table view -->
-    <!-- TODO: Make table headers sortable (by date, company name, status) -->
-    <!-- TODO: Add "days since applied" indicator with color coding (green < 7 days, yellow < 14, red > 14) -->
-    <!-- TODO: Show success toast when status is updated via dropdown -->
-    <!-- TODO: Empty state should have illustration and stronger CTA -->
-    <!-- TODO: Add drag-and-drop reordering or priority ranking -->
-    <!-- TODO: Add company logo/favicon next to company name -->
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Applied</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Next Step</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                </tr>
-            </thead>
-            <tbody id="applications-table-body" class="bg-white divide-y divide-gray-200">
-            </tbody>
-        </table>
+    <!-- Table View -->
+    <div id="table-view" class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 transition-colors select-none" onclick="sortTable('company_name')">
+                            <div class="flex items-center gap-1">
+                                Company
+                                <svg id="sort-icon-company_name" class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                                </svg>
+                            </div>
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 transition-colors select-none" onclick="sortTable('status')">
+                            <div class="flex items-center gap-1">
+                                Status
+                                <svg id="sort-icon-status" class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                                </svg>
+                            </div>
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 transition-colors select-none" onclick="sortTable('applied_date')">
+                            <div class="flex items-center gap-1">
+                                Applied
+                                <svg id="sort-icon-applied_date" class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                                </svg>
+                            </div>
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Next Step</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="applications-table-body" class="bg-white divide-y divide-gray-200">
+                    <tr>
+                        <td colspan="7" class="px-6 py-12 text-center">
+                            <svg class="animate-spin h-8 w-8 text-gray-400 mx-auto" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Kanban View -->
+    <div id="kanban-view" class="hidden">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- Saved Column -->
+            <div class="bg-gray-100 rounded-lg p-3">
+                <h3 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-gray-400"></span>
+                    Saved <span class="text-gray-400 font-normal" id="kanban-count-saved">(0)</span>
+                </h3>
+                <div id="kanban-saved" class="space-y-2 min-h-[200px]"></div>
+            </div>
+
+            <!-- Applied Column -->
+            <div class="bg-blue-50 rounded-lg p-3">
+                <h3 class="font-semibold text-blue-700 mb-3 flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+                    Applied <span class="text-blue-400 font-normal" id="kanban-count-applied">(0)</span>
+                </h3>
+                <div id="kanban-applied" class="space-y-2 min-h-[200px]"></div>
+            </div>
+
+            <!-- Interviewing Column -->
+            <div class="bg-yellow-50 rounded-lg p-3">
+                <h3 class="font-semibold text-yellow-700 mb-3 flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                    Interviewing <span class="text-yellow-400 font-normal" id="kanban-count-interviewing">(0)</span>
+                </h3>
+                <div id="kanban-interviewing" class="space-y-2 min-h-[200px]"></div>
+            </div>
+
+            <!-- Offers Column -->
+            <div class="bg-green-50 rounded-lg p-3">
+                <h3 class="font-semibold text-green-700 mb-3 flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                    Offers <span class="text-green-400 font-normal" id="kanban-count-offers">(0)</span>
+                </h3>
+                <div id="kanban-offers" class="space-y-2 min-h-[200px]"></div>
+            </div>
+        </div>
     </div>
 </div>
 
+<!-- Toast Notification -->
+<div id="toast" class="hidden fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50 transition-all transform translate-y-2 opacity-0">
+    <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+    </svg>
+    <span id="toast-message">Status updated</span>
+</div>
+
 <!-- Add/Edit Application Modal -->
-<div id="application-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <h2 id="modal-title" class="text-xl font-bold mb-4">Track Application</h2>
-        <form id="application-form" class="space-y-4">
-            <input type="hidden" id="app-id">
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Company *</label>
-                    <input type="text" id="app-company" required class="mt-1 block w-full border rounded px-3 py-2">
+<div id="application-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick="handleModalBackdropClick(event)">
+    <div class="bg-white rounded-lg w-full max-w-lg max-h-[90vh] overflow-hidden shadow-xl" onclick="event.stopPropagation()">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            <h2 id="modal-title" class="text-xl font-bold text-gray-900">Track Application</h2>
+            <button onclick="closeModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="px-6 py-4 max-h-[calc(90vh-130px)] overflow-y-auto">
+            <form id="application-form" class="space-y-6" novalidate>
+                <input type="hidden" id="app-id">
+
+                <!-- Basic Info -->
+                <div class="space-y-4">
+                    <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider">Job Details</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Company <span class="text-red-500">*</span></label>
+                            <input type="text" id="app-company" required class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Role <span class="text-red-500">*</span></label>
+                            <input type="text" id="app-role" required class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Location</label>
+                            <input type="text" id="app-location" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Remote / City, State">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Source</label>
+                            <select id="app-source" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Select...</option>
+                                <option value="linkedin">LinkedIn</option>
+                                <option value="company_site">Company Website</option>
+                                <option value="indeed">Indeed</option>
+                                <option value="glassdoor">Glassdoor</option>
+                                <option value="referral">Referral</option>
+                                <option value="recruiter">Recruiter</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Job URL</label>
+                        <input type="url" id="app-url" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="https://...">
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Role *</label>
-                    <input type="text" id="app-role" required class="mt-1 block w-full border rounded px-3 py-2">
+
+                <!-- Status & Dates -->
+                <div class="space-y-4 pt-4 border-t border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider">Status & Timeline</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Status</label>
+                            <select id="app-status" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="saved">Saved</option>
+                                <option value="applied">Applied</option>
+                                <option value="phone_screen">Phone Screen</option>
+                                <option value="technical">Technical</option>
+                                <option value="onsite">Onsite</option>
+                                <option value="offer">Offer</option>
+                                <option value="accepted">Accepted</option>
+                                <option value="rejected">Rejected</option>
+                                <option value="withdrawn">Withdrawn</option>
+                                <option value="ghosted">Ghosted</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Applied Date</label>
+                            <input type="date" id="app-date" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Next Step</label>
+                            <input type="text" id="app-next-step" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., Technical interview">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Next Step Date</label>
+                            <input type="date" id="app-next-date" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Excitement Level</label>
+                        <div class="flex items-center gap-2 mt-2">
+                            <input type="range" id="app-excitement" min="1" max="5" value="3" class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            <span id="excitement-label" class="text-sm font-medium text-gray-600 w-24 text-center">Neutral</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Job URL</label>
-                <input type="url" id="app-url" class="mt-1 block w-full border rounded px-3 py-2" placeholder="https://...">
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Status</label>
-                    <select id="app-status" class="mt-1 block w-full border rounded px-3 py-2">
-                        <option value="saved">Saved</option>
-                        <option value="applied">Applied</option>
-                        <option value="phone_screen">Phone Screen</option>
-                        <option value="technical">Technical</option>
-                        <option value="onsite">Onsite</option>
-                        <option value="offer">Offer</option>
-                        <option value="accepted">Accepted</option>
-                        <option value="rejected">Rejected</option>
-                        <option value="withdrawn">Withdrawn</option>
-                        <option value="ghosted">Ghosted</option>
-                    </select>
+
+                <!-- Compensation -->
+                <div class="space-y-4 pt-4 border-t border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider">Compensation</h3>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Salary Min</label>
+                            <input type="number" id="app-salary-min" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="80000">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Salary Max</label>
+                            <input type="number" id="app-salary-max" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="120000">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Offered</label>
+                            <input type="text" id="app-salary" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="$110k">
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Applied Date</label>
-                    <input type="date" id="app-date" class="mt-1 block w-full border rounded px-3 py-2">
+
+                <!-- Notes -->
+                <div class="space-y-4 pt-4 border-t border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider">Notes</h3>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Job Description</label>
+                        <textarea id="app-description" rows="3" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Paste job description for reference..."></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Notes</label>
+                        <textarea id="app-notes" rows="2" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
                 </div>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Next Step</label>
-                    <input type="text" id="app-next-step" class="mt-1 block w-full border rounded px-3 py-2" placeholder="e.g., Technical interview">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Next Step Date</label>
-                    <input type="date" id="app-next-date" class="mt-1 block w-full border rounded px-3 py-2">
-                </div>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Salary (if offered)</label>
-                <input type="text" id="app-salary" class="mt-1 block w-full border rounded px-3 py-2" placeholder="e.g., $120k - $150k">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Job Description</label>
-                <textarea id="app-description" rows="3" class="mt-1 block w-full border rounded px-3 py-2" placeholder="Paste job description for reference..."></textarea>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Notes</label>
-                <textarea id="app-notes" rows="2" class="mt-1 block w-full border rounded px-3 py-2"></textarea>
-            </div>
-            <div class="flex justify-end gap-4">
-                <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded hover:bg-gray-50">Cancel</button>
-                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Save</button>
-            </div>
-        </form>
+            </form>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
+            <button type="button" onclick="closeModal()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors">Cancel</button>
+            <button type="button" onclick="submitForm()" id="save-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-2 min-w-[100px] justify-center">
+                <span id="save-btn-text">Save</span>
+                <svg id="save-btn-spinner" class="hidden animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </button>
+        </div>
     </div>
 </div>
 
 <script>
 let allApplications = [];
+let filteredApplications = [];
+let currentView = 'table';
+let currentSort = { field: 'applied_date', direction: 'desc' };
+let searchTimeout = null;
+let activeStageFilter = null;
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    loadApplications();
+    setupExcitementSlider();
+    setupKeyboardShortcuts();
+});
+
+function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeModal();
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            document.getElementById('search-input').focus();
+        }
+    });
+}
+
+function setupExcitementSlider() {
+    const slider = document.getElementById('app-excitement');
+    const label = document.getElementById('excitement-label');
+    const labels = ['Not Excited', 'Slightly', 'Neutral', 'Excited', 'Very Excited'];
+
+    slider.addEventListener('input', function() {
+        label.textContent = labels[this.value - 1];
+    });
+}
 
 async function loadApplications() {
     const status = document.getElementById('filter-status').value;
     const activeOnly = document.getElementById('filter-active').checked;
+    const dateRange = document.getElementById('filter-date-range').value;
 
     let url = '/api/applications/?';
     if (status) url += `status=${status}&`;
-    if (activeOnly) url += `active_only=true&`;
+    if (activeOnly && !activeStageFilter) url += `active_only=true&`;
 
     const response = await fetch(url);
     allApplications = await response.json();
-    renderApplications(allApplications);
+
+    // Apply date range filter client-side
+    if (dateRange) {
+        const now = new Date();
+        let cutoff = new Date();
+        if (dateRange === 'week') cutoff.setDate(now.getDate() - 7);
+        else if (dateRange === 'month') cutoff.setDate(now.getDate() - 30);
+        else if (dateRange === 'quarter') cutoff.setDate(now.getDate() - 90);
+
+        allApplications = allApplications.filter(a => {
+            if (!a.applied_date) return true;
+            return new Date(a.applied_date) >= cutoff;
+        });
+    }
+
+    applySearchFilter();
     updateCounts();
+    updateClearFiltersButton();
+}
+
+function handleSearch() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        applySearchFilter();
+    }, 300);
+}
+
+function applySearchFilter() {
+    const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+
+    if (searchTerm) {
+        filteredApplications = allApplications.filter(a =>
+            (a.company_name && a.company_name.toLowerCase().includes(searchTerm)) ||
+            (a.role && a.role.toLowerCase().includes(searchTerm))
+        );
+    } else {
+        filteredApplications = [...allApplications];
+    }
+
+    // Apply stage filter
+    if (activeStageFilter) {
+        filteredApplications = filteredApplications.filter(a => {
+            if (activeStageFilter === 'saved') return a.status === 'saved';
+            if (activeStageFilter === 'applied') return a.status === 'applied';
+            if (activeStageFilter === 'interviewing') return ['phone_screen', 'technical', 'onsite'].includes(a.status);
+            if (activeStageFilter === 'offer') return ['offer', 'accepted'].includes(a.status);
+            if (activeStageFilter === 'closed') return ['rejected', 'withdrawn', 'ghosted'].includes(a.status);
+            return true;
+        });
+    }
+
+    sortApplications();
+    renderApplications();
+    updateResultsCount();
+    updateClearFiltersButton();
+}
+
+function sortApplications() {
+    const { field, direction } = currentSort;
+    filteredApplications.sort((a, b) => {
+        let aVal = a[field] || '';
+        let bVal = b[field] || '';
+
+        if (field === 'applied_date') {
+            aVal = aVal ? new Date(aVal).getTime() : 0;
+            bVal = bVal ? new Date(bVal).getTime() : 0;
+        } else {
+            aVal = aVal.toString().toLowerCase();
+            bVal = bVal.toString().toLowerCase();
+        }
+
+        if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    // Update sort icons
+    document.querySelectorAll('[id^="sort-icon-"]').forEach(icon => {
+        icon.classList.remove('text-blue-600');
+        icon.classList.add('text-gray-400');
+    });
+    const activeIcon = document.getElementById(`sort-icon-${field}`);
+    if (activeIcon) {
+        activeIcon.classList.remove('text-gray-400');
+        activeIcon.classList.add('text-blue-600');
+    }
+}
+
+function sortTable(field) {
+    if (currentSort.field === field) {
+        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSort.field = field;
+        currentSort.direction = field === 'applied_date' ? 'desc' : 'asc';
+    }
+    sortApplications();
+    renderApplications();
+}
+
+function updateResultsCount() {
+    const total = allApplications.length;
+    const filtered = filteredApplications.length;
+    const countEl = document.getElementById('results-count');
+
+    if (total === 0) {
+        countEl.textContent = 'No applications yet';
+    } else if (filtered === total) {
+        countEl.textContent = `${total} application${total !== 1 ? 's' : ''}`;
+    } else {
+        countEl.textContent = `Showing ${filtered} of ${total} applications`;
+    }
+}
+
+function updateClearFiltersButton() {
+    const hasFilters =
+        document.getElementById('filter-status').value ||
+        document.getElementById('filter-date-range').value ||
+        !document.getElementById('filter-active').checked ||
+        document.getElementById('search-input').value.trim() ||
+        activeStageFilter;
+
+    document.getElementById('clear-filters-btn').classList.toggle('hidden', !hasFilters);
+}
+
+function clearFilters() {
+    document.getElementById('filter-status').value = '';
+    document.getElementById('filter-date-range').value = '';
+    document.getElementById('filter-active').checked = true;
+    document.getElementById('search-input').value = '';
+    activeStageFilter = null;
+
+    // Remove active state from stage buttons
+    document.querySelectorAll('[data-stage]').forEach(btn => {
+        btn.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-500');
+    });
+
+    loadApplications();
+}
+
+function filterByStage(stage) {
+    // Toggle stage filter
+    if (activeStageFilter === stage) {
+        activeStageFilter = null;
+        document.querySelectorAll('[data-stage]').forEach(btn => {
+            btn.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-500');
+        });
+    } else {
+        activeStageFilter = stage;
+        document.querySelectorAll('[data-stage]').forEach(btn => {
+            btn.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-500');
+        });
+        document.querySelector(`[data-stage="${stage}"]`).classList.add('ring-2', 'ring-offset-2', 'ring-blue-500');
+    }
+
+    // Clear status dropdown when using stage filter
+    document.getElementById('filter-status').value = '';
+    document.getElementById('filter-active').checked = false;
+
+    applySearchFilter();
 }
 
 async function updateCounts() {
     const response = await fetch('/api/applications/stats');
     const stats = await response.json();
 
-    document.getElementById('count-saved').textContent = stats.by_status.saved || 0;
-    document.getElementById('count-applied').textContent = stats.by_status.applied || 0;
-    document.getElementById('count-interviewing').textContent =
-        (stats.by_status.phone_screen || 0) + (stats.by_status.technical || 0) + (stats.by_status.onsite || 0);
-    document.getElementById('count-offer').textContent =
-        (stats.by_status.offer || 0) + (stats.by_status.accepted || 0);
-    document.getElementById('count-closed').textContent =
-        (stats.by_status.rejected || 0) + (stats.by_status.withdrawn || 0) + (stats.by_status.ghosted || 0);
+    const saved = stats.by_status.saved || 0;
+    const applied = stats.by_status.applied || 0;
+    const interviewing = (stats.by_status.phone_screen || 0) + (stats.by_status.technical || 0) + (stats.by_status.onsite || 0);
+    const offers = (stats.by_status.offer || 0) + (stats.by_status.accepted || 0);
+    const closed = (stats.by_status.rejected || 0) + (stats.by_status.withdrawn || 0) + (stats.by_status.ghosted || 0);
+
+    document.getElementById('count-saved').textContent = saved;
+    document.getElementById('count-applied').textContent = applied;
+    document.getElementById('count-interviewing').textContent = interviewing;
+    document.getElementById('count-offer').textContent = offers;
+    document.getElementById('count-closed').textContent = closed;
+
+    // Calculate conversion rates
+    const totalApplied = applied + interviewing + offers + closed;
+    if (totalApplied > 0) {
+        const interviewRate = Math.round((interviewing + offers) / totalApplied * 100);
+        const offerRate = Math.round(offers / totalApplied * 100);
+
+        document.getElementById('rate-applied').textContent = '';
+        document.getElementById('rate-interviewing').textContent = interviewRate > 0 ? `${interviewRate}% interview` : '';
+        document.getElementById('rate-offer').textContent = offerRate > 0 ? `${offerRate}% offer` : '';
+
+        document.getElementById('conversion-summary').textContent =
+            `${interviewRate}% interview rate | ${offerRate}% offer rate`;
+    }
 }
 
-function renderApplications(apps) {
+function setView(view) {
+    currentView = view;
+
+    document.getElementById('view-table-btn').classList.toggle('bg-blue-600', view === 'table');
+    document.getElementById('view-table-btn').classList.toggle('text-white', view === 'table');
+    document.getElementById('view-table-btn').classList.toggle('bg-white', view !== 'table');
+    document.getElementById('view-table-btn').classList.toggle('text-gray-600', view !== 'table');
+
+    document.getElementById('view-kanban-btn').classList.toggle('bg-blue-600', view === 'kanban');
+    document.getElementById('view-kanban-btn').classList.toggle('text-white', view === 'kanban');
+    document.getElementById('view-kanban-btn').classList.toggle('bg-white', view !== 'kanban');
+    document.getElementById('view-kanban-btn').classList.toggle('text-gray-600', view !== 'kanban');
+
+    document.getElementById('table-view').classList.toggle('hidden', view !== 'table');
+    document.getElementById('kanban-view').classList.toggle('hidden', view !== 'kanban');
+
+    renderApplications();
+}
+
+function renderApplications() {
+    if (currentView === 'table') {
+        renderTableView();
+    } else {
+        renderKanbanView();
+    }
+}
+
+function renderTableView() {
     const tbody = document.getElementById('applications-table-body');
-    if (apps.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No applications found. Start tracking your first application!</td></tr>';
+
+    if (filteredApplications.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="px-6 py-12 text-center">
+                    <div class="flex flex-col items-center">
+                        <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        <p class="text-gray-500 mb-4">${allApplications.length === 0 ? 'No applications yet. Start tracking your job search!' : 'No applications match your filters.'}</p>
+                        <button onclick="${allApplications.length === 0 ? 'openAddModal()' : 'clearFilters()'}"
+                                class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                ${allApplications.length === 0
+                                    ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>'
+                                    : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>'}
+                            </svg>
+                            ${allApplications.length === 0 ? 'Track Your First Application' : 'Clear Filters'}
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
         return;
     }
-    tbody.innerHTML = apps.map(a => `
-        <tr>
+
+    tbody.innerHTML = filteredApplications.map(a => `
+        <tr class="hover:bg-gray-50 transition-colors">
             <td class="px-6 py-4">
-                <div class="font-medium text-gray-900">${a.company_name}</div>
-                ${a.job_url ? `<a href="${a.job_url}" target="_blank" class="text-xs text-blue-500 hover:underline">View posting</a>` : ''}
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 font-semibold text-sm">
+                        ${escapeHtml(a.company_name.substring(0, 2).toUpperCase())}
+                    </div>
+                    <div>
+                        <div class="font-medium text-gray-900">${escapeHtml(a.company_name)}</div>
+                        ${a.job_url ? `<a href="${escapeHtml(a.job_url)}" target="_blank" class="text-xs text-blue-500 hover:underline">View posting</a>` : ''}
+                    </div>
+                </div>
             </td>
-            <td class="px-6 py-4 text-gray-500">${a.role}</td>
             <td class="px-6 py-4">
-                <select onchange="updateStatus(${a.id}, this.value)" class="text-xs border rounded px-2 py-1 ${getStatusBg(a.status)}">
+                <div class="text-gray-900">${escapeHtml(a.role)}</div>
+                ${a.location ? `<div class="text-xs text-gray-500">${escapeHtml(a.location)}</div>` : ''}
+            </td>
+            <td class="px-6 py-4">
+                <select onchange="updateStatus(${a.id}, this.value)" class="text-xs border rounded-lg px-2 py-1.5 font-medium ${getStatusBg(a.status)} cursor-pointer focus:ring-2 focus:ring-blue-500">
                     <option value="saved" ${a.status === 'saved' ? 'selected' : ''}>Saved</option>
                     <option value="applied" ${a.status === 'applied' ? 'selected' : ''}>Applied</option>
                     <option value="phone_screen" ${a.status === 'phone_screen' ? 'selected' : ''}>Phone Screen</option>
@@ -219,54 +737,188 @@ function renderApplications(apps) {
                     <option value="ghosted" ${a.status === 'ghosted' ? 'selected' : ''}>Ghosted</option>
                 </select>
             </td>
-            <td class="px-6 py-4 text-gray-500">${a.applied_date || '-'}</td>
-            <td class="px-6 py-4 text-gray-500">
-                ${a.next_step ? `<div>${a.next_step}</div>` : ''}
-                ${a.next_step_date ? `<div class="text-xs">${a.next_step_date}</div>` : ''}
+            <td class="px-6 py-4">
+                ${a.applied_date ? `
+                    <div class="text-gray-900">${formatDate(a.applied_date)}</div>
+                    <div class="text-xs ${getDaysSinceColor(a.applied_date, a.status)}">${getDaysSinceText(a.applied_date)}</div>
+                ` : '<span class="text-gray-400">-</span>'}
             </td>
             <td class="px-6 py-4">
-                <button onclick="editApplication(${a.id})" class="text-blue-600 hover:underline mr-2">Edit</button>
-                <button onclick="deleteApplication(${a.id})" class="text-red-600 hover:underline">Delete</button>
+                ${a.next_step ? `
+                    <div class="text-gray-900">${escapeHtml(a.next_step)}</div>
+                    ${a.next_step_date ? `<div class="text-xs text-gray-500">${formatDate(a.next_step_date)}</div>` : ''}
+                ` : '<span class="text-gray-400">-</span>'}
+            </td>
+            <td class="px-6 py-4">
+                ${renderExcitementStars(a.excitement_level || 3)}
+            </td>
+            <td class="px-6 py-4">
+                <div class="flex items-center gap-2">
+                    <button onclick="editApplication(${a.id})" class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Edit">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                    </button>
+                    <button onclick="deleteApplication(${a.id})" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors" title="Delete">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                    </button>
+                </div>
             </td>
         </tr>
     `).join('');
 }
 
+function renderKanbanView() {
+    const saved = filteredApplications.filter(a => a.status === 'saved');
+    const applied = filteredApplications.filter(a => a.status === 'applied');
+    const interviewing = filteredApplications.filter(a => ['phone_screen', 'technical', 'onsite'].includes(a.status));
+    const offers = filteredApplications.filter(a => ['offer', 'accepted'].includes(a.status));
+
+    document.getElementById('kanban-count-saved').textContent = `(${saved.length})`;
+    document.getElementById('kanban-count-applied').textContent = `(${applied.length})`;
+    document.getElementById('kanban-count-interviewing').textContent = `(${interviewing.length})`;
+    document.getElementById('kanban-count-offers').textContent = `(${offers.length})`;
+
+    document.getElementById('kanban-saved').innerHTML = renderKanbanCards(saved);
+    document.getElementById('kanban-applied').innerHTML = renderKanbanCards(applied);
+    document.getElementById('kanban-interviewing').innerHTML = renderKanbanCards(interviewing);
+    document.getElementById('kanban-offers').innerHTML = renderKanbanCards(offers);
+}
+
+function renderKanbanCards(apps) {
+    if (apps.length === 0) {
+        return '<div class="text-center text-gray-400 text-sm py-4">No applications</div>';
+    }
+
+    return apps.map(a => `
+        <div class="bg-white rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onclick="editApplication(${a.id})">
+            <div class="font-medium text-gray-900 truncate">${escapeHtml(a.company_name)}</div>
+            <div class="text-sm text-gray-500 truncate">${escapeHtml(a.role)}</div>
+            ${a.applied_date ? `<div class="text-xs ${getDaysSinceColor(a.applied_date, a.status)} mt-2">${getDaysSinceText(a.applied_date)}</div>` : ''}
+            ${a.next_step ? `<div class="text-xs text-gray-400 mt-1">Next: ${escapeHtml(a.next_step)}</div>` : ''}
+        </div>
+    `).join('');
+}
+
+function renderExcitementStars(level) {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+        const filled = i <= level;
+        stars.push(`<svg class="w-4 h-4 ${filled ? 'text-yellow-400' : 'text-gray-300'}" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+        </svg>`);
+    }
+    return `<div class="flex">${stars.join('')}</div>`;
+}
+
+function getDaysSinceText(dateStr) {
+    const date = new Date(dateStr);
+    const today = new Date();
+    const diff = Math.floor((today - date) / (1000 * 60 * 60 * 24));
+
+    if (diff === 0) return 'Today';
+    if (diff === 1) return '1 day ago';
+    if (diff < 7) return `${diff} days ago`;
+    if (diff < 14) return '1 week ago';
+    if (diff < 30) return `${Math.floor(diff / 7)} weeks ago`;
+    return `${Math.floor(diff / 30)} month${Math.floor(diff / 30) > 1 ? 's' : ''} ago`;
+}
+
+function getDaysSinceColor(dateStr, status) {
+    // Don't show warning colors for closed statuses
+    if (['accepted', 'rejected', 'withdrawn', 'ghosted'].includes(status)) {
+        return 'text-gray-500';
+    }
+
+    const date = new Date(dateStr);
+    const today = new Date();
+    const diff = Math.floor((today - date) / (1000 * 60 * 60 * 24));
+
+    if (diff < 7) return 'text-green-600';
+    if (diff < 14) return 'text-yellow-600';
+    return 'text-red-600';
+}
+
 function getStatusBg(status) {
     const colors = {
-        'saved': 'bg-gray-100',
-        'applied': 'bg-blue-100',
-        'phone_screen': 'bg-yellow-100',
-        'technical': 'bg-purple-100',
-        'onsite': 'bg-indigo-100',
-        'offer': 'bg-green-100',
-        'accepted': 'bg-green-200',
-        'rejected': 'bg-red-100',
-        'withdrawn': 'bg-gray-200',
-        'ghosted': 'bg-gray-300'
+        'saved': 'bg-gray-100 text-gray-700',
+        'applied': 'bg-blue-100 text-blue-700',
+        'phone_screen': 'bg-yellow-100 text-yellow-700',
+        'technical': 'bg-purple-100 text-purple-700',
+        'onsite': 'bg-indigo-100 text-indigo-700',
+        'offer': 'bg-green-100 text-green-700',
+        'accepted': 'bg-green-200 text-green-800',
+        'rejected': 'bg-red-100 text-red-700',
+        'withdrawn': 'bg-gray-200 text-gray-700',
+        'ghosted': 'bg-gray-300 text-gray-700'
     };
-    return colors[status] || '';
+    return colors[status] || 'bg-gray-100 text-gray-700';
 }
 
 async function updateStatus(id, status) {
     await fetch(`/api/applications/${id}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
     });
+
+    showToast('Status updated successfully');
     loadApplications();
 }
 
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-message').textContent = message;
+
+    toast.classList.remove('hidden');
+    setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+    }, 10);
+
+    setTimeout(() => {
+        toast.classList.add('translate-y-2', 'opacity-0');
+        setTimeout(() => {
+            toast.classList.add('hidden');
+        }, 300);
+    }, 3000);
+}
+
+// Helper functions
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// Modal functions
 function openAddModal() {
     document.getElementById('modal-title').textContent = 'Track Application';
     document.getElementById('application-form').reset();
     document.getElementById('app-id').value = '';
     document.getElementById('app-status').value = 'saved';
+    document.getElementById('app-excitement').value = 3;
+    document.getElementById('excitement-label').textContent = 'Neutral';
     document.getElementById('application-modal').classList.remove('hidden');
+    document.getElementById('app-company').focus();
 }
 
 function closeModal() {
     document.getElementById('application-modal').classList.add('hidden');
+}
+
+function handleModalBackdropClick(event) {
+    if (event.target === event.currentTarget) {
+        closeModal();
+    }
 }
 
 async function editApplication(id) {
@@ -277,14 +929,23 @@ async function editApplication(id) {
     document.getElementById('app-id').value = app.id;
     document.getElementById('app-company').value = app.company_name || '';
     document.getElementById('app-role').value = app.role || '';
+    document.getElementById('app-location').value = app.location || '';
+    document.getElementById('app-source').value = app.source || '';
     document.getElementById('app-url').value = app.job_url || '';
     document.getElementById('app-status').value = app.status || 'saved';
     document.getElementById('app-date').value = app.applied_date || '';
     document.getElementById('app-next-step').value = app.next_step || '';
     document.getElementById('app-next-date').value = app.next_step_date || '';
+    document.getElementById('app-excitement').value = app.excitement_level || 3;
+    document.getElementById('app-salary-min').value = app.salary_min || '';
+    document.getElementById('app-salary-max').value = app.salary_max || '';
     document.getElementById('app-salary').value = app.salary_offered || '';
     document.getElementById('app-description').value = app.job_description || '';
     document.getElementById('app-notes').value = app.notes || '';
+
+    // Update excitement label
+    const labels = ['Not Excited', 'Slightly', 'Neutral', 'Excited', 'Very Excited'];
+    document.getElementById('excitement-label').textContent = labels[(app.excitement_level || 3) - 1];
 
     document.getElementById('application-modal').classList.remove('hidden');
 }
@@ -293,39 +954,63 @@ async function deleteApplication(id) {
     if (!confirm('Are you sure you want to delete this application?')) return;
 
     await fetch(`/api/applications/${id}`, { method: 'DELETE' });
+    showToast('Application deleted');
     loadApplications();
 }
 
-document.getElementById('application-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
+async function submitForm() {
+    const saveBtn = document.getElementById('save-btn');
+    const saveBtnText = document.getElementById('save-btn-text');
+    const saveBtnSpinner = document.getElementById('save-btn-spinner');
 
-    const id = document.getElementById('app-id').value;
-    const data = {
-        company_name: document.getElementById('app-company').value,
-        role: document.getElementById('app-role').value,
-        job_url: document.getElementById('app-url').value || null,
-        status: document.getElementById('app-status').value,
-        applied_date: document.getElementById('app-date').value || null,
-        next_step: document.getElementById('app-next-step').value || null,
-        next_step_date: document.getElementById('app-next-date').value || null,
-        salary_offered: document.getElementById('app-salary').value || null,
-        job_description: document.getElementById('app-description').value || null,
-        notes: document.getElementById('app-notes').value || null
-    };
+    saveBtn.disabled = true;
+    saveBtnText.textContent = 'Saving...';
+    saveBtnSpinner.classList.remove('hidden');
 
-    const url = id ? `/api/applications/${id}` : '/api/applications/';
-    const method = id ? 'PATCH' : 'POST';
+    try {
+        const id = document.getElementById('app-id').value;
+        const data = {
+            company_name: document.getElementById('app-company').value,
+            role: document.getElementById('app-role').value,
+            location: document.getElementById('app-location').value || null,
+            source: document.getElementById('app-source').value || null,
+            job_url: document.getElementById('app-url').value || null,
+            status: document.getElementById('app-status').value,
+            applied_date: document.getElementById('app-date').value || null,
+            next_step: document.getElementById('app-next-step').value || null,
+            next_step_date: document.getElementById('app-next-date').value || null,
+            excitement_level: parseInt(document.getElementById('app-excitement').value),
+            salary_min: document.getElementById('app-salary-min').value ? parseInt(document.getElementById('app-salary-min').value) : null,
+            salary_max: document.getElementById('app-salary-max').value ? parseInt(document.getElementById('app-salary-max').value) : null,
+            salary_offered: document.getElementById('app-salary').value || null,
+            job_description: document.getElementById('app-description').value || null,
+            notes: document.getElementById('app-notes').value || null
+        };
 
-    await fetch(url, {
-        method: method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    });
+        const url = id ? `/api/applications/${id}` : '/api/applications/';
+        const method = id ? 'PUT' : 'POST';
 
-    closeModal();
-    loadApplications();
-});
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
 
-document.addEventListener('DOMContentLoaded', loadApplications);
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to save application');
+        }
+
+        closeModal();
+        showToast(id ? 'Application updated' : 'Application added');
+        loadApplications();
+    } catch (e) {
+        alert('Error saving application: ' + e.message);
+    } finally {
+        saveBtn.disabled = false;
+        saveBtnText.textContent = 'Save';
+        saveBtnSpinner.classList.add('hidden');
+    }
+}
 </script>
 {% endblock %}
