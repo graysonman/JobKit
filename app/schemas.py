@@ -99,11 +99,13 @@ class ContactBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     linkedin_url: Optional[str] = Field(None, max_length=500)
     email: Optional[str] = Field(None, max_length=254)
+    phone_number: Optional[str] = Field(None, max_length=50)
     company: Optional[str] = Field(None, max_length=200)
     role: Optional[str] = Field(None, max_length=200)
     contact_type: Optional[ContactType] = None
     is_alumni: bool = False
     school_name: Optional[str] = Field(None, max_length=200)
+    location: Optional[str] = Field(None, max_length=200)
     notes: Optional[str] = Field(None, max_length=5000)
 
     @field_validator('linkedin_url')
@@ -132,11 +134,13 @@ class ContactUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=200)
     linkedin_url: Optional[str] = Field(None, max_length=500)
     email: Optional[str] = Field(None, max_length=254)
+    phone_number: Optional[str] = Field(None, max_length=50)
     company: Optional[str] = Field(None, max_length=200)
     role: Optional[str] = Field(None, max_length=200)
     contact_type: Optional[ContactType] = None
     is_alumni: Optional[bool] = None
     school_name: Optional[str] = Field(None, max_length=200)
+    location: Optional[str] = Field(None, max_length=200)
     connection_status: Optional[ConnectionStatus] = None
     relationship_strength: Optional[int] = Field(None, ge=0, le=10)
     last_contacted: Optional[date] = None
@@ -168,6 +172,8 @@ class CompanyBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     website: Optional[str] = Field(None, max_length=500)
     linkedin_url: Optional[str] = Field(None, max_length=500)
+    careers_page_url: Optional[str] = Field(None, max_length=500)
+    headquarters_location: Optional[str] = Field(None, max_length=200)
     size: Optional[CompanySize] = None
     industry: Optional[str] = Field(None, max_length=100)
     tech_stack: Optional[str] = Field(None, max_length=1000)
@@ -186,6 +192,11 @@ class CompanyBase(BaseModel):
     def validate_linkedin(cls, v):
         return validate_linkedin_url(v)
 
+    @field_validator('careers_page_url')
+    @classmethod
+    def validate_careers_url(cls, v):
+        return validate_url(v)
+
 
 class CompanyCreate(CompanyBase):
     glassdoor_rating: Optional[float] = Field(None, ge=0, le=5)
@@ -196,6 +207,8 @@ class CompanyUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=200)
     website: Optional[str] = Field(None, max_length=500)
     linkedin_url: Optional[str] = Field(None, max_length=500)
+    careers_page_url: Optional[str] = Field(None, max_length=500)
+    headquarters_location: Optional[str] = Field(None, max_length=200)
     size: Optional[CompanySize] = None
     industry: Optional[str] = Field(None, max_length=100)
     tech_stack: Optional[str] = Field(None, max_length=1000)
@@ -206,7 +219,7 @@ class CompanyUpdate(BaseModel):
     priority: Optional[int] = Field(None, ge=0, le=5)
     notes: Optional[str] = Field(None, max_length=5000)
 
-    @field_validator('website')
+    @field_validator('website', 'careers_page_url')
     @classmethod
     def validate_website(cls, v):
         return validate_url(v)
@@ -230,7 +243,10 @@ class ApplicationBase(BaseModel):
     role: str = Field(..., min_length=1, max_length=200)
     job_url: Optional[str] = Field(None, max_length=1000)
     job_description: Optional[str] = Field(None, max_length=50000)
+    location: Optional[str] = Field(None, max_length=200)  # remote/hybrid/onsite + city
+    source: Optional[str] = Field(None, max_length=100)  # linkedin, company_site, indeed, referral
     status: ApplicationStatus = ApplicationStatus.SAVED
+    excitement_level: int = Field(3, ge=1, le=5)  # 1-5 how excited about this role
     notes: Optional[str] = Field(None, max_length=5000)
 
     @field_validator('job_url')
@@ -243,6 +259,8 @@ class ApplicationCreate(ApplicationBase):
     company_id: Optional[int] = None
     referral_contact_id: Optional[int] = None
     applied_date: Optional[date] = None
+    salary_min: Optional[int] = Field(None, ge=0)
+    salary_max: Optional[int] = Field(None, ge=0)
 
 
 class ApplicationUpdate(BaseModel):
@@ -250,15 +268,21 @@ class ApplicationUpdate(BaseModel):
     role: Optional[str] = Field(None, min_length=1, max_length=200)
     job_url: Optional[str] = Field(None, max_length=1000)
     job_description: Optional[str] = Field(None, max_length=50000)
+    location: Optional[str] = Field(None, max_length=200)
+    source: Optional[str] = Field(None, max_length=100)
     status: Optional[ApplicationStatus] = None
     applied_date: Optional[date] = None
     response_date: Optional[date] = None
     next_step: Optional[str] = Field(None, max_length=500)
     next_step_date: Optional[date] = None
+    salary_min: Optional[int] = Field(None, ge=0)
+    salary_max: Optional[int] = Field(None, ge=0)
     salary_offered: Optional[str] = Field(None, max_length=100)
+    excitement_level: Optional[int] = Field(None, ge=1, le=5)
     referral_contact_id: Optional[int] = None
     resume_version: Optional[str] = Field(None, max_length=100)
     cover_letter_used: Optional[bool] = None
+    rejection_reason: Optional[str] = Field(None, max_length=500)
     notes: Optional[str] = Field(None, max_length=5000)
 
     @field_validator('job_url')
@@ -274,10 +298,13 @@ class ApplicationResponse(ApplicationBase):
     response_date: Optional[date]
     next_step: Optional[str]
     next_step_date: Optional[date]
+    salary_min: Optional[int]
+    salary_max: Optional[int]
     salary_offered: Optional[str]
     referral_contact_id: Optional[int]
     resume_version: Optional[str]
     cover_letter_used: bool
+    rejection_reason: Optional[str]
     created_at: datetime
     updated_at: Optional[datetime] = None
 
@@ -339,15 +366,20 @@ class MessageGenerateResponse(BaseModel):
 class UserProfileBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     email: Optional[str] = Field(None, max_length=254)
+    phone_number: Optional[str] = Field(None, max_length=50)
     linkedin_url: Optional[str] = Field(None, max_length=500)
+    location: Optional[str] = Field(None, max_length=200)
     school: Optional[str] = Field(None, max_length=200)
     graduation_year: Optional[int] = Field(None, ge=1950, le=2100)
     current_title: Optional[str] = Field(None, max_length=200)
     years_experience: Optional[int] = Field(None, ge=0, le=70)
     skills: Optional[str] = Field(None, max_length=1000)
     target_roles: Optional[str] = Field(None, max_length=500)
+    preferred_locations: Optional[str] = Field(None, max_length=500)
+    salary_expectations: Optional[str] = Field(None, max_length=100)
     elevator_pitch: Optional[str] = Field(None, max_length=2000)
     resume_summary: Optional[str] = Field(None, max_length=5000)
+    resume_file_path: Optional[str] = Field(None, max_length=500)
 
     @field_validator('linkedin_url')
     @classmethod
@@ -358,15 +390,20 @@ class UserProfileBase(BaseModel):
 class UserProfileUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=200)
     email: Optional[str] = Field(None, max_length=254)
+    phone_number: Optional[str] = Field(None, max_length=50)
     linkedin_url: Optional[str] = Field(None, max_length=500)
+    location: Optional[str] = Field(None, max_length=200)
     school: Optional[str] = Field(None, max_length=200)
     graduation_year: Optional[int] = Field(None, ge=1950, le=2100)
     current_title: Optional[str] = Field(None, max_length=200)
     years_experience: Optional[int] = Field(None, ge=0, le=70)
     skills: Optional[str] = Field(None, max_length=1000)
     target_roles: Optional[str] = Field(None, max_length=500)
+    preferred_locations: Optional[str] = Field(None, max_length=500)
+    salary_expectations: Optional[str] = Field(None, max_length=100)
     elevator_pitch: Optional[str] = Field(None, max_length=2000)
     resume_summary: Optional[str] = Field(None, max_length=5000)
+    resume_file_path: Optional[str] = Field(None, max_length=500)
 
 
 class UserProfileResponse(UserProfileBase):

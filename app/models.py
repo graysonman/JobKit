@@ -8,10 +8,6 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from .database import Base
 
-# TODO: Add Tag model for tagging contacts/companies/applications
-# TODO: Add Reminder model for scheduled follow-up notifications
-# TODO: Add ResumeVersion model to store different resume versions
-# TODO: Add InterviewNote model to track interview feedback per application
 
 class Contact(Base):
     __tablename__ = "contacts"
@@ -20,11 +16,13 @@ class Contact(Base):
     name = Column(String, nullable=False)
     linkedin_url = Column(String)
     email = Column(String)
+    phone_number = Column(String)
     company = Column(String)
     role = Column(String)
     contact_type = Column(String)  # recruiter, junior_dev, senior_dev, hiring_manager, other
     is_alumni = Column(Boolean, default=False)
     school_name = Column(String)
+    location = Column(String)  # city/region
     connection_status = Column(String, default="not_connected")
     relationship_strength = Column(Integer, default=0)
     last_contacted = Column(Date)
@@ -33,17 +31,9 @@ class Contact(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # TODO: Add phone_number field
-    # TODO: Add profile_photo_url field (for LinkedIn profile pic caching)
-    # TODO: Add company_id foreign key to link to Company model
-    # TODO: Add location field (city/region)
-    # TODO: Add tags relationship for custom categorization
-    # TODO: Add response_rate computed field (messages sent vs responses received)
-
     # Relationships
     messages = relationship("MessageHistory", back_populates="contact")
     interactions = relationship("Interaction", back_populates="contact")
-    # TODO: Add referrals relationship to applications
 
 
 class Company(Base):
@@ -53,6 +43,8 @@ class Company(Base):
     name = Column(String, nullable=False, unique=True)
     website = Column(String)
     linkedin_url = Column(String)
+    careers_page_url = Column(String)
+    headquarters_location = Column(String)
     size = Column(String)
     industry = Column(String)
     tech_stack = Column(Text)
@@ -64,15 +56,6 @@ class Company(Base):
     notes = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    # TODO: Add logo_url field (fetch from Clearbit or similar API)
-    # TODO: Add headquarters_location field
-    # TODO: Add careers_page_url field
-    # TODO: Add levels_fyi_url field for salary data
-    # TODO: Add blind_rating field (teamblind.com)
-    # TODO: Add funding_stage field (for startups: seed, series A, etc.)
-    # TODO: Add employee_count field (more specific than size category)
-    # TODO: Add contacts relationship to show contacts at this company
 
     # Relationships
     applications = relationship("Application", back_populates="company")
@@ -87,32 +70,28 @@ class Application(Base):
     role = Column(String, nullable=False)
     job_url = Column(String)
     job_description = Column(Text)
+    location = Column(String)  # remote/hybrid/onsite + city
+    source = Column(String)  # linkedin, company_site, indeed, referral, etc.
     status = Column(String, default="saved")
     applied_date = Column(Date)
     response_date = Column(Date)
     next_step = Column(String)
     next_step_date = Column(Date)
+    salary_min = Column(Integer)
+    salary_max = Column(Integer)
     salary_offered = Column(String)
+    excitement_level = Column(Integer, default=3)  # 1-5 how excited about this role
     referral_contact_id = Column(Integer, ForeignKey("contacts.id"))
     resume_version = Column(String)
     cover_letter_used = Column(Boolean, default=False)
+    rejection_reason = Column(String)
     notes = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # TODO: Add location field (remote/hybrid/onsite + city)
-    # TODO: Add salary_min and salary_max fields (numeric) for filtering
-    # TODO: Add source field (LinkedIn, company site, Indeed, referral, etc.)
-    # TODO: Add excitement_level field (1-5 how excited about this role)
-    # TODO: Add rejection_reason field (for learning from rejections)
-    # TODO: Add cover_letter_text field to store the actual cover letter used
-    # TODO: Add interview_notes relationship for per-round interview tracking
-    # TODO: Add timeline/status_history relationship to track status changes over time
-
     # Relationships
     company = relationship("Company", back_populates="applications")
     referral = relationship("Contact")
-    # TODO: Add relationship to resume versions
 
 
 class MessageTemplate(Base):
@@ -125,10 +104,8 @@ class MessageTemplate(Base):
     subject = Column(String)
     template = Column(Text, nullable=False)
     is_default = Column(Boolean, default=False)
+    usage_count = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
-
-    # TODO Phase 3: Add usage count tracking
-    # TODO Phase 3: Add effectiveness rating based on responses
 
 
 class MessageHistory(Base):
@@ -155,18 +132,20 @@ class UserProfile(Base):
     name = Column(String, nullable=False)
     email = Column(String)
     linkedin_url = Column(String)
+    phone_number = Column(String)
+    location = Column(String)
     school = Column(String)
     graduation_year = Column(Integer)
     current_title = Column(String)
     years_experience = Column(Integer)
     skills = Column(Text)
     target_roles = Column(Text)
+    preferred_locations = Column(Text)
+    salary_expectations = Column(String)
     elevator_pitch = Column(Text)
     resume_summary = Column(Text)
+    resume_file_path = Column(String)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    # TODO Phase 5: Add resume_file_path for stored resume
-    # TODO Phase 5: Add multiple target role support with priorities
 
 
 class Interaction(Base):

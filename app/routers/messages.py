@@ -507,3 +507,111 @@ def export_message_history(
             "Content-Disposition": f"attachment; filename=message_history_{date.today()}.json"
         }
     )
+
+
+# --- Message Analysis & Tools ---
+
+@router.post("/validate-length")
+def validate_message_length_endpoint(
+    message: str,
+    platform: str = Query("linkedin_connection", pattern="^(linkedin_connection|linkedin_inmail|linkedin_message|email_subject|twitter_dm)$")
+):
+    """Validate message length for a specific platform."""
+    from ..services.message_generator import validate_message_length
+    return validate_message_length(message, platform)
+
+
+@router.post("/detect-overused-phrases")
+def detect_overused_phrases_endpoint(message: str):
+    """Detect overused phrases in a message."""
+    from ..services.message_generator import detect_overused_phrases
+    phrases = detect_overused_phrases(message)
+    return {
+        "overused_phrases": phrases,
+        "count": len(phrases),
+        "message": f"Found {len(phrases)} overused phrase(s)" if phrases else "No overused phrases detected"
+    }
+
+
+@router.post("/suggest-improvements")
+def suggest_improvements_endpoint(message: str):
+    """Get suggestions to improve a message."""
+    from ..services.message_generator import suggest_message_improvements, detect_overused_phrases
+    suggestions = suggest_message_improvements(message)
+    overused = detect_overused_phrases(message)
+    return {
+        "suggestions": suggestions,
+        "overused_phrases": overused,
+        "character_count": len(message)
+    }
+
+
+@router.post("/generate-variations")
+def generate_variations_endpoint(
+    contact_id: int,
+    template_id: int,
+    count: int = Query(3, ge=2, le=5),
+    db: Session = Depends(get_db)
+):
+    """Generate multiple variations of a message for A/B testing."""
+    from ..services.message_generator import generate_variations
+
+    contact = db.query(Contact).filter(Contact.id == contact_id).first()
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact not found")
+
+    template = db.query(MessageTemplate).filter(MessageTemplate.id == template_id).first()
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    user_profile = db.query(UserProfile).first()
+    if not user_profile:
+        raise HTTPException(status_code=400, detail="Please set up your profile first")
+
+    variations = generate_variations(template, contact, user_profile, count)
+    return {
+        "contact_name": contact.name,
+        "template_name": template.name,
+        "variations": variations
+    }
+
+
+@router.post("/generate-followup-sequence")
+def generate_followup_sequence_endpoint(
+    contact_id: int,
+    context: str = Query("general", pattern="^(general|application|meeting|referral)$"),
+    db: Session = Depends(get_db)
+):
+    """Generate a sequence of follow-up messages (day 3, 7, 14)."""
+    from ..services.message_generator import generate_followup_sequence
+
+    contact = db.query(Contact).filter(Contact.id == contact_id).first()
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact not found")
+
+    user_profile = db.query(UserProfile).first()
+    if not user_profile:
+        raise HTTPException(status_code=400, detail="Please set up your profile first")
+
+    sequence = generate_followup_sequence(contact, user_profile, context)
+    return {
+        "contact_name": contact.name,
+        "context": context,
+        "sequence": sequence
+    }
+
+
+@router.get("/platform-limits")
+def get_platform_limits():
+    """Get character limits for different messaging platforms."""
+    from ..services.message_generator import PLATFORM_LIMITS
+    return {
+        "platforms": PLATFORM_LIMITS,
+        "descriptions": {
+            "linkedin_connection": "LinkedIn connection request note",
+            "linkedin_inmail": "LinkedIn InMail message",
+            "linkedin_message": "LinkedIn direct message",
+            "email_subject": "Email subject line",
+            "twitter_dm": "Twitter direct message"
+        }
+    }
