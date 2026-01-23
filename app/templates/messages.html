@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+{% block title %}Messages - Job Search Toolkit{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <h1 class="text-3xl font-bold text-gray-900">Message Center</h1>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Message Generator -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-bold mb-4">Generate Message</h2>
+            <form id="generate-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Select Contact *</label>
+                    <select id="msg-contact" required class="mt-1 block w-full border rounded px-3 py-2">
+                        <option value="">Choose a contact...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Message Type</label>
+                    <select id="msg-type" required class="mt-1 block w-full border rounded px-3 py-2">
+                        <option value="connection_request">Connection Request (short)</option>
+                        <option value="inmail">InMail / Email (longer)</option>
+                        <option value="follow_up">Follow-up</option>
+                        <option value="thank_you">Thank You</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Template (optional)</label>
+                    <select id="msg-template" class="mt-1 block w-full border rounded px-3 py-2">
+                        <option value="">Use default for contact type</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
+                    Generate Message
+                </button>
+            </form>
+
+            <!-- Generated Message -->
+            <div id="generated-message" class="mt-6 hidden">
+                <h3 class="font-bold mb-2">Generated Message for <span id="msg-recipient"></span>:</h3>
+                <div id="msg-subject-container" class="mb-2 hidden">
+                    <label class="text-sm font-medium text-gray-700">Subject:</label>
+                    <input type="text" id="msg-subject" class="mt-1 block w-full border rounded px-3 py-2">
+                </div>
+                <textarea id="msg-content" rows="8" class="w-full border rounded px-3 py-2"></textarea>
+                <p class="text-xs text-gray-500 mt-1"><span id="char-count">0</span> characters</p>
+                <div class="flex gap-2 mt-2">
+                    <button onclick="copyMessage()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                        Copy to Clipboard
+                    </button>
+                    <button onclick="markAsSent()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                        Mark as Sent
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Templates Management -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Message Templates</h2>
+                <button onclick="openTemplateModal()" class="text-purple-600 hover:underline text-sm">+ Add Template</button>
+            </div>
+            <div id="templates-list" class="space-y-3 max-h-96 overflow-y-auto">
+                <p class="text-gray-500">Loading templates...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message History -->
+    <div class="bg-white p-6 rounded-lg shadow">
+        <h2 class="text-xl font-bold mb-4">Message History</h2>
+        <div id="message-history" class="space-y-2">
+            <p class="text-gray-500">Loading history...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Add Template Modal -->
+<div id="template-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <h2 class="text-xl font-bold mb-4">Add Template</h2>
+        <form id="template-form" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Template Name *</label>
+                <input type="text" id="tpl-name" required class="mt-1 block w-full border rounded px-3 py-2">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Message Type</label>
+                    <select id="tpl-msg-type" class="mt-1 block w-full border rounded px-3 py-2">
+                        <option value="connection_request">Connection Request</option>
+                        <option value="inmail">InMail</option>
+                        <option value="follow_up">Follow-up</option>
+                        <option value="thank_you">Thank You</option>
+                        <option value="cold_email">Cold Email</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Target Type</label>
+                    <select id="tpl-target-type" class="mt-1 block w-full border rounded px-3 py-2">
+                        <option value="general">General</option>
+                        <option value="recruiter">Recruiter</option>
+                        <option value="developer">Developer</option>
+                        <option value="alumni">Alumni</option>
+                        <option value="hiring_manager">Hiring Manager</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Subject (for emails/InMails)</label>
+                <input type="text" id="tpl-subject" class="mt-1 block w-full border rounded px-3 py-2">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Template Text *</label>
+                <textarea id="tpl-template" rows="6" required class="mt-1 block w-full border rounded px-3 py-2" placeholder="Hi {name}, ..."></textarea>
+                <p class="text-xs text-gray-500 mt-1">Available placeholders: {name}, {company}, {role}, {school}, {my_name}, {my_title}, {my_background}, {my_skills}</p>
+            </div>
+            <div class="flex justify-end gap-4">
+                <button type="button" onclick="closeTemplateModal()" class="px-4 py-2 border rounded hover:bg-gray-50">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let contacts = [];
+let templates = [];
+let currentContactId = null;
+let currentMessageType = null;
+
+async function loadContacts() {
+    const response = await fetch('/api/contacts/');
+    contacts = await response.json();
+    const select = document.getElementById('msg-contact');
+    select.innerHTML = '<option value="">Choose a contact...</option>' +
+        contacts.map(c => `<option value="${c.id}">${c.name} ${c.company ? '(' + c.company + ')' : ''}</option>`).join('');
+}
+
+async function loadTemplates() {
+    const response = await fetch('/api/messages/templates');
+    templates = await response.json();
+    renderTemplates(templates);
+    updateTemplateDropdown();
+}
+
+function renderTemplates(templates) {
+    const list = document.getElementById('templates-list');
+    if (templates.length === 0) {
+        list.innerHTML = '<p class="text-gray-500">No templates yet.</p>';
+        return;
+    }
+    list.innerHTML = templates.map(t => `
+        <div class="border rounded p-3">
+            <div class="flex justify-between items-start">
+                <div>
+                    <span class="font-medium">${t.name}</span>
+                    ${t.is_default ? '<span class="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">Default</span>' : ''}
+                </div>
+                <button onclick="deleteTemplate(${t.id})" class="text-red-600 hover:underline text-xs">Delete</button>
+            </div>
+            <div class="text-xs text-gray-500 mt-1">${t.message_type} • ${t.target_type}</div>
+            <p class="text-sm text-gray-600 mt-2 line-clamp-2">${t.template.substring(0, 100)}...</p>
+        </div>
+    `).join('');
+}
+
+function updateTemplateDropdown() {
+    const msgType = document.getElementById('msg-type').value;
+    const filtered = templates.filter(t => t.message_type === msgType);
+    const select = document.getElementById('msg-template');
+    select.innerHTML = '<option value="">Use default for contact type</option>' +
+        filtered.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+}
+
+async function loadMessageHistory() {
+    const response = await fetch('/api/messages/history?limit=10');
+    const history = await response.json();
+    const container = document.getElementById('message-history');
+
+    if (history.length === 0) {
+        container.innerHTML = '<p class="text-gray-500">No messages sent yet.</p>';
+        return;
+    }
+
+    container.innerHTML = history.map(h => {
+        const contact = contacts.find(c => c.id === h.contact_id);
+        return `
+            <div class="border rounded p-3">
+                <div class="flex justify-between">
+                    <span class="font-medium">${contact ? contact.name : 'Unknown'}</span>
+                    <span class="text-xs text-gray-500">${new Date(h.sent_at).toLocaleDateString()}</span>
+                </div>
+                <span class="text-xs bg-gray-100 px-2 py-0.5 rounded">${h.message_type || 'message'}</span>
+                <p class="text-sm text-gray-600 mt-2 line-clamp-2">${h.message_content.substring(0, 150)}...</p>
+            </div>
+        `;
+    }).join('');
+}
+
+document.getElementById('msg-type').addEventListener('change', updateTemplateDropdown);
+
+document.getElementById('generate-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    currentContactId = document.getElementById('msg-contact').value;
+    currentMessageType = document.getElementById('msg-type').value;
+    const templateId = document.getElementById('msg-template').value;
+
+    const data = {
+        contact_id: parseInt(currentContactId),
+        message_type: currentMessageType
+    };
+    if (templateId) data.template_id = parseInt(templateId);
+
+    try {
+        const response = await fetch('/api/messages/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            alert(error.detail || 'Error generating message');
+            return;
+        }
+
+        const result = await response.json();
+
+        document.getElementById('msg-recipient').textContent = result.contact_name;
+        document.getElementById('msg-content').value = result.message;
+        document.getElementById('char-count').textContent = result.message.length;
+
+        if (result.subject) {
+            document.getElementById('msg-subject').value = result.subject;
+            document.getElementById('msg-subject-container').classList.remove('hidden');
+        } else {
+            document.getElementById('msg-subject-container').classList.add('hidden');
+        }
+
+        document.getElementById('generated-message').classList.remove('hidden');
+    } catch (e) {
+        alert('Error generating message. Make sure you have set up your profile in Settings.');
+    }
+});
+
+document.getElementById('msg-content').addEventListener('input', function() {
+    document.getElementById('char-count').textContent = this.value.length;
+});
+
+async function copyMessage() {
+    const content = document.getElementById('msg-content').value;
+    await navigator.clipboard.writeText(content);
+    alert('Copied to clipboard!');
+}
+
+async function markAsSent() {
+    const content = document.getElementById('msg-content').value;
+
+    await fetch('/api/messages/save-sent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            contact_id: parseInt(currentContactId),
+            message_type: currentMessageType,
+            message_content: content
+        })
+    });
+
+    alert('Message marked as sent! Contact status updated.');
+    document.getElementById('generated-message').classList.add('hidden');
+    document.getElementById('generate-form').reset();
+    loadMessageHistory();
+}
+
+function openTemplateModal() {
+    document.getElementById('template-form').reset();
+    document.getElementById('template-modal').classList.remove('hidden');
+}
+
+function closeTemplateModal() {
+    document.getElementById('template-modal').classList.add('hidden');
+}
+
+async function deleteTemplate(id) {
+    if (!confirm('Delete this template?')) return;
+    await fetch(`/api/messages/templates/${id}`, { method: 'DELETE' });
+    loadTemplates();
+}
+
+document.getElementById('template-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const data = {
+        name: document.getElementById('tpl-name').value,
+        message_type: document.getElementById('tpl-msg-type').value,
+        target_type: document.getElementById('tpl-target-type').value,
+        subject: document.getElementById('tpl-subject').value || null,
+        template: document.getElementById('tpl-template').value,
+        is_default: false
+    };
+
+    await fetch('/api/messages/templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+
+    closeTemplateModal();
+    loadTemplates();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadContacts();
+    loadTemplates();
+    loadMessageHistory();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% block title %}Resume Helper - Job Search Toolkit{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <h1 class="text-3xl font-bold text-gray-900">Resume & Cover Letter Helper</h1>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Job Description Analysis -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-bold mb-4">Analyze Job Description</h2>
+            <form id="analyze-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Paste Job Description</label>
+                    <textarea id="job-description" rows="8" required class="mt-1 block w-full border rounded px-3 py-2" placeholder="Paste the full job description here..."></textarea>
+                </div>
+                <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    Analyze Requirements
+                </button>
+            </form>
+
+            <div id="analysis-results" class="mt-6 hidden">
+                <h3 class="font-bold mb-3">Analysis Results</h3>
+
+                <div class="space-y-3">
+                    <div>
+                        <span class="text-sm font-medium text-gray-700">Experience Level:</span>
+                        <span id="exp-level" class="ml-2 px-2 py-1 text-xs rounded bg-blue-100 text-blue-800"></span>
+                    </div>
+
+                    <div>
+                        <span class="text-sm font-medium text-gray-700">Required Skills:</span>
+                        <div id="required-skills" class="mt-1 flex flex-wrap gap-1"></div>
+                    </div>
+
+                    <div>
+                        <span class="text-sm font-medium text-gray-700">Preferred Skills:</span>
+                        <div id="preferred-skills" class="mt-1 flex flex-wrap gap-1"></div>
+                    </div>
+
+                    <div>
+                        <span class="text-sm font-medium text-gray-700">Keywords:</span>
+                        <div id="keywords" class="mt-1 flex flex-wrap gap-1"></div>
+                    </div>
+
+                    <div>
+                        <span class="text-sm font-medium text-gray-700">Key Responsibilities:</span>
+                        <ul id="responsibilities" class="mt-1 text-sm text-gray-600 list-disc list-inside"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resume Match Analysis -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-bold mb-4">Check Resume Match</h2>
+            <form id="match-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Your Resume (text)</label>
+                    <textarea id="resume-text" rows="8" required class="mt-1 block w-full border rounded px-3 py-2" placeholder="Paste your resume text here..."></textarea>
+                </div>
+                <button type="submit" class="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                    Check Match
+                </button>
+            </form>
+
+            <div id="match-results" class="mt-6 hidden">
+                <h3 class="font-bold mb-3">Match Results</h3>
+
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-sm font-medium">Match Score</span>
+                        <span id="match-score" class="text-lg font-bold"></span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div id="match-bar" class="h-2.5 rounded-full"></div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div>
+                        <span class="text-sm font-medium text-green-700">Matching Skills:</span>
+                        <div id="matching-skills" class="mt-1 flex flex-wrap gap-1"></div>
+                    </div>
+
+                    <div>
+                        <span class="text-sm font-medium text-red-700">Missing Skills:</span>
+                        <div id="missing-skills" class="mt-1 flex flex-wrap gap-1"></div>
+                    </div>
+
+                    <div>
+                        <span class="text-sm font-medium text-gray-700">Suggestions:</span>
+                        <ul id="suggestions" class="mt-1 text-sm text-gray-600 list-disc list-inside"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cover Letter Generator -->
+    <div class="bg-white p-6 rounded-lg shadow">
+        <h2 class="text-xl font-bold mb-4">Generate Cover Letter</h2>
+        <form id="cover-letter-form" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Company Name *</label>
+                    <input type="text" id="cl-company" required class="mt-1 block w-full border rounded px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Role *</label>
+                    <input type="text" id="cl-role" required class="mt-1 block w-full border rounded px-3 py-2">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Custom Points (optional, one per line)</label>
+                <textarea id="cl-points" rows="3" class="mt-1 block w-full border rounded px-3 py-2" placeholder="Specific achievements or points to highlight..."></textarea>
+            </div>
+            <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
+                Generate Cover Letter
+            </button>
+        </form>
+
+        <div id="cover-letter-result" class="mt-6 hidden">
+            <h3 class="font-bold mb-2">Generated Cover Letter</h3>
+            <textarea id="cover-letter-text" rows="12" class="w-full border rounded px-3 py-2"></textarea>
+            <div class="flex gap-2 mt-2">
+                <button onclick="copyCoverLetter()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    Copy to Clipboard
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentJobDescription = '';
+
+document.getElementById('analyze-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    currentJobDescription = document.getElementById('job-description').value;
+
+    const response = await fetch('/api/resume/analyze-job', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ job_description: currentJobDescription })
+    });
+
+    const result = await response.json();
+
+    document.getElementById('exp-level').textContent = result.experience_level;
+
+    document.getElementById('required-skills').innerHTML = result.required_skills
+        .map(s => `<span class="px-2 py-1 text-xs rounded bg-red-100 text-red-800">${s}</span>`).join('');
+
+    document.getElementById('preferred-skills').innerHTML = result.preferred_skills
+        .map(s => `<span class="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800">${s}</span>`).join('');
+
+    document.getElementById('keywords').innerHTML = result.keywords
+        .map(s => `<span class="px-2 py-1 text-xs rounded bg-gray-100">${s}</span>`).join('');
+
+    document.getElementById('responsibilities').innerHTML = result.key_responsibilities
+        .map(r => `<li>${r}</li>`).join('');
+
+    document.getElementById('analysis-results').classList.remove('hidden');
+});
+
+document.getElementById('match-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    if (!currentJobDescription) {
+        alert('Please analyze a job description first');
+        return;
+    }
+
+    const resumeText = document.getElementById('resume-text').value;
+
+    const response = await fetch('/api/resume/match-resume', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            resume_text: resumeText,
+            job_description: currentJobDescription
+        })
+    });
+
+    const result = await response.json();
+
+    const scorePercent = Math.round(result.match_score * 100);
+    document.getElementById('match-score').textContent = scorePercent + '%';
+
+    const matchBar = document.getElementById('match-bar');
+    matchBar.style.width = scorePercent + '%';
+    matchBar.className = 'h-2.5 rounded-full ' + (scorePercent >= 70 ? 'bg-green-600' : scorePercent >= 50 ? 'bg-yellow-500' : 'bg-red-500');
+
+    document.getElementById('matching-skills').innerHTML = result.matching_skills
+        .map(s => `<span class="px-2 py-1 text-xs rounded bg-green-100 text-green-800">${s}</span>`).join('');
+
+    document.getElementById('missing-skills').innerHTML = result.missing_skills
+        .map(s => `<span class="px-2 py-1 text-xs rounded bg-red-100 text-red-800">${s}</span>`).join('');
+
+    document.getElementById('suggestions').innerHTML = result.suggestions
+        .map(s => `<li>${s}</li>`).join('');
+
+    document.getElementById('match-results').classList.remove('hidden');
+});
+
+document.getElementById('cover-letter-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    if (!currentJobDescription) {
+        alert('Please analyze a job description first');
+        return;
+    }
+
+    const companyName = document.getElementById('cl-company').value;
+    const role = document.getElementById('cl-role').value;
+    const pointsText = document.getElementById('cl-points').value;
+    const customPoints = pointsText ? pointsText.split('\n').filter(p => p.trim()) : null;
+
+    try {
+        const response = await fetch('/api/resume/generate-cover-letter', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                job_description: currentJobDescription,
+                company_name: companyName,
+                role: role,
+                custom_points: customPoints
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            alert(error.detail || 'Error generating cover letter');
+            return;
+        }
+
+        const result = await response.json();
+        document.getElementById('cover-letter-text').value = result.cover_letter;
+        document.getElementById('cover-letter-result').classList.remove('hidden');
+    } catch (e) {
+        alert('Error generating cover letter. Make sure you have set up your profile in Settings.');
+    }
+});
+
+async function copyCoverLetter() {
+    const text = document.getElementById('cover-letter-text').value;
+    await navigator.clipboard.writeText(text);
+    alert('Cover letter copied to clipboard!');
+}
+</script>
+{% endblock %}

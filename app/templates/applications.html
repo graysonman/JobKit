@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+{% block title %}Applications - Job Search Toolkit{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-gray-900">Job Applications</h1>
+        <button onclick="openAddModal()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+            + Track Application
+        </button>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white p-4 rounded-lg shadow">
+        <div class="flex flex-wrap gap-4">
+            <select id="filter-status" onchange="loadApplications()" class="border rounded px-3 py-2">
+                <option value="">All Statuses</option>
+                <option value="saved">Saved</option>
+                <option value="applied">Applied</option>
+                <option value="phone_screen">Phone Screen</option>
+                <option value="technical">Technical</option>
+                <option value="onsite">Onsite</option>
+                <option value="offer">Offer</option>
+                <option value="accepted">Accepted</option>
+                <option value="rejected">Rejected</option>
+                <option value="withdrawn">Withdrawn</option>
+                <option value="ghosted">Ghosted</option>
+            </select>
+            <label class="flex items-center gap-2">
+                <input type="checkbox" id="filter-active" onchange="loadApplications()" checked>
+                <span>Active Only</span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Pipeline Summary -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
+        <div class="bg-gray-100 p-3 rounded text-center">
+            <div class="text-2xl font-bold" id="count-saved">0</div>
+            <div class="text-xs text-gray-600">Saved</div>
+        </div>
+        <div class="bg-blue-100 p-3 rounded text-center">
+            <div class="text-2xl font-bold text-blue-800" id="count-applied">0</div>
+            <div class="text-xs text-blue-600">Applied</div>
+        </div>
+        <div class="bg-yellow-100 p-3 rounded text-center">
+            <div class="text-2xl font-bold text-yellow-800" id="count-interviewing">0</div>
+            <div class="text-xs text-yellow-600">Interviewing</div>
+        </div>
+        <div class="bg-green-100 p-3 rounded text-center">
+            <div class="text-2xl font-bold text-green-800" id="count-offer">0</div>
+            <div class="text-xs text-green-600">Offers</div>
+        </div>
+        <div class="bg-red-100 p-3 rounded text-center">
+            <div class="text-2xl font-bold text-red-800" id="count-closed">0</div>
+            <div class="text-xs text-red-600">Closed</div>
+        </div>
+    </div>
+
+    <!-- Applications Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Applied</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Next Step</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="applications-table-body" class="bg-white divide-y divide-gray-200">
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add/Edit Application Modal -->
+<div id="application-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <h2 id="modal-title" class="text-xl font-bold mb-4">Track Application</h2>
+        <form id="application-form" class="space-y-4">
+            <input type="hidden" id="app-id">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Company *</label>
+                    <input type="text" id="app-company" required class="mt-1 block w-full border rounded px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Role *</label>
+                    <input type="text" id="app-role" required class="mt-1 block w-full border rounded px-3 py-2">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Job URL</label>
+                <input type="url" id="app-url" class="mt-1 block w-full border rounded px-3 py-2" placeholder="https://...">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Status</label>
+                    <select id="app-status" class="mt-1 block w-full border rounded px-3 py-2">
+                        <option value="saved">Saved</option>
+                        <option value="applied">Applied</option>
+                        <option value="phone_screen">Phone Screen</option>
+                        <option value="technical">Technical</option>
+                        <option value="onsite">Onsite</option>
+                        <option value="offer">Offer</option>
+                        <option value="accepted">Accepted</option>
+                        <option value="rejected">Rejected</option>
+                        <option value="withdrawn">Withdrawn</option>
+                        <option value="ghosted">Ghosted</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Applied Date</label>
+                    <input type="date" id="app-date" class="mt-1 block w-full border rounded px-3 py-2">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Next Step</label>
+                    <input type="text" id="app-next-step" class="mt-1 block w-full border rounded px-3 py-2" placeholder="e.g., Technical interview">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Next Step Date</label>
+                    <input type="date" id="app-next-date" class="mt-1 block w-full border rounded px-3 py-2">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Salary (if offered)</label>
+                <input type="text" id="app-salary" class="mt-1 block w-full border rounded px-3 py-2" placeholder="e.g., $120k - $150k">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Job Description</label>
+                <textarea id="app-description" rows="3" class="mt-1 block w-full border rounded px-3 py-2" placeholder="Paste job description for reference..."></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Notes</label>
+                <textarea id="app-notes" rows="2" class="mt-1 block w-full border rounded px-3 py-2"></textarea>
+            </div>
+            <div class="flex justify-end gap-4">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded hover:bg-gray-50">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let allApplications = [];
+
+async function loadApplications() {
+    const status = document.getElementById('filter-status').value;
+    const activeOnly = document.getElementById('filter-active').checked;
+
+    let url = '/api/applications/?';
+    if (status) url += `status=${status}&`;
+    if (activeOnly) url += `active_only=true&`;
+
+    const response = await fetch(url);
+    allApplications = await response.json();
+    renderApplications(allApplications);
+    updateCounts();
+}
+
+async function updateCounts() {
+    const response = await fetch('/api/applications/stats');
+    const stats = await response.json();
+
+    document.getElementById('count-saved').textContent = stats.by_status.saved || 0;
+    document.getElementById('count-applied').textContent = stats.by_status.applied || 0;
+    document.getElementById('count-interviewing').textContent =
+        (stats.by_status.phone_screen || 0) + (stats.by_status.technical || 0) + (stats.by_status.onsite || 0);
+    document.getElementById('count-offer').textContent =
+        (stats.by_status.offer || 0) + (stats.by_status.accepted || 0);
+    document.getElementById('count-closed').textContent =
+        (stats.by_status.rejected || 0) + (stats.by_status.withdrawn || 0) + (stats.by_status.ghosted || 0);
+}
+
+function renderApplications(apps) {
+    const tbody = document.getElementById('applications-table-body');
+    if (apps.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No applications found. Start tracking your first application!</td></tr>';
+        return;
+    }
+    tbody.innerHTML = apps.map(a => `
+        <tr>
+            <td class="px-6 py-4">
+                <div class="font-medium text-gray-900">${a.company_name}</div>
+                ${a.job_url ? `<a href="${a.job_url}" target="_blank" class="text-xs text-blue-500 hover:underline">View posting</a>` : ''}
+            </td>
+            <td class="px-6 py-4 text-gray-500">${a.role}</td>
+            <td class="px-6 py-4">
+                <select onchange="updateStatus(${a.id}, this.value)" class="text-xs border rounded px-2 py-1 ${getStatusBg(a.status)}">
+                    <option value="saved" ${a.status === 'saved' ? 'selected' : ''}>Saved</option>
+                    <option value="applied" ${a.status === 'applied' ? 'selected' : ''}>Applied</option>
+                    <option value="phone_screen" ${a.status === 'phone_screen' ? 'selected' : ''}>Phone Screen</option>
+                    <option value="technical" ${a.status === 'technical' ? 'selected' : ''}>Technical</option>
+                    <option value="onsite" ${a.status === 'onsite' ? 'selected' : ''}>Onsite</option>
+                    <option value="offer" ${a.status === 'offer' ? 'selected' : ''}>Offer</option>
+                    <option value="accepted" ${a.status === 'accepted' ? 'selected' : ''}>Accepted</option>
+                    <option value="rejected" ${a.status === 'rejected' ? 'selected' : ''}>Rejected</option>
+                    <option value="withdrawn" ${a.status === 'withdrawn' ? 'selected' : ''}>Withdrawn</option>
+                    <option value="ghosted" ${a.status === 'ghosted' ? 'selected' : ''}>Ghosted</option>
+                </select>
+            </td>
+            <td class="px-6 py-4 text-gray-500">${a.applied_date || '-'}</td>
+            <td class="px-6 py-4 text-gray-500">
+                ${a.next_step ? `<div>${a.next_step}</div>` : ''}
+                ${a.next_step_date ? `<div class="text-xs">${a.next_step_date}</div>` : ''}
+            </td>
+            <td class="px-6 py-4">
+                <button onclick="editApplication(${a.id})" class="text-blue-600 hover:underline mr-2">Edit</button>
+                <button onclick="deleteApplication(${a.id})" class="text-red-600 hover:underline">Delete</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function getStatusBg(status) {
+    const colors = {
+        'saved': 'bg-gray-100',
+        'applied': 'bg-blue-100',
+        'phone_screen': 'bg-yellow-100',
+        'technical': 'bg-purple-100',
+        'onsite': 'bg-indigo-100',
+        'offer': 'bg-green-100',
+        'accepted': 'bg-green-200',
+        'rejected': 'bg-red-100',
+        'withdrawn': 'bg-gray-200',
+        'ghosted': 'bg-gray-300'
+    };
+    return colors[status] || '';
+}
+
+async function updateStatus(id, status) {
+    await fetch(`/api/applications/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+    });
+    loadApplications();
+}
+
+function openAddModal() {
+    document.getElementById('modal-title').textContent = 'Track Application';
+    document.getElementById('application-form').reset();
+    document.getElementById('app-id').value = '';
+    document.getElementById('app-status').value = 'saved';
+    document.getElementById('application-modal').classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('application-modal').classList.add('hidden');
+}
+
+async function editApplication(id) {
+    const app = allApplications.find(a => a.id === id);
+    if (!app) return;
+
+    document.getElementById('modal-title').textContent = 'Edit Application';
+    document.getElementById('app-id').value = app.id;
+    document.getElementById('app-company').value = app.company_name || '';
+    document.getElementById('app-role').value = app.role || '';
+    document.getElementById('app-url').value = app.job_url || '';
+    document.getElementById('app-status').value = app.status || 'saved';
+    document.getElementById('app-date').value = app.applied_date || '';
+    document.getElementById('app-next-step').value = app.next_step || '';
+    document.getElementById('app-next-date').value = app.next_step_date || '';
+    document.getElementById('app-salary').value = app.salary_offered || '';
+    document.getElementById('app-description').value = app.job_description || '';
+    document.getElementById('app-notes').value = app.notes || '';
+
+    document.getElementById('application-modal').classList.remove('hidden');
+}
+
+async function deleteApplication(id) {
+    if (!confirm('Are you sure you want to delete this application?')) return;
+
+    await fetch(`/api/applications/${id}`, { method: 'DELETE' });
+    loadApplications();
+}
+
+document.getElementById('application-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const id = document.getElementById('app-id').value;
+    const data = {
+        company_name: document.getElementById('app-company').value,
+        role: document.getElementById('app-role').value,
+        job_url: document.getElementById('app-url').value || null,
+        status: document.getElementById('app-status').value,
+        applied_date: document.getElementById('app-date').value || null,
+        next_step: document.getElementById('app-next-step').value || null,
+        next_step_date: document.getElementById('app-next-date').value || null,
+        salary_offered: document.getElementById('app-salary').value || null,
+        job_description: document.getElementById('app-description').value || null,
+        notes: document.getElementById('app-notes').value || null
+    };
+
+    const url = id ? `/api/applications/${id}` : '/api/applications/';
+    const method = id ? 'PATCH' : 'POST';
+
+    await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+
+    closeModal();
+    loadApplications();
+});
+
+document.addEventListener('DOMContentLoaded', loadApplications);
+</script>
+{% endblock %}

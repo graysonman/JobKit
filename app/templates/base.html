@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Job Search Toolkit{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <!-- TODO: Add favicon -->
+    <!-- TODO: Add meta description for SEO -->
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <!-- TODO: Replace mobile nav with hamburger menu + slide-out drawer instead of wrapping links -->
+    <!-- TODO: Add logo/icon next to "Job Search Toolkit" text -->
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <a href="/" class="flex items-center px-2 text-xl font-bold text-gray-900">
+                        Job Search Toolkit
+                    </a>
+                    <!-- TODO: Add icons next to each nav link for better visual recognition -->
+                    <!-- TODO: Implement active state styling (blue text + bottom border) based on current route -->
+                    <!-- TODO: Consider grouping nav items (e.g., "Tracking" for Contacts/Applications/Companies, "Tools" for Messages/Resume) -->
+                    <div class="hidden md:flex md:ml-6 md:space-x-4">
+                        <a href="/" class="nav-link px-3 py-2 text-gray-600 hover:text-gray-900 flex items-center" data-page="dashboard">Dashboard</a>
+                        <a href="/contacts" class="nav-link px-3 py-2 text-gray-600 hover:text-gray-900 flex items-center" data-page="contacts">Contacts</a>
+                        <a href="/applications" class="nav-link px-3 py-2 text-gray-600 hover:text-gray-900 flex items-center" data-page="applications">Applications</a>
+                        <a href="/companies" class="nav-link px-3 py-2 text-gray-600 hover:text-gray-900 flex items-center" data-page="companies">Companies</a>
+                        <a href="/messages" class="nav-link px-3 py-2 text-gray-600 hover:text-gray-900 flex items-center" data-page="messages">Messages</a>
+                        <a href="/resume" class="nav-link px-3 py-2 text-gray-600 hover:text-gray-900 flex items-center" data-page="resume">Resume</a>
+                        <a href="/settings" class="nav-link px-3 py-2 text-gray-600 hover:text-gray-900 flex items-center" data-page="settings">Settings</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile menu -->
+        <div class="md:hidden px-4 pb-4">
+            <div class="flex flex-wrap gap-2">
+                <a href="/" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">Dashboard</a>
+                <a href="/contacts" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">Contacts</a>
+                <a href="/applications" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">Applications</a>
+                <a href="/companies" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">Companies</a>
+                <a href="/messages" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">Messages</a>
+                <a href="/resume" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">Resume</a>
+                <a href="/settings" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">Settings</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto py-6 px-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- TODO: Add a footer with links (About, Privacy, Help) and version number -->
+
+    <script src="/static/js/app.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

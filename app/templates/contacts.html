@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+{% block title %}Contacts - Job Search Toolkit{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-gray-900">Networking Contacts</h1>
+        <button onclick="openAddModal()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+            + Add Contact
+        </button>
+    </div>
+
+    <!-- Filters -->
+    <!-- TODO: Add a search input field to filter contacts by name/company -->
+    <!-- TODO: Add a "Clear filters" button when filters are active -->
+    <!-- TODO: Show count of filtered results (e.g., "Showing 5 of 20 contacts") -->
+    <!-- TODO: Style checkboxes with custom design for consistency -->
+    <div class="bg-white p-4 rounded-lg shadow">
+        <div class="flex flex-wrap gap-4">
+            <select id="filter-type" onchange="loadContacts()" class="border rounded px-3 py-2">
+                <option value="">All Types</option>
+                <option value="recruiter">Recruiters</option>
+                <option value="junior_dev">Junior Devs</option>
+                <option value="senior_dev">Senior Devs</option>
+                <option value="hiring_manager">Hiring Managers</option>
+                <option value="other">Other</option>
+            </select>
+            <select id="filter-status" onchange="loadContacts()" class="border rounded px-3 py-2">
+                <option value="">All Statuses</option>
+                <option value="not_connected">Not Connected</option>
+                <option value="pending">Pending</option>
+                <option value="connected">Connected</option>
+                <option value="messaged">Messaged</option>
+            </select>
+            <label class="flex items-center gap-2">
+                <input type="checkbox" id="filter-alumni" onchange="loadContacts()">
+                <span>Alumni Only</span>
+            </label>
+            <label class="flex items-center gap-2">
+                <input type="checkbox" id="filter-followup" onchange="loadContacts()">
+                <span>Needs Follow-up</span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Contacts Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="contacts-table-body" class="bg-white divide-y divide-gray-200">
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add/Edit Contact Modal -->
+<div id="contact-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <h2 id="modal-title" class="text-xl font-bold mb-4">Add Contact</h2>
+        <form id="contact-form" class="space-y-4">
+            <input type="hidden" id="contact-id">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Name *</label>
+                <input type="text" id="contact-name" required class="mt-1 block w-full border rounded px-3 py-2">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Company</label>
+                    <input type="text" id="contact-company" class="mt-1 block w-full border rounded px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Role</label>
+                    <input type="text" id="contact-role" class="mt-1 block w-full border rounded px-3 py-2">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Type</label>
+                    <select id="contact-type" class="mt-1 block w-full border rounded px-3 py-2">
+                        <option value="">Select...</option>
+                        <option value="recruiter">Recruiter</option>
+                        <option value="junior_dev">Junior Developer</option>
+                        <option value="senior_dev">Senior Developer</option>
+                        <option value="hiring_manager">Hiring Manager</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="contact-email" class="mt-1 block w-full border rounded px-3 py-2">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">LinkedIn URL</label>
+                <input type="url" id="contact-linkedin" class="mt-1 block w-full border rounded px-3 py-2" placeholder="https://linkedin.com/in/...">
+            </div>
+            <div class="flex items-center gap-4">
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" id="contact-alumni">
+                    <span>Alumni</span>
+                </label>
+                <input type="text" id="contact-school" placeholder="School name" class="border rounded px-3 py-2 flex-1">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Connection Status</label>
+                    <select id="contact-status" class="mt-1 block w-full border rounded px-3 py-2">
+                        <option value="not_connected">Not Connected</option>
+                        <option value="pending">Pending</option>
+                        <option value="connected">Connected</option>
+                        <option value="messaged">Messaged</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Next Follow-up</label>
+                    <input type="date" id="contact-followup" class="mt-1 block w-full border rounded px-3 py-2">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Notes</label>
+                <textarea id="contact-notes" rows="3" class="mt-1 block w-full border rounded px-3 py-2"></textarea>
+            </div>
+            <div class="flex justify-end gap-4">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded hover:bg-gray-50">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let allContacts = [];
+
+async function loadContacts() {
+    const type = document.getElementById('filter-type').value;
+    const status = document.getElementById('filter-status').value;
+    const alumni = document.getElementById('filter-alumni').checked;
+    const followup = document.getElementById('filter-followup').checked;
+
+    let url = '/api/contacts/?';
+    if (type) url += `contact_type=${type}&`;
+    if (status) url += `connection_status=${status}&`;
+    if (alumni) url += `is_alumni=true&`;
+    if (followup) url += `needs_follow_up=true&`;
+
+    const response = await fetch(url);
+    allContacts = await response.json();
+    renderContacts(allContacts);
+}
+
+function renderContacts(contacts) {
+    const tbody = document.getElementById('contacts-table-body');
+    if (contacts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No contacts found. Add your first contact!</td></tr>';
+        return;
+    }
+    tbody.innerHTML = contacts.map(c => `
+        <tr>
+            <td class="px-6 py-4">
+                <div class="font-medium text-gray-900">${c.name}</div>
+                ${c.is_alumni ? '<span class="text-xs text-blue-600">Alumni</span>' : ''}
+                ${c.linkedin_url ? `<a href="${c.linkedin_url}" target="_blank" class="text-xs text-blue-500 hover:underline ml-2">LinkedIn</a>` : ''}
+            </td>
+            <td class="px-6 py-4 text-gray-500">${c.company || '-'}</td>
+            <td class="px-6 py-4 text-gray-500">${c.role || '-'}</td>
+            <td class="px-6 py-4">
+                <span class="px-2 py-1 text-xs rounded bg-gray-100">${formatType(c.contact_type)}</span>
+            </td>
+            <td class="px-6 py-4">
+                <span class="px-2 py-1 text-xs rounded ${getStatusColor(c.connection_status)}">${formatStatus(c.connection_status)}</span>
+            </td>
+            <td class="px-6 py-4">
+                <button onclick="editContact(${c.id})" class="text-blue-600 hover:underline mr-2">Edit</button>
+                <button onclick="deleteContact(${c.id})" class="text-red-600 hover:underline">Delete</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function formatType(type) {
+    const types = {
+        'recruiter': 'Recruiter',
+        'junior_dev': 'Junior Dev',
+        'senior_dev': 'Senior Dev',
+        'hiring_manager': 'Hiring Manager',
+        'other': 'Other'
+    };
+    return types[type] || type || '-';
+}
+
+function formatStatus(status) {
+    const statuses = {
+        'not_connected': 'Not Connected',
+        'pending': 'Pending',
+        'connected': 'Connected',
+        'messaged': 'Messaged'
+    };
+    return statuses[status] || status;
+}
+
+function getStatusColor(status) {
+    const colors = {
+        'not_connected': 'bg-gray-100',
+        'pending': 'bg-yellow-100 text-yellow-800',
+        'connected': 'bg-green-100 text-green-800',
+        'messaged': 'bg-blue-100 text-blue-800'
+    };
+    return colors[status] || 'bg-gray-100';
+}
+
+function openAddModal() {
+    document.getElementById('modal-title').textContent = 'Add Contact';
+    document.getElementById('contact-form').reset();
+    document.getElementById('contact-id').value = '';
+    document.getElementById('contact-status').value = 'not_connected';
+    document.getElementById('contact-modal').classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('contact-modal').classList.add('hidden');
+}
+
+async function editContact(id) {
+    const contact = allContacts.find(c => c.id === id);
+    if (!contact) return;
+
+    document.getElementById('modal-title').textContent = 'Edit Contact';
+    document.getElementById('contact-id').value = contact.id;
+    document.getElementById('contact-name').value = contact.name || '';
+    document.getElementById('contact-company').value = contact.company || '';
+    document.getElementById('contact-role').value = contact.role || '';
+    document.getElementById('contact-type').value = contact.contact_type || '';
+    document.getElementById('contact-email').value = contact.email || '';
+    document.getElementById('contact-linkedin').value = contact.linkedin_url || '';
+    document.getElementById('contact-alumni').checked = contact.is_alumni || false;
+    document.getElementById('contact-school').value = contact.school_name || '';
+    document.getElementById('contact-status').value = contact.connection_status || 'not_connected';
+    document.getElementById('contact-followup').value = contact.next_follow_up || '';
+    document.getElementById('contact-notes').value = contact.notes || '';
+
+    document.getElementById('contact-modal').classList.remove('hidden');
+}
+
+async function deleteContact(id) {
+    if (!confirm('Are you sure you want to delete this contact?')) return;
+
+    await fetch(`/api/contacts/${id}`, { method: 'DELETE' });
+    loadContacts();
+}
+
+document.getElementById('contact-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const id = document.getElementById('contact-id').value;
+    const data = {
+        name: document.getElementById('contact-name').value,
+        company: document.getElementById('contact-company').value || null,
+        role: document.getElementById('contact-role').value || null,
+        contact_type: document.getElementById('contact-type').value || null,
+        email: document.getElementById('contact-email').value || null,
+        linkedin_url: document.getElementById('contact-linkedin').value || null,
+        is_alumni: document.getElementById('contact-alumni').checked,
+        school_name: document.getElementById('contact-school').value || null,
+        connection_status: document.getElementById('contact-status').value,
+        next_follow_up: document.getElementById('contact-followup').value || null,
+        notes: document.getElementById('contact-notes').value || null
+    };
+
+    const url = id ? `/api/contacts/${id}` : '/api/contacts/';
+    const method = id ? 'PATCH' : 'POST';
+
+    await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+
+    closeModal();
+    loadContacts();
+});
+
+document.addEventListener('DOMContentLoaded', loadContacts);
+</script>
+{% endblock %}

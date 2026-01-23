@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Settings - Job Search Toolkit{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <h1 class="text-3xl font-bold text-gray-900">Settings</h1>
+
+    <!-- User Profile -->
+    <div class="bg-white p-6 rounded-lg shadow">
+        <h2 class="text-xl font-bold mb-4">Your Profile</h2>
+        <p class="text-gray-600 mb-4">This information is used to personalize message templates.</p>
+
+        <form id="profile-form" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Your Name *</label>
+                    <input type="text" id="profile-name" required class="mt-1 block w-full border rounded px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="profile-email" class="mt-1 block w-full border rounded px-3 py-2">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">LinkedIn URL</label>
+                    <input type="url" id="profile-linkedin" class="mt-1 block w-full border rounded px-3 py-2" placeholder="https://linkedin.com/in/...">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Current Title</label>
+                    <input type="text" id="profile-title" class="mt-1 block w-full border rounded px-3 py-2" placeholder="e.g., Software Developer">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">School/University</label>
+                    <input type="text" id="profile-school" class="mt-1 block w-full border rounded px-3 py-2" placeholder="For alumni connections">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Graduation Year</label>
+                    <input type="number" id="profile-grad-year" class="mt-1 block w-full border rounded px-3 py-2" min="1950" max="2030">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Years of Experience</label>
+                    <input type="number" id="profile-experience" class="mt-1 block w-full border rounded px-3 py-2" min="0" max="50">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Key Skills</label>
+                <input type="text" id="profile-skills" class="mt-1 block w-full border rounded px-3 py-2" placeholder="Python, JavaScript, React, AWS, etc.">
+                <p class="text-xs text-gray-500 mt-1">Comma-separated list of your main skills</p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Target Roles</label>
+                <input type="text" id="profile-roles" class="mt-1 block w-full border rounded px-3 py-2" placeholder="Software Engineer, Full Stack Developer, etc.">
+                <p class="text-xs text-gray-500 mt-1">What types of roles are you looking for?</p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Elevator Pitch</label>
+                <textarea id="profile-pitch" rows="3" class="mt-1 block w-full border rounded px-3 py-2" placeholder="A brief introduction about yourself (2-3 sentences)..."></textarea>
+                <p class="text-xs text-gray-500 mt-1">Used in longer messages like InMails. Keep it concise!</p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Resume Summary</label>
+                <textarea id="profile-resume" rows="4" class="mt-1 block w-full border rounded px-3 py-2" placeholder="Key highlights from your resume for cover letter generation..."></textarea>
+                <p class="text-xs text-gray-500 mt-1">Key accomplishments and experience for cover letter generation</p>
+            </div>
+
+            <div class="flex gap-4">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    Save Profile
+                </button>
+                <span id="save-status" class="text-green-600 hidden items-center">Saved!</span>
+            </div>
+        </form>
+    </div>
+
+    <!-- Data Management -->
+    <div class="bg-white p-6 rounded-lg shadow">
+        <h2 class="text-xl font-bold mb-4">Data Management</h2>
+        <div class="space-y-4">
+            <div>
+                <h3 class="font-medium">Export Data</h3>
+                <p class="text-sm text-gray-600 mb-2">Download your data as JSON files.</p>
+                <div class="flex gap-2">
+                    <button onclick="exportData('contacts')" class="px-3 py-1 border rounded hover:bg-gray-50 text-sm">Export Contacts</button>
+                    <button onclick="exportData('applications')" class="px-3 py-1 border rounded hover:bg-gray-50 text-sm">Export Applications</button>
+                    <button onclick="exportData('companies')" class="px-3 py-1 border rounded hover:bg-gray-50 text-sm">Export Companies</button>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t">
+                <h3 class="font-medium text-red-600">Danger Zone</h3>
+                <p class="text-sm text-gray-600 mb-2">These actions cannot be undone.</p>
+                <button onclick="clearAllData()" class="px-3 py-1 border border-red-600 text-red-600 rounded hover:bg-red-50 text-sm">
+                    Clear All Data
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function loadProfile() {
+    try {
+        const response = await fetch('/api/profile/');
+        if (response.ok) {
+            const profile = await response.json();
+            document.getElementById('profile-name').value = profile.name || '';
+            document.getElementById('profile-email').value = profile.email || '';
+            document.getElementById('profile-linkedin').value = profile.linkedin_url || '';
+            document.getElementById('profile-title').value = profile.current_title || '';
+            document.getElementById('profile-school').value = profile.school || '';
+            document.getElementById('profile-grad-year').value = profile.graduation_year || '';
+            document.getElementById('profile-experience').value = profile.years_experience || '';
+            document.getElementById('profile-skills').value = profile.skills || '';
+            document.getElementById('profile-roles').value = profile.target_roles || '';
+            document.getElementById('profile-pitch').value = profile.elevator_pitch || '';
+            document.getElementById('profile-resume').value = profile.resume_summary || '';
+        }
+    } catch (e) {
+        // Profile doesn't exist yet, that's fine
+    }
+}
+
+document.getElementById('profile-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const data = {
+        name: document.getElementById('profile-name').value,
+        email: document.getElementById('profile-email').value || null,
+        linkedin_url: document.getElementById('profile-linkedin').value || null,
+        current_title: document.getElementById('profile-title').value || null,
+        school: document.getElementById('profile-school').value || null,
+        graduation_year: parseInt(document.getElementById('profile-grad-year').value) || null,
+        years_experience: parseInt(document.getElementById('profile-experience').value) || null,
+        skills: document.getElementById('profile-skills').value || null,
+        target_roles: document.getElementById('profile-roles').value || null,
+        elevator_pitch: document.getElementById('profile-pitch').value || null,
+        resume_summary: document.getElementById('profile-resume').value || null
+    };
+
+    await fetch('/api/profile/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+
+    const status = document.getElementById('save-status');
+    status.classList.remove('hidden');
+    status.classList.add('flex');
+    setTimeout(() => {
+        status.classList.add('hidden');
+        status.classList.remove('flex');
+    }, 2000);
+});
+
+async function exportData(type) {
+    const response = await fetch(`/api/${type}/`);
+    const data = await response.json();
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${type}_export_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+async function clearAllData() {
+    if (!confirm('Are you sure you want to delete ALL data? This cannot be undone!')) return;
+    if (!confirm('Really? This will delete all contacts, applications, companies, and message history.')) return;
+
+    // Delete all data
+    const contacts = await fetch('/api/contacts/').then(r => r.json());
+    for (const c of contacts) {
+        await fetch(`/api/contacts/${c.id}`, { method: 'DELETE' });
+    }
+
+    const apps = await fetch('/api/applications/').then(r => r.json());
+    for (const a of apps) {
+        await fetch(`/api/applications/${a.id}`, { method: 'DELETE' });
+    }
+
+    const companies = await fetch('/api/companies/').then(r => r.json());
+    for (const c of companies) {
+        await fetch(`/api/companies/${c.id}`, { method: 'DELETE' });
+    }
+
+    alert('All data has been cleared.');
+    location.reload();
+}
+
+document.addEventListener('DOMContentLoaded', loadProfile);
+</script>
+{% endblock %}
