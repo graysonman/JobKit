@@ -3,61 +3,236 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="JobKit - A comprehensive job search management toolkit for software developers. Track applications, manage networking contacts, and streamline your job search.">
     <title>{% block title %}JobKit{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <link rel="stylesheet" href="/static/css/styles.css">
-    <!-- TODO: Add favicon -->
-    <!-- TODO: Add meta description for SEO -->
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232563eb'/><path d='M30 30h40v10H30zM30 45h30v10H30zM30 60h35v10H30z' fill='white'/></svg>">
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <!-- Skip link for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
     <!-- Navigation -->
-    <!-- TODO: Replace mobile nav with hamburger menu + slide-out drawer instead of wrapping links -->
-    <!-- TODO: Add logo/icon next to "JobKit" text -->
-    <nav class="bg-white shadow-sm">
+    <nav class="bg-white shadow-sm sticky top-0 z-30">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between h-16">
-                <div class="flex">
-                    <a href="/" class="flex items-center px-2 text-xl font-bold text-gray-900">
-                        JobKit
+                <div class="flex items-center">
+                    <!-- Mobile menu button -->
+                    <button id="mobile-menu-btn" class="md:hidden p-2 rounded-lg hover:bg-gray-100 mr-2" aria-label="Open menu">
+                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+
+                    <!-- Logo -->
+                    <a href="/" class="flex items-center gap-2 px-2 text-xl font-bold text-gray-900">
+                        <svg class="w-8 h-8" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="100" height="100" rx="20" fill="#2563eb"/>
+                            <path d="M30 30h40v10H30zM30 45h30v10H30zM30 60h35v10H30z" fill="white"/>
+                        </svg>
+                        <span>JobKit</span>
                     </a>
-                    <!-- TODO: Add icons next to each nav link for better visual recognition -->
-                    <!-- TODO: Implement active state styling (blue text + bottom border) based on current route -->
-                    <!-- TODO: Consider grouping nav items (e.g., "Tracking" for Contacts/Applications/Companies, "Tools" for Messages/Resume) -->
-                    <div class="hidden md:flex md:ml-6 md:space-x-4">
-                        <a href="/" class="nav-link px-3 py-2 text-gray-600 hover:text-gray-900 flex items-center" data-page="dashboard">Dashboard</a>
-                        <a href="/contacts" class="nav-link px-3 py-2 text-gray-600 hover:text-gray-900 flex items-center" data-page="contacts">Contacts</a>
-                        <a href="/applications" class="nav-link px-3 py-2 text-gray-600 hover:text-gray-900 flex items-center" data-page="applications">Applications</a>
-                        <a href="/companies" class="nav-link px-3 py-2 text-gray-600 hover:text-gray-900 flex items-center" data-page="companies">Companies</a>
-                        <a href="/messages" class="nav-link px-3 py-2 text-gray-600 hover:text-gray-900 flex items-center" data-page="messages">Messages</a>
-                        <a href="/resume" class="nav-link px-3 py-2 text-gray-600 hover:text-gray-900 flex items-center" data-page="resume">Resume</a>
-                        <a href="/settings" class="nav-link px-3 py-2 text-gray-600 hover:text-gray-900 flex items-center" data-page="settings">Settings</a>
+
+                    <!-- Desktop Navigation -->
+                    <div class="hidden md:flex md:ml-6 md:space-x-1">
+                        <a href="/" class="nav-link px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg flex items-center gap-2" data-page="dashboard">
+                            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                            </svg>
+                            <span>Dashboard</span>
+                        </a>
+                        <a href="/contacts" class="nav-link px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg flex items-center gap-2" data-page="contacts">
+                            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            <span>Contacts</span>
+                        </a>
+                        <a href="/applications" class="nav-link px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg flex items-center gap-2" data-page="applications">
+                            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                            </svg>
+                            <span>Applications</span>
+                        </a>
+                        <a href="/companies" class="nav-link px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg flex items-center gap-2" data-page="companies">
+                            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                            <span>Companies</span>
+                        </a>
+                        <a href="/messages" class="nav-link px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg flex items-center gap-2" data-page="messages">
+                            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                            </svg>
+                            <span>Messages</span>
+                        </a>
+                        <a href="/resume" class="nav-link px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg flex items-center gap-2" data-page="resume">
+                            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <span>Resume</span>
+                        </a>
+                        <a href="/settings" class="nav-link px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg flex items-center gap-2" data-page="settings">
+                            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            <span>Settings</span>
+                        </a>
                     </div>
                 </div>
-            </div>
-        </div>
-        <!-- Mobile menu -->
-        <div class="md:hidden px-4 pb-4">
-            <div class="flex flex-wrap gap-2">
-                <a href="/" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">Dashboard</a>
-                <a href="/contacts" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">Contacts</a>
-                <a href="/applications" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">Applications</a>
-                <a href="/companies" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">Companies</a>
-                <a href="/messages" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">Messages</a>
-                <a href="/resume" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">Resume</a>
-                <a href="/settings" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-900">Settings</a>
+
+                <!-- Keyboard shortcut hint -->
+                <div class="hidden lg:flex items-center text-xs text-gray-400">
+                    <kbd class="px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-xs">Alt</kbd>
+                    <span class="mx-1">+</span>
+                    <kbd class="px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-xs">1-6</kbd>
+                    <span class="ml-1">to navigate</span>
+                </div>
             </div>
         </div>
     </nav>
 
+    <!-- Mobile menu backdrop -->
+    <div id="mobile-menu-backdrop" class="mobile-menu-backdrop"></div>
+
+    <!-- Mobile menu slide-out drawer -->
+    <div id="mobile-menu" class="mobile-menu">
+        <div class="p-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <a href="/" class="flex items-center gap-2 text-xl font-bold text-gray-900">
+                    <svg class="w-8 h-8" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100" height="100" rx="20" fill="#2563eb"/>
+                        <path d="M30 30h40v10H30zM30 45h30v10H30zM30 60h35v10H30z" fill="white"/>
+                    </svg>
+                    <span>JobKit</span>
+                </a>
+                <button id="mobile-menu-close" class="p-2 rounded-lg hover:bg-gray-100" aria-label="Close menu">
+                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <nav class="p-4 space-y-1">
+            <a href="/" class="mobile-nav-link flex items-center gap-3 px-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg" data-page="dashboard">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                Dashboard
+            </a>
+            <a href="/contacts" class="mobile-nav-link flex items-center gap-3 px-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg" data-page="contacts">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                Contacts
+            </a>
+            <a href="/applications" class="mobile-nav-link flex items-center gap-3 px-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg" data-page="applications">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                Applications
+            </a>
+            <a href="/companies" class="mobile-nav-link flex items-center gap-3 px-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg" data-page="companies">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                </svg>
+                Companies
+            </a>
+            <a href="/messages" class="mobile-nav-link flex items-center gap-3 px-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg" data-page="messages">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                </svg>
+                Messages
+            </a>
+            <a href="/resume" class="mobile-nav-link flex items-center gap-3 px-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg" data-page="resume">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Resume
+            </a>
+            <a href="/settings" class="mobile-nav-link flex items-center gap-3 px-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg" data-page="settings">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                Settings
+            </a>
+        </nav>
+    </div>
+
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto py-6 px-4">
+    <main id="main-content" class="flex-1 max-w-7xl mx-auto w-full py-6 px-4">
         {% block content %}{% endblock %}
     </main>
 
-    <!-- TODO: Add a footer with links (About, Privacy, Help) and version number -->
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-2 text-sm text-gray-500">
+                <div class="flex items-center gap-4">
+                    <span>JobKit v1.0</span>
+                    <span class="hidden md:inline">|</span>
+                    <span class="hidden md:inline">Your local job search toolkit</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <a href="/settings" class="hover:text-gray-700">Settings</a>
+                    <span>|</span>
+                    <span class="text-xs">
+                        Press <kbd class="px-1 py-0.5 bg-gray-100 border border-gray-200 rounded text-xs">?</kbd> for help
+                    </span>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <script src="/static/js/app.js"></script>
+    <script>
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenuClose = document.getElementById('mobile-menu-close');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const mobileMenuBackdrop = document.getElementById('mobile-menu-backdrop');
+
+        function openMobileMenu() {
+            mobileMenu.classList.add('open');
+            mobileMenuBackdrop.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMobileMenu() {
+            mobileMenu.classList.remove('open');
+            mobileMenuBackdrop.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        mobileMenuBtn.addEventListener('click', openMobileMenu);
+        mobileMenuClose.addEventListener('click', closeMobileMenu);
+        mobileMenuBackdrop.addEventListener('click', closeMobileMenu);
+
+        // Close on Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && mobileMenu.classList.contains('open')) {
+                closeMobileMenu();
+            }
+        });
+
+        // Highlight active mobile nav link
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
+
+            mobileNavLinks.forEach(link => {
+                const linkPath = link.getAttribute('href');
+                if (linkPath === currentPath || (currentPath === '/' && linkPath === '/')) {
+                    link.classList.add('bg-blue-50', 'text-blue-600', 'font-medium');
+                    link.classList.remove('text-gray-700');
+                }
+            });
+        });
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

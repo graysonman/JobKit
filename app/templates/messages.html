@@ -7,151 +7,289 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Message Generator -->
-        <!-- TODO: Add preview of selected contact's details (company, role) below dropdown -->
-        <!-- TODO: Show character count limit warning for connection requests (300 char LinkedIn limit) -->
-        <!-- TODO: Add "Open in LinkedIn" button after generating message -->
-        <!-- TODO: Add tone selector (formal, casual, enthusiastic) -->
         <div class="bg-white p-6 rounded-lg shadow">
             <h2 class="text-xl font-bold mb-4">Generate Message</h2>
             <form id="generate-form" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Select Contact *</label>
-                    <select id="msg-contact" required class="mt-1 block w-full border rounded px-3 py-2">
+                    <select id="msg-contact" required class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
                         <option value="">Choose a contact...</option>
                     </select>
+                    <!-- Contact Preview -->
+                    <div id="contact-preview" class="hidden mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-semibold" id="contact-avatar">--</div>
+                            <div>
+                                <div class="font-medium text-gray-900" id="contact-name">-</div>
+                                <div class="text-sm text-gray-500" id="contact-info">-</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 mt-2 text-xs">
+                            <span id="contact-type" class="badge badge-gray">-</span>
+                            <span id="contact-status" class="text-gray-500">-</span>
+                        </div>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Message Type</label>
-                    <select id="msg-type" required class="mt-1 block w-full border rounded px-3 py-2">
-                        <option value="connection_request">Connection Request (short)</option>
-                        <option value="inmail">InMail / Email (longer)</option>
+                    <select id="msg-type" required class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        <option value="connection_request">Connection Request (max 300 chars)</option>
+                        <option value="inmail">InMail / Email (max 1900 chars)</option>
                         <option value="follow_up">Follow-up</option>
                         <option value="thank_you">Thank You</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Template (optional)</label>
-                    <select id="msg-template" class="mt-1 block w-full border rounded px-3 py-2">
+                    <select id="msg-template" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
                         <option value="">Use default for contact type</option>
                     </select>
                 </div>
-                <button type="submit" class="w-full px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
+                <button type="submit" id="generate-btn" class="w-full btn btn-secondary">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
                     Generate Message
                 </button>
             </form>
 
             <!-- Generated Message -->
             <div id="generated-message" class="mt-6 hidden">
-                <h3 class="font-bold mb-2">Generated Message for <span id="msg-recipient"></span>:</h3>
+                <h3 class="font-bold mb-2">Generated Message for <span id="msg-recipient" class="text-purple-600"></span>:</h3>
                 <div id="msg-subject-container" class="mb-2 hidden">
                     <label class="text-sm font-medium text-gray-700">Subject:</label>
-                    <input type="text" id="msg-subject" class="mt-1 block w-full border rounded px-3 py-2">
+                    <input type="text" id="msg-subject" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2">
                 </div>
-                <textarea id="msg-content" rows="8" class="w-full border rounded px-3 py-2"></textarea>
-                <p class="text-xs text-gray-500 mt-1"><span id="char-count">0</span> characters</p>
-                <div class="flex gap-2 mt-2">
-                    <button onclick="copyMessage()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                        Copy to Clipboard
+                <textarea id="msg-content" rows="8" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500"></textarea>
+                <!-- Character Count with Warning -->
+                <div class="flex justify-between items-center mt-1">
+                    <p id="char-warning" class="text-xs text-gray-500 hidden">
+                        <svg class="w-4 h-4 inline text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                        <span></span>
+                    </p>
+                    <p class="char-count"><span id="char-count">0</span> / <span id="char-limit">-</span> characters</p>
+                </div>
+                <div class="flex flex-wrap gap-2 mt-3">
+                    <button onclick="copyMessage()" class="btn btn-primary flex-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        Copy
                     </button>
-                    <button onclick="markAsSent()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-                        Mark as Sent
+                    <button onclick="openInLinkedIn()" id="linkedin-btn" class="btn btn-outline flex-1 hidden">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                        </svg>
+                        Open LinkedIn
+                    </button>
+                    <button onclick="markAsSent()" class="btn btn-success flex-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Mark Sent
                     </button>
                 </div>
             </div>
         </div>
 
         <!-- Templates Management -->
-        <!-- TODO: Add ability to edit existing templates (currently only delete) -->
-        <!-- TODO: Add "duplicate template" option -->
-        <!-- TODO: Show preview modal when clicking on a template -->
-        <!-- TODO: Add template usage count/stats -->
         <div class="bg-white p-6 rounded-lg shadow">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold">Message Templates</h2>
-                <button onclick="openTemplateModal()" class="text-purple-600 hover:underline text-sm">+ Add Template</button>
+                <button onclick="openTemplateModal()" class="btn btn-sm btn-secondary">+ Add Template</button>
             </div>
             <div id="templates-list" class="space-y-3 max-h-96 overflow-y-auto">
-                <p class="text-gray-500">Loading templates...</p>
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card"></div>
             </div>
         </div>
     </div>
 
     <!-- Message History -->
-    <!-- TODO: Add filter by contact or message type -->
-    <!-- TODO: Add search functionality -->
-    <!-- TODO: Show response received indicator (if contact responded) -->
-    <!-- TODO: Add pagination for long history -->
-    <!-- TODO: Add "resend" or "follow up" quick action -->
-    <!-- TODO: Empty state needs illustration -->
     <div class="bg-white p-6 rounded-lg shadow">
-        <h2 class="text-xl font-bold mb-4">Message History</h2>
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+            <h2 class="text-xl font-bold">Message History</h2>
+            <div class="flex flex-wrap gap-3">
+                <!-- Search -->
+                <div class="relative">
+                    <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <input type="text" id="history-search" placeholder="Search messages..."
+                           class="pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500"
+                           oninput="filterHistory()">
+                </div>
+                <!-- Contact Filter -->
+                <select id="history-contact-filter" onchange="filterHistory()" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+                    <option value="">All Contacts</option>
+                </select>
+                <!-- Type Filter -->
+                <select id="history-type-filter" onchange="filterHistory()" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+                    <option value="">All Types</option>
+                    <option value="connection_request">Connection Request</option>
+                    <option value="inmail">InMail</option>
+                    <option value="follow_up">Follow-up</option>
+                    <option value="thank_you">Thank You</option>
+                </select>
+            </div>
+        </div>
         <div id="message-history" class="space-y-2">
-            <p class="text-gray-500">Loading history...</p>
+            <div class="skeleton skeleton-card"></div>
+        </div>
+        <!-- Pagination -->
+        <div id="history-pagination" class="hidden flex justify-center items-center gap-2 mt-4 pt-4 border-t border-gray-200">
+            <button onclick="loadHistoryPage(currentHistoryPage - 1)" id="prev-page-btn" class="btn btn-sm btn-outline" disabled>Previous</button>
+            <span id="page-info" class="text-sm text-gray-500">Page 1</span>
+            <button onclick="loadHistoryPage(currentHistoryPage + 1)" id="next-page-btn" class="btn btn-sm btn-outline">Next</button>
         </div>
     </div>
 </div>
 
-<!-- Add Template Modal -->
-<div id="template-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <h2 class="text-xl font-bold mb-4">Add Template</h2>
-        <form id="template-form" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Template Name *</label>
-                <input type="text" id="tpl-name" required class="mt-1 block w-full border rounded px-3 py-2">
-            </div>
-            <div class="grid grid-cols-2 gap-4">
+<!-- Add/Edit Template Modal -->
+<div id="template-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick="handleModalBackdropClick(event, closeTemplateModal)">
+    <div class="bg-white rounded-lg w-full max-w-lg max-h-[90vh] overflow-hidden shadow-xl" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            <h2 id="template-modal-title" class="text-xl font-bold text-gray-900">Add Template</h2>
+            <button onclick="closeTemplateModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="px-6 py-4 max-h-[calc(90vh-130px)] overflow-y-auto">
+            <form id="template-form" class="space-y-4">
+                <input type="hidden" id="tpl-id">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Message Type</label>
-                    <select id="tpl-msg-type" class="mt-1 block w-full border rounded px-3 py-2">
-                        <option value="connection_request">Connection Request</option>
-                        <option value="inmail">InMail</option>
-                        <option value="follow_up">Follow-up</option>
-                        <option value="thank_you">Thank You</option>
-                        <option value="cold_email">Cold Email</option>
-                    </select>
+                    <label class="block text-sm font-medium text-gray-700">Template Name *</label>
+                    <input type="text" id="tpl-name" required class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Message Type</label>
+                        <select id="tpl-msg-type" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2">
+                            <option value="connection_request">Connection Request</option>
+                            <option value="inmail">InMail</option>
+                            <option value="follow_up">Follow-up</option>
+                            <option value="thank_you">Thank You</option>
+                            <option value="cold_email">Cold Email</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Target Type</label>
+                        <select id="tpl-target-type" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2">
+                            <option value="general">General</option>
+                            <option value="recruiter">Recruiter</option>
+                            <option value="developer">Developer</option>
+                            <option value="alumni">Alumni</option>
+                            <option value="hiring_manager">Hiring Manager</option>
+                        </select>
+                    </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Target Type</label>
-                    <select id="tpl-target-type" class="mt-1 block w-full border rounded px-3 py-2">
-                        <option value="general">General</option>
-                        <option value="recruiter">Recruiter</option>
-                        <option value="developer">Developer</option>
-                        <option value="alumni">Alumni</option>
-                        <option value="hiring_manager">Hiring Manager</option>
-                    </select>
+                    <label class="block text-sm font-medium text-gray-700">Subject (for emails/InMails)</label>
+                    <input type="text" id="tpl-subject" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2">
                 </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Template Text *</label>
+                    <textarea id="tpl-template" rows="6" required class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Hi {name}, ..."></textarea>
+                    <p class="text-xs text-gray-500 mt-1">Placeholders: {name}, {company}, {role}, {school}, {my_name}, {my_title}, {my_background}, {my_skills}</p>
+                </div>
+            </form>
+        </div>
+        <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
+            <button type="button" onclick="closeTemplateModal()" class="btn btn-outline">Cancel</button>
+            <button type="button" onclick="submitTemplate()" class="btn btn-secondary">Save Template</button>
+        </div>
+    </div>
+</div>
+
+<!-- Template Preview Modal -->
+<div id="preview-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick="handleModalBackdropClick(event, closePreviewModal)">
+    <div class="bg-white rounded-lg w-full max-w-lg max-h-[90vh] overflow-hidden shadow-xl" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            <h2 id="preview-title" class="text-xl font-bold text-gray-900">Template Preview</h2>
+            <button onclick="closePreviewModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="px-6 py-4">
+            <div class="flex gap-2 mb-4">
+                <span id="preview-msg-type" class="badge badge-primary"></span>
+                <span id="preview-target-type" class="badge badge-gray"></span>
+                <span id="preview-usage" class="badge badge-info"></span>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Subject (for emails/InMails)</label>
-                <input type="text" id="tpl-subject" class="mt-1 block w-full border rounded px-3 py-2">
+            <div id="preview-subject-container" class="hidden mb-3">
+                <label class="text-sm font-medium text-gray-700">Subject:</label>
+                <p id="preview-subject" class="text-gray-900 mt-1 p-2 bg-gray-50 rounded"></p>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Template Text *</label>
-                <textarea id="tpl-template" rows="6" required class="mt-1 block w-full border rounded px-3 py-2" placeholder="Hi {name}, ..."></textarea>
-                <p class="text-xs text-gray-500 mt-1">Available placeholders: {name}, {company}, {role}, {school}, {my_name}, {my_title}, {my_background}, {my_skills}</p>
-            </div>
-            <div class="flex justify-end gap-4">
-                <button type="button" onclick="closeTemplateModal()" class="px-4 py-2 border rounded hover:bg-gray-50">Cancel</button>
-                <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">Save</button>
-            </div>
-        </form>
+            <label class="text-sm font-medium text-gray-700">Message:</label>
+            <div id="preview-content" class="mt-1 p-3 bg-gray-50 rounded-lg text-gray-800 whitespace-pre-wrap max-h-64 overflow-y-auto"></div>
+        </div>
+        <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
+            <button onclick="duplicateTemplate(previewTemplateId)" class="btn btn-outline">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                </svg>
+                Duplicate
+            </button>
+            <button onclick="editTemplateFromPreview()" class="btn btn-secondary">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+                Edit
+            </button>
+        </div>
     </div>
 </div>
 
 <script>
 let contacts = [];
 let templates = [];
+let allHistory = [];
+let filteredHistory = [];
 let currentContactId = null;
 let currentMessageType = null;
+let currentLinkedInUrl = null;
+let previewTemplateId = null;
+let currentHistoryPage = 1;
+const historyPerPage = 10;
+
+const charLimits = {
+    'connection_request': 300,
+    'inmail': 1900,
+    'follow_up': 8000,
+    'thank_you': 8000
+};
 
 async function loadContacts() {
     const response = await fetch('/api/contacts/');
     contacts = await response.json();
     const select = document.getElementById('msg-contact');
     select.innerHTML = '<option value="">Choose a contact...</option>' +
-        contacts.map(c => `<option value="${c.id}">${c.name} ${c.company ? '(' + c.company + ')' : ''}</option>`).join('');
+        contacts.map(c => `<option value="${c.id}">${escapeHtml(c.name)} ${c.company ? '(' + escapeHtml(c.company) + ')' : ''}</option>`).join('');
+    const historySelect = document.getElementById('history-contact-filter');
+    historySelect.innerHTML = '<option value="">All Contacts</option>' +
+        contacts.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
 }
+
+document.getElementById('msg-contact').addEventListener('change', function() {
+    const contactId = this.value;
+    const preview = document.getElementById('contact-preview');
+    if (!contactId) { preview.classList.add('hidden'); return; }
+    const contact = contacts.find(c => c.id === parseInt(contactId));
+    if (!contact) return;
+    document.getElementById('contact-avatar').textContent = contact.name.substring(0, 2).toUpperCase();
+    document.getElementById('contact-name').textContent = contact.name;
+    document.getElementById('contact-info').textContent = [contact.role, contact.company].filter(Boolean).join(' at ') || 'No details';
+    document.getElementById('contact-type').textContent = contact.contact_type || 'Contact';
+    document.getElementById('contact-status').textContent = contact.connection_status ? `Status: ${contact.connection_status}` : '';
+    currentLinkedInUrl = contact.linkedin_url;
+    preview.classList.remove('hidden');
+});
 
 async function loadTemplates() {
     const response = await fetch('/api/messages/templates');
@@ -163,174 +301,171 @@ async function loadTemplates() {
 function renderTemplates(templates) {
     const list = document.getElementById('templates-list');
     if (templates.length === 0) {
-        list.innerHTML = '<p class="text-gray-500">No templates yet.</p>';
+        list.innerHTML = `<div class="empty-state py-8"><svg class="empty-state-icon w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><p class="text-gray-500 mb-3">No custom templates yet</p><button onclick="openTemplateModal()" class="btn btn-sm btn-secondary">Create Template</button></div>`;
         return;
     }
     list.innerHTML = templates.map(t => `
-        <div class="border rounded p-3">
+        <div class="border border-gray-200 rounded-lg p-3 hover:border-purple-300 transition-colors cursor-pointer" onclick="previewTemplate(${t.id})">
             <div class="flex justify-between items-start">
-                <div>
-                    <span class="font-medium">${t.name}</span>
-                    ${t.is_default ? '<span class="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">Default</span>' : ''}
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2"><span class="font-medium text-gray-900 truncate">${escapeHtml(t.name)}</span>${t.is_default ? '<span class="badge badge-primary text-xs">Default</span>' : ''}</div>
+                    <div class="flex items-center gap-2 mt-1"><span class="text-xs text-gray-500">${formatMessageType(t.message_type)}</span><span class="text-xs text-gray-400">|</span><span class="text-xs text-gray-500">${formatTargetType(t.target_type)}</span>${t.usage_count ? `<span class="text-xs text-gray-400">| Used ${t.usage_count}x</span>` : ''}</div>
                 </div>
-                <button onclick="deleteTemplate(${t.id})" class="text-red-600 hover:underline text-xs">Delete</button>
+                <div class="flex gap-1 ml-2" onclick="event.stopPropagation()">
+                    <button onclick="editTemplate(${t.id})" class="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded" title="Edit"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+                    <button onclick="duplicateTemplate(${t.id})" class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded" title="Duplicate"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></button>
+                    <button onclick="deleteTemplate(${t.id})" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded" title="Delete"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                </div>
             </div>
-            <div class="text-xs text-gray-500 mt-1">${t.message_type} • ${t.target_type}</div>
-            <p class="text-sm text-gray-600 mt-2 line-clamp-2">${t.template.substring(0, 100)}...</p>
+            <p class="text-sm text-gray-600 mt-2 line-clamp-2">${escapeHtml(t.template.substring(0, 100))}...</p>
         </div>
     `).join('');
 }
 
-function updateTemplateDropdown() {
-    const msgType = document.getElementById('msg-type').value;
-    const filtered = templates.filter(t => t.message_type === msgType);
-    const select = document.getElementById('msg-template');
-    select.innerHTML = '<option value="">Use default for contact type</option>' +
-        filtered.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+function formatMessageType(type) { return {'connection_request':'Connection','inmail':'InMail','follow_up':'Follow-up','thank_you':'Thank You','cold_email':'Cold Email'}[type] || type; }
+function formatTargetType(type) { return {'general':'General','recruiter':'Recruiter','developer':'Developer','alumni':'Alumni','hiring_manager':'Hiring Manager'}[type] || type; }
+function updateTemplateDropdown() { const msgType = document.getElementById('msg-type').value; const filtered = templates.filter(t => t.message_type === msgType); document.getElementById('msg-template').innerHTML = '<option value="">Use default for contact type</option>' + filtered.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join(''); }
+
+async function loadMessageHistory() { const response = await fetch('/api/messages/history?limit=100'); allHistory = await response.json(); filterHistory(); }
+
+function filterHistory() {
+    const search = document.getElementById('history-search').value.toLowerCase();
+    const contactFilter = document.getElementById('history-contact-filter').value;
+    const typeFilter = document.getElementById('history-type-filter').value;
+    filteredHistory = allHistory.filter(h => {
+        const contact = contacts.find(c => c.id === h.contact_id);
+        const contactName = contact ? contact.name.toLowerCase() : '';
+        if (search && !h.message_content.toLowerCase().includes(search) && !contactName.includes(search)) return false;
+        if (contactFilter && h.contact_id !== parseInt(contactFilter)) return false;
+        if (typeFilter && h.message_type !== typeFilter) return false;
+        return true;
+    });
+    currentHistoryPage = 1;
+    renderHistory();
 }
 
-async function loadMessageHistory() {
-    const response = await fetch('/api/messages/history?limit=10');
-    const history = await response.json();
+function renderHistory() {
     const container = document.getElementById('message-history');
+    const pagination = document.getElementById('history-pagination');
+    const totalPages = Math.ceil(filteredHistory.length / historyPerPage);
+    const start = (currentHistoryPage - 1) * historyPerPage;
+    const pageHistory = filteredHistory.slice(start, start + historyPerPage);
 
-    if (history.length === 0) {
-        container.innerHTML = '<p class="text-gray-500">No messages sent yet.</p>';
+    if (filteredHistory.length === 0) {
+        container.innerHTML = `<div class="empty-state py-12"><svg class="empty-state-icon w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg><h3 class="empty-state-title">${allHistory.length === 0 ? 'No messages sent yet' : 'No matching messages'}</h3><p class="empty-state-description">${allHistory.length === 0 ? 'Generate and send your first message to start building your network.' : 'Try adjusting your search or filters.'}</p></div>`;
+        pagination.classList.add('hidden');
         return;
     }
 
-    container.innerHTML = history.map(h => {
+    container.innerHTML = pageHistory.map(h => {
         const contact = contacts.find(c => c.id === h.contact_id);
-        return `
-            <div class="border rounded p-3">
-                <div class="flex justify-between">
-                    <span class="font-medium">${contact ? contact.name : 'Unknown'}</span>
-                    <span class="text-xs text-gray-500">${new Date(h.sent_at).toLocaleDateString()}</span>
-                </div>
-                <span class="text-xs bg-gray-100 px-2 py-0.5 rounded">${h.message_type || 'message'}</span>
-                <p class="text-sm text-gray-600 mt-2 line-clamp-2">${h.message_content.substring(0, 150)}...</p>
-            </div>
-        `;
+        return `<div class="border border-gray-200 rounded-lg p-4 hover:border-purple-200 transition-colors"><div class="flex justify-between items-start"><div class="flex items-center gap-2"><span class="font-medium text-gray-900">${contact ? escapeHtml(contact.name) : 'Unknown Contact'}</span><span class="badge badge-gray text-xs">${formatMessageType(h.message_type) || 'message'}</span>${h.got_response ? '<span class="badge badge-success text-xs">Responded</span>' : ''}</div><div class="flex items-center gap-2"><span class="text-xs text-gray-500">${new Date(h.sent_at).toLocaleDateString()}</span><button onclick="followUpMessage(${h.contact_id})" class="p-1 text-gray-400 hover:text-purple-600" title="Send follow-up"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg></button></div></div><p class="text-sm text-gray-600 mt-2 line-clamp-2">${escapeHtml(h.message_content.substring(0, 200))}${h.message_content.length > 200 ? '...' : ''}</p></div>`;
     }).join('');
+
+    if (totalPages > 1) { pagination.classList.remove('hidden'); document.getElementById('prev-page-btn').disabled = currentHistoryPage === 1; document.getElementById('next-page-btn').disabled = currentHistoryPage === totalPages; document.getElementById('page-info').textContent = `Page ${currentHistoryPage} of ${totalPages}`; } else { pagination.classList.add('hidden'); }
 }
 
-document.getElementById('msg-type').addEventListener('change', updateTemplateDropdown);
+function loadHistoryPage(page) { const totalPages = Math.ceil(filteredHistory.length / historyPerPage); if (page < 1 || page > totalPages) return; currentHistoryPage = page; renderHistory(); }
+function followUpMessage(contactId) { document.getElementById('msg-contact').value = contactId; document.getElementById('msg-contact').dispatchEvent(new Event('change')); document.getElementById('msg-type').value = 'follow_up'; updateTemplateDropdown(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+document.getElementById('msg-type').addEventListener('change', function() { updateTemplateDropdown(); updateCharLimit(); });
+function updateCharLimit() { const msgType = document.getElementById('msg-type').value; document.getElementById('char-limit').textContent = charLimits[msgType] || 8000; }
 
 document.getElementById('generate-form').addEventListener('submit', async function(e) {
     e.preventDefault();
-
+    const btn = document.getElementById('generate-btn'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Generating...';
     currentContactId = document.getElementById('msg-contact').value;
     currentMessageType = document.getElementById('msg-type').value;
     const templateId = document.getElementById('msg-template').value;
-
-    const data = {
-        contact_id: parseInt(currentContactId),
-        message_type: currentMessageType
-    };
+    const data = { contact_id: parseInt(currentContactId), message_type: currentMessageType };
     if (templateId) data.template_id = parseInt(templateId);
 
     try {
-        const response = await fetch('/api/messages/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            alert(error.detail || 'Error generating message');
-            return;
-        }
-
+        const response = await fetch('/api/messages/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        if (!response.ok) { const error = await response.json(); throw new Error(error.detail || 'Error generating message'); }
         const result = await response.json();
-
         document.getElementById('msg-recipient').textContent = result.contact_name;
         document.getElementById('msg-content').value = result.message;
-        document.getElementById('char-count').textContent = result.message.length;
-
-        if (result.subject) {
-            document.getElementById('msg-subject').value = result.subject;
-            document.getElementById('msg-subject-container').classList.remove('hidden');
-        } else {
-            document.getElementById('msg-subject-container').classList.add('hidden');
-        }
-
+        updateCharCount();
+        if (result.subject) { document.getElementById('msg-subject').value = result.subject; document.getElementById('msg-subject-container').classList.remove('hidden'); } else { document.getElementById('msg-subject-container').classList.add('hidden'); }
+        document.getElementById('linkedin-btn').classList.toggle('hidden', !currentLinkedInUrl);
         document.getElementById('generated-message').classList.remove('hidden');
-    } catch (e) {
-        alert('Error generating message. Make sure you have set up your profile in Settings.');
-    }
+    } catch (e) { alert('Error generating message: ' + e.message); }
+    finally { btn.disabled = false; btn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Generate Message`; }
 });
 
-document.getElementById('msg-content').addEventListener('input', function() {
-    document.getElementById('char-count').textContent = this.value.length;
-});
-
-async function copyMessage() {
+document.getElementById('msg-content').addEventListener('input', updateCharCount);
+function updateCharCount() {
     const content = document.getElementById('msg-content').value;
-    await navigator.clipboard.writeText(content);
-    alert('Copied to clipboard!');
+    const limit = charLimits[currentMessageType || document.getElementById('msg-type').value] || 8000;
+    const count = content.length;
+    document.getElementById('char-count').textContent = count;
+    document.getElementById('char-limit').textContent = limit;
+    const charCountEl = document.querySelector('.char-count');
+    const warningEl = document.getElementById('char-warning');
+    if (count > limit) { charCountEl.classList.add('error'); charCountEl.classList.remove('warning'); warningEl.classList.remove('hidden'); warningEl.querySelector('span').textContent = `${count - limit} characters over limit!`; }
+    else if (count > limit * 0.9) { charCountEl.classList.add('warning'); charCountEl.classList.remove('error'); warningEl.classList.remove('hidden'); warningEl.querySelector('span').textContent = `Only ${limit - count} characters remaining`; }
+    else { charCountEl.classList.remove('warning', 'error'); warningEl.classList.add('hidden'); }
 }
 
+async function copyMessage() { await navigator.clipboard.writeText(document.getElementById('msg-content').value); showToast('Copied to clipboard!'); }
+function openInLinkedIn() { if (currentLinkedInUrl) window.open(currentLinkedInUrl, '_blank'); }
 async function markAsSent() {
-    const content = document.getElementById('msg-content').value;
-
-    await fetch('/api/messages/save-sent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            contact_id: parseInt(currentContactId),
-            message_type: currentMessageType,
-            message_content: content
-        })
-    });
-
-    alert('Message marked as sent! Contact status updated.');
+    await fetch('/api/messages/save-sent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: parseInt(currentContactId), message_type: currentMessageType, message_content: document.getElementById('msg-content').value }) });
+    showToast('Message marked as sent!');
     document.getElementById('generated-message').classList.add('hidden');
     document.getElementById('generate-form').reset();
+    document.getElementById('contact-preview').classList.add('hidden');
     loadMessageHistory();
 }
 
-function openTemplateModal() {
-    document.getElementById('template-form').reset();
+function showToast(message) { const toast = document.createElement('div'); toast.className = 'toast'; toast.innerHTML = `<svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> ${message}`; document.body.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
+function handleModalBackdropClick(event, closeFunction) { if (event.target === event.currentTarget) closeFunction(); }
+function openTemplateModal() { document.getElementById('template-modal-title').textContent = 'Add Template'; document.getElementById('template-form').reset(); document.getElementById('tpl-id').value = ''; document.getElementById('template-modal').classList.remove('hidden'); }
+function closeTemplateModal() { document.getElementById('template-modal').classList.add('hidden'); }
+
+function editTemplate(id) {
+    const template = templates.find(t => t.id === id); if (!template) return;
+    document.getElementById('template-modal-title').textContent = 'Edit Template';
+    document.getElementById('tpl-id').value = template.id;
+    document.getElementById('tpl-name').value = template.name;
+    document.getElementById('tpl-msg-type').value = template.message_type;
+    document.getElementById('tpl-target-type').value = template.target_type;
+    document.getElementById('tpl-subject').value = template.subject || '';
+    document.getElementById('tpl-template').value = template.template;
+    closePreviewModal();
     document.getElementById('template-modal').classList.remove('hidden');
 }
+function editTemplateFromPreview() { editTemplate(previewTemplateId); }
 
-function closeTemplateModal() {
-    document.getElementById('template-modal').classList.add('hidden');
+async function duplicateTemplate(id) {
+    const template = templates.find(t => t.id === id); if (!template) return;
+    await fetch('/api/messages/templates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: template.name + ' (Copy)', message_type: template.message_type, target_type: template.target_type, subject: template.subject, template: template.template, is_default: false }) });
+    closePreviewModal(); loadTemplates(); showToast('Template duplicated!');
+}
+async function deleteTemplate(id) { if (!confirm('Delete this template?')) return; await fetch(`/api/messages/templates/${id}`, { method: 'DELETE' }); loadTemplates(); }
+
+async function submitTemplate() {
+    const id = document.getElementById('tpl-id').value;
+    const data = { name: document.getElementById('tpl-name').value, message_type: document.getElementById('tpl-msg-type').value, target_type: document.getElementById('tpl-target-type').value, subject: document.getElementById('tpl-subject').value || null, template: document.getElementById('tpl-template').value, is_default: false };
+    await fetch(id ? `/api/messages/templates/${id}` : '/api/messages/templates', { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    closeTemplateModal(); loadTemplates(); showToast(id ? 'Template updated!' : 'Template created!');
 }
 
-async function deleteTemplate(id) {
-    if (!confirm('Delete this template?')) return;
-    await fetch(`/api/messages/templates/${id}`, { method: 'DELETE' });
-    loadTemplates();
+function previewTemplate(id) {
+    const template = templates.find(t => t.id === id); if (!template) return;
+    previewTemplateId = id;
+    document.getElementById('preview-title').textContent = template.name;
+    document.getElementById('preview-msg-type').textContent = formatMessageType(template.message_type);
+    document.getElementById('preview-target-type').textContent = formatTargetType(template.target_type);
+    document.getElementById('preview-usage').textContent = `Used ${template.usage_count || 0} times`;
+    document.getElementById('preview-content').textContent = template.template;
+    if (template.subject) { document.getElementById('preview-subject').textContent = template.subject; document.getElementById('preview-subject-container').classList.remove('hidden'); } else { document.getElementById('preview-subject-container').classList.add('hidden'); }
+    document.getElementById('preview-modal').classList.remove('hidden');
 }
-
-document.getElementById('template-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    const data = {
-        name: document.getElementById('tpl-name').value,
-        message_type: document.getElementById('tpl-msg-type').value,
-        target_type: document.getElementById('tpl-target-type').value,
-        subject: document.getElementById('tpl-subject').value || null,
-        template: document.getElementById('tpl-template').value,
-        is_default: false
-    };
-
-    await fetch('/api/messages/templates', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    });
-
-    closeTemplateModal();
-    loadTemplates();
-});
-
-document.addEventListener('DOMContentLoaded', function() {
-    loadContacts();
-    loadTemplates();
-    loadMessageHistory();
-});
+function closePreviewModal() { document.getElementById('preview-modal').classList.add('hidden'); previewTemplateId = null; }
+function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { closeTemplateModal(); closePreviewModal(); } });
+document.addEventListener('DOMContentLoaded', function() { loadContacts(); loadTemplates(); loadMessageHistory(); updateCharLimit(); });
 </script>
 {% endblock %}
