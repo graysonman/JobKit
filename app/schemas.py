@@ -361,6 +361,97 @@ class MessageGenerateResponse(BaseModel):
     character_count: int
 
 
+# --- Structured Resume Schemas ---
+
+class ResumeExperience(BaseModel):
+    """A single work experience entry."""
+    company: str = Field(..., min_length=1, max_length=200)
+    title: str = Field(..., min_length=1, max_length=200)
+    start_date: Optional[str] = Field(None, max_length=50)  # e.g., "Jan 2020", "2020"
+    end_date: Optional[str] = Field(None, max_length=50)  # None or "Present" means current
+    location: Optional[str] = Field(None, max_length=200)
+    bullets: List[str] = Field(default_factory=list)  # Achievement bullet points
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "company": "Acme Corp",
+                "title": "Senior Software Engineer",
+                "start_date": "Jan 2020",
+                "end_date": "Present",
+                "location": "San Francisco, CA",
+                "bullets": [
+                    "Led development of microservices architecture serving 1M+ users",
+                    "Reduced API response time by 40% through optimization"
+                ]
+            }
+        }
+
+
+class ResumeEducation(BaseModel):
+    """A single education entry."""
+    school: str = Field(..., min_length=1, max_length=200)
+    degree: Optional[str] = Field(None, max_length=200)  # e.g., "Bachelor of Science"
+    field: Optional[str] = Field(None, max_length=200)  # e.g., "Computer Science"
+    year: Optional[str] = Field(None, max_length=20)  # Graduation year
+    gpa: Optional[str] = Field(None, max_length=20)
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "school": "MIT",
+                "degree": "Bachelor of Science",
+                "field": "Computer Science",
+                "year": "2018",
+                "gpa": "3.8"
+            }
+        }
+
+
+class ResumeProject(BaseModel):
+    """A single project entry."""
+    name: str = Field(..., min_length=1, max_length=200)
+    description: Optional[str] = Field(None, max_length=1000)
+    technologies: List[str] = Field(default_factory=list)
+    url: Optional[str] = Field(None, max_length=500)
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "name": "Open Source CLI Tool",
+                "description": "Built a CLI tool for automating deployment workflows",
+                "technologies": ["Python", "Docker", "AWS"],
+                "url": "https://github.com/user/project"
+            }
+        }
+
+
+class StructuredResume(BaseModel):
+    """
+    Structured resume data for storage, editing, and job tailoring.
+    Stored as JSON in the database.
+    """
+    summary: Optional[str] = Field(None, max_length=2000)
+    experience: List[ResumeExperience] = Field(default_factory=list)
+    education: List[ResumeEducation] = Field(default_factory=list)
+    skills: List[str] = Field(default_factory=list)
+    projects: List[ResumeProject] = Field(default_factory=list)
+    certifications: List[str] = Field(default_factory=list)
+    raw_text: Optional[str] = None  # Original text backup from parsing
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "summary": "Experienced software engineer with 5+ years in full-stack development",
+                "experience": [],
+                "education": [],
+                "skills": ["Python", "JavaScript", "React", "PostgreSQL", "AWS"],
+                "projects": [],
+                "certifications": ["AWS Solutions Architect"]
+            }
+        }
+
+
 # --- User Profile Schemas ---
 
 class UserProfileBase(BaseModel):
@@ -380,6 +471,7 @@ class UserProfileBase(BaseModel):
     elevator_pitch: Optional[str] = Field(None, max_length=2000)
     resume_summary: Optional[str] = Field(None, max_length=5000)
     resume_file_path: Optional[str] = Field(None, max_length=500)
+    resume_data: Optional[StructuredResume] = None
 
     @field_validator('linkedin_url')
     @classmethod
@@ -404,6 +496,7 @@ class UserProfileUpdate(BaseModel):
     elevator_pitch: Optional[str] = Field(None, max_length=2000)
     resume_summary: Optional[str] = Field(None, max_length=5000)
     resume_file_path: Optional[str] = Field(None, max_length=500)
+    resume_data: Optional[StructuredResume] = None
 
 
 class UserProfileResponse(UserProfileBase):

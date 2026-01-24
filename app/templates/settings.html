@@ -226,6 +226,53 @@
                 </div>
             </div>
 
+            <!-- TODO: Resume Management Section
+            ==========================================
+            Add a new collapsible section for structured resume management:
+
+            1. Resume Upload/Input
+               - File upload button (accepts .pdf, .docx, .txt)
+               - "Or paste text" textarea option
+               - "Parse Resume" button to extract sections
+
+            2. Parsed Resume View (after parsing)
+               - Summary section (editable textarea)
+               - Experience section:
+                 - List of jobs with company, title, dates
+                 - Editable bullet points for each
+                 - Add/remove job entries
+               - Education section:
+                 - List of education entries
+                 - School, degree, field, year
+               - Skills section:
+                 - Tag-style display of skills
+                 - Add/remove skills easily
+               - Projects section (optional):
+                 - Project name, description, technologies
+
+            3. Preview & Actions
+               - "Preview Full Resume" button
+               - "Export as Text" button
+               - Last updated timestamp
+
+            HTML Structure Example:
+            <div class="collapsible border-t">
+                <button type="button" class="collapsible-header" onclick="toggleSection(this)">
+                    <span class="flex items-center">
+                        <svg>...</svg>
+                        Resume Management
+                    </span>
+                </button>
+                <div class="collapsible-content">
+                    <div class="p-6 space-y-4">
+                        [Upload section]
+                        [Parsed sections]
+                    </div>
+                </div>
+            </div>
+            ==========================================
+            -->
+
             <!-- Save Status -->
             <div class="p-4 border-t bg-gray-50 rounded-b-lg flex items-center justify-between">
                 <div id="save-status" class="flex items-center text-sm text-gray-500">

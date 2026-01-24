@@ -96,6 +96,53 @@
         </div>
 
         <!-- Resume Match Analysis -->
+        <!-- TODO: Resume Input Options
+        ==========================================
+        Replace the current textarea-only input with multiple input options:
+
+        1. Radio button group for input source:
+           ○ Use profile resume (recommended) - loads structured resume from profile
+           ○ Paste text manually - shows textarea
+           ○ Upload file - shows file input (.pdf, .docx, .txt)
+
+        2. When "Use profile resume" is selected:
+           - Show preview of stored resume sections
+           - "Edit in Settings" link
+           - Option to select which sections to include
+
+        3. When "Upload file" is selected:
+           - File input with drag-and-drop
+           - Supported formats: .pdf, .docx, .txt
+           - Preview extracted text before analysis
+           - Option to save to profile after upload
+
+        4. Resume Tailoring Results (after job analysis):
+           - Show tailored suggestions specific to this job
+           - "Keywords to add" with suggested placements
+           - "Skills to emphasize" based on job requirements
+           - "Bullet improvements" with before/after suggestions
+           - "Download Tailored Resume" button
+
+        HTML Structure Example:
+        <div class="space-y-4">
+            <div class="flex flex-col gap-2">
+                <label class="flex items-center gap-2">
+                    <input type="radio" name="resume-source" value="profile" checked>
+                    <span>Use profile resume</span>
+                </label>
+                <label class="flex items-center gap-2">
+                    <input type="radio" name="resume-source" value="paste">
+                    <span>Paste text manually</span>
+                </label>
+                <label class="flex items-center gap-2">
+                    <input type="radio" name="resume-source" value="upload">
+                    <span>Upload file</span>
+                </label>
+            </div>
+            [Conditional content based on selection]
+        </div>
+        ==========================================
+        -->
         <div id="match-section" class="bg-white p-6 rounded-lg shadow relative">
             <!-- Overlay when disabled -->
             <div id="match-overlay" class="absolute inset-0 bg-gray-100 bg-opacity-75 rounded-lg flex items-center justify-center z-10">

@@ -3,6 +3,51 @@ JobKit - Resume and cover letter API endpoints.
 
 Endpoints for analyzing job descriptions, matching resumes to jobs,
 generating cover letters, and suggesting resume improvements.
+
+TODO: File Upload & Structured Resume Endpoints
+==============================================
+1. POST /upload-resume
+   - Accept file upload (PDF, DOCX, TXT)
+   - Use UploadFile from fastapi
+   - Extract text using pdfplumber/python-docx
+   - Parse into structured sections
+   - Return parsed resume data
+   - Optionally save to user profile
+
+   Example:
+   @router.post("/upload-resume")
+   async def upload_resume(
+       file: UploadFile = File(...),
+       save_to_profile: bool = Query(False),
+       db: Session = Depends(get_db)
+   ):
+       # Validate file type
+       # Extract text based on extension
+       # Parse into structured data
+       # Optionally save to profile
+       pass
+
+2. POST /parse-resume-text
+   - Accept raw resume text
+   - Parse into structured sections
+   - Return structured resume data
+
+3. GET /profile-resume
+   - Get the user's stored structured resume
+   - Used by frontend to load resume from profile
+
+4. PUT /profile-resume
+   - Update specific sections of stored resume
+   - Allow editing experience, skills, education individually
+
+5. POST /tailor-resume
+   - Accept resume (from profile or uploaded) + job description
+   - Return tailored suggestions:
+     - Keywords to add
+     - Bullets to modify
+     - Skills to emphasize
+     - Section reordering recommendations
+==============================================
 """
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse

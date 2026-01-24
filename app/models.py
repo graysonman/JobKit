@@ -126,6 +126,25 @@ class MessageHistory(Base):
 
 
 class UserProfile(Base):
+    """
+    User profile for job search personalization.
+
+    The resume_data column stores structured resume data as JSON:
+    {
+        "summary": "Professional summary text",
+        "experience": [
+            {"company": "", "title": "", "start_date": "", "end_date": "", "location": "", "bullets": []}
+        ],
+        "education": [
+            {"school": "", "degree": "", "field": "", "year": "", "gpa": ""}
+        ],
+        "skills": ["skill1", "skill2"],
+        "projects": [
+            {"name": "", "description": "", "technologies": [], "url": ""}
+        ],
+        "certifications": ["cert1", "cert2"]
+    }
+    """
     __tablename__ = "user_profile"
 
     id = Column(Integer, primary_key=True)
@@ -143,8 +162,9 @@ class UserProfile(Base):
     preferred_locations = Column(Text)
     salary_expectations = Column(String)
     elevator_pitch = Column(Text)
-    resume_summary = Column(Text)
-    resume_file_path = Column(String)
+    resume_summary = Column(Text)  # Plain text backup for backward compatibility
+    resume_file_path = Column(String)  # Path to uploaded resume file
+    resume_data = Column(Text)  # JSON string storing structured resume sections
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
