@@ -3,29 +3,68 @@
 
 {% block content %}
 <div class="space-y-6">
-    <h1 class="text-3xl font-bold text-gray-900">Resume & Cover Letter Helper</h1>
+    <div class="flex items-center justify-between">
+        <h1 class="text-3xl font-bold text-gray-900">Resume & Cover Letter Helper</h1>
+    </div>
 
-    <!-- TODO: Add step indicators (1. Analyze Job -> 2. Check Match -> 3. Generate Cover Letter) -->
-    <!-- TODO: Consider adding "Save to Applications" button after analysis to create application entry -->
+    <!-- Step Indicators -->
+    <div class="bg-white p-4 rounded-lg shadow">
+        <div class="steps">
+            <div class="step active" id="step-1">
+                <div class="step-number">1</div>
+                <span class="step-label hidden sm:inline">Analyze Job</span>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step" id="step-2">
+                <div class="step-number">2</div>
+                <span class="step-label hidden sm:inline">Check Match</span>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step" id="step-3">
+                <div class="step-number">3</div>
+                <span class="step-label hidden sm:inline">Cover Letter</span>
+            </div>
+        </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Job Description Analysis -->
-        <!-- TODO: Add "Paste from clipboard" button for convenience -->
-        <!-- TODO: Add URL input option to fetch job description automatically -->
-        <!-- TODO: Show loading spinner during analysis -->
         <div class="bg-white p-6 rounded-lg shadow">
-            <h2 class="text-xl font-bold mb-4">Analyze Job Description</h2>
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold">1</span>
+                Analyze Job Description
+            </h2>
             <form id="analyze-form" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Paste Job Description</label>
-                    <textarea id="job-description" rows="8" required class="mt-1 block w-full border rounded px-3 py-2" placeholder="Paste the full job description here..."></textarea>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-sm font-medium text-gray-700">Paste Job Description</label>
+                        <button type="button" onclick="pasteFromClipboard('job-description')" class="btn btn-ghost btn-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                            </svg>
+                            Paste
+                        </button>
+                    </div>
+                    <textarea id="job-description" rows="8" required class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Paste the full job description here..."></textarea>
                 </div>
-                <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                <button type="submit" class="btn btn-primary w-full">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                    </svg>
                     Analyze Requirements
                 </button>
             </form>
 
             <div id="analysis-results" class="mt-6 hidden">
-                <h3 class="font-bold mb-3">Analysis Results</h3>
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-bold">Analysis Results</h3>
+                    <button onclick="saveToApplication()" class="btn btn-outline btn-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                        Save to Applications
+                    </button>
+                </div>
 
                 <div class="space-y-3">
                     <div>
@@ -57,18 +96,48 @@
         </div>
 
         <!-- Resume Match Analysis -->
-        <!-- TODO: Add file upload option (.pdf, .docx) instead of just text paste -->
-        <!-- TODO: Pre-fill with resume from Settings/Profile if available -->
-        <!-- TODO: Add "Save resume" option to store for future use -->
-        <!-- TODO: Disable this section until job description is analyzed (show visual indication) -->
-        <div class="bg-white p-6 rounded-lg shadow">
-            <h2 class="text-xl font-bold mb-4">Check Resume Match</h2>
+        <div id="match-section" class="bg-white p-6 rounded-lg shadow relative">
+            <!-- Overlay when disabled -->
+            <div id="match-overlay" class="absolute inset-0 bg-gray-100 bg-opacity-75 rounded-lg flex items-center justify-center z-10">
+                <div class="text-center p-4">
+                    <svg class="w-12 h-12 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                    <p class="text-gray-600 font-medium">Analyze a job description first</p>
+                    <p class="text-sm text-gray-500">Complete Step 1 to unlock this section</p>
+                </div>
+            </div>
+
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-sm font-bold">2</span>
+                Check Resume Match
+            </h2>
             <form id="match-form" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Your Resume (text)</label>
-                    <textarea id="resume-text" rows="8" required class="mt-1 block w-full border rounded px-3 py-2" placeholder="Paste your resume text here..."></textarea>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-sm font-medium text-gray-700">Your Resume (text)</label>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="pasteFromClipboard('resume-text')" class="btn btn-ghost btn-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                </svg>
+                                Paste
+                            </button>
+                            <button type="button" onclick="saveResumeToProfile()" class="btn btn-ghost btn-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+                                </svg>
+                                Save to Profile
+                            </button>
+                        </div>
+                    </div>
+                    <textarea id="resume-text" rows="8" required class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Paste your resume text here..."></textarea>
+                    <p id="resume-source" class="text-xs text-gray-500 mt-1 hidden">Pre-filled from your profile</p>
                 </div>
-                <button type="submit" class="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                <button type="submit" class="btn btn-success w-full">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
                     Check Match
                 </button>
             </form>
@@ -82,7 +151,7 @@
                         <span id="match-score" class="text-lg font-bold"></span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2.5">
-                        <div id="match-bar" class="h-2.5 rounded-full"></div>
+                        <div id="match-bar" class="h-2.5 rounded-full transition-all duration-500"></div>
                     </div>
                 </div>
 
@@ -107,129 +176,461 @@
     </div>
 
     <!-- Cover Letter Generator -->
-    <!-- TODO: Auto-fill company/role from analyzed job description -->
-    <!-- TODO: Add tone/style selector (formal, conversational, enthusiastic) -->
-    <!-- TODO: Add length option (short, medium, detailed) -->
-    <!-- TODO: Show word count on generated letter -->
-    <!-- TODO: Add "Download as PDF" option -->
-    <!-- TODO: Add "Save to application" to attach cover letter to an application entry -->
-    <div class="bg-white p-6 rounded-lg shadow">
-        <h2 class="text-xl font-bold mb-4">Generate Cover Letter</h2>
+    <div id="cover-letter-section" class="bg-white p-6 rounded-lg shadow relative">
+        <!-- Overlay when disabled -->
+        <div id="cover-overlay" class="absolute inset-0 bg-gray-100 bg-opacity-75 rounded-lg flex items-center justify-center z-10">
+            <div class="text-center p-4">
+                <svg class="w-12 h-12 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                </svg>
+                <p class="text-gray-600 font-medium">Analyze a job description first</p>
+                <p class="text-sm text-gray-500">Complete Step 1 to unlock this section</p>
+            </div>
+        </div>
+
+        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-sm font-bold">3</span>
+            Generate Cover Letter
+        </h2>
         <form id="cover-letter-form" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Company Name *</label>
-                    <input type="text" id="cl-company" required class="mt-1 block w-full border rounded px-3 py-2">
+                    <input type="text" id="cl-company" required class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Role *</label>
-                    <input type="text" id="cl-role" required class="mt-1 block w-full border rounded px-3 py-2">
+                    <input type="text" id="cl-role" required class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Tone/Style</label>
+                    <select id="cl-tone" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        <option value="professional">Professional</option>
+                        <option value="conversational">Conversational</option>
+                        <option value="enthusiastic">Enthusiastic</option>
+                        <option value="formal">Formal</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Length</label>
+                    <select id="cl-length" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        <option value="short">Short (~150 words)</option>
+                        <option value="medium" selected>Medium (~250 words)</option>
+                        <option value="detailed">Detailed (~350 words)</option>
+                    </select>
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Custom Points (optional, one per line)</label>
-                <textarea id="cl-points" rows="3" class="mt-1 block w-full border rounded px-3 py-2" placeholder="Specific achievements or points to highlight..."></textarea>
+                <textarea id="cl-points" rows="3" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500" placeholder="Specific achievements or points to highlight..."></textarea>
             </div>
-            <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
+            <button type="submit" class="btn btn-secondary w-full md:w-auto">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
                 Generate Cover Letter
             </button>
         </form>
 
         <div id="cover-letter-result" class="mt-6 hidden">
-            <h3 class="font-bold mb-2">Generated Cover Letter</h3>
-            <textarea id="cover-letter-text" rows="12" class="w-full border rounded px-3 py-2"></textarea>
-            <div class="flex gap-2 mt-2">
-                <button onclick="copyCoverLetter()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="font-bold">Generated Cover Letter</h3>
+                <span id="word-count" class="text-sm text-gray-500"></span>
+            </div>
+            <textarea id="cover-letter-text" rows="12" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"></textarea>
+            <div class="flex flex-wrap gap-2 mt-3">
+                <button onclick="copyCoverLetter()" class="btn btn-primary">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+                    </svg>
                     Copy to Clipboard
+                </button>
+                <button onclick="downloadCoverLetter()" class="btn btn-outline">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    Download as Text
+                </button>
+                <button onclick="openSaveToAppModal()" class="btn btn-outline">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+                    </svg>
+                    Save to Application
                 </button>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Save to Application Modal -->
+<div id="save-app-modal" class="modal-backdrop hidden">
+    <div class="modal-content max-w-md">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold">Save to Application</h3>
+            <button onclick="closeSaveAppModal()" class="text-gray-500 hover:text-gray-700">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <form id="save-app-form" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Company Name *</label>
+                <input type="text" id="app-company" required class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Job Title *</label>
+                <input type="text" id="app-title" required class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Job URL</label>
+                <input type="url" id="app-url" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="https://...">
+            </div>
+            <div class="flex items-center gap-2">
+                <input type="checkbox" id="app-include-cover" checked class="rounded border-gray-300">
+                <label for="app-include-cover" class="text-sm text-gray-700">Include cover letter in notes</label>
+            </div>
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="closeSaveAppModal()" class="btn btn-outline">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Application</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
 <script>
 let currentJobDescription = '';
+let currentAnalysis = null;
+
+// Toast Notifications
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+
+    const bgColors = {
+        success: 'bg-green-500',
+        error: 'bg-red-500',
+        info: 'bg-blue-500',
+        warning: 'bg-yellow-500'
+    };
+
+    toast.className = `${bgColors[type]} text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in`;
+    toast.innerHTML = `
+        <span>${message}</span>
+        <button onclick="this.parentElement.remove()" class="ml-2 hover:opacity-75">&times;</button>
+    `;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+function setButtonLoading(button, loading) {
+    if (loading) {
+        button.disabled = true;
+        button.dataset.originalText = button.innerHTML;
+        button.innerHTML = '<span class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>Processing...';
+    } else {
+        button.disabled = false;
+        button.innerHTML = button.dataset.originalText || button.innerHTML;
+    }
+}
+
+// Paste from clipboard
+async function pasteFromClipboard(elementId) {
+    try {
+        const text = await navigator.clipboard.readText();
+        document.getElementById(elementId).value = text;
+        showToast('Pasted from clipboard', 'success');
+    } catch (e) {
+        showToast('Unable to access clipboard. Please paste manually.', 'warning');
+    }
+}
+
+// Update step indicators
+function updateSteps(completedStep) {
+    for (let i = 1; i <= 3; i++) {
+        const step = document.getElementById(`step-${i}`);
+        step.classList.remove('active', 'completed');
+        if (i < completedStep) {
+            step.classList.add('completed');
+        } else if (i === completedStep) {
+            step.classList.add('active');
+        }
+    }
+}
+
+// Unlock sections
+function unlockSections() {
+    document.getElementById('match-overlay').classList.add('hidden');
+    document.getElementById('cover-overlay').classList.add('hidden');
+}
+
+// Save resume to profile
+async function saveResumeToProfile() {
+    const resumeText = document.getElementById('resume-text').value;
+    if (!resumeText.trim()) {
+        showToast('Please enter your resume first', 'warning');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/profile/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ resume_summary: resumeText })
+        });
+
+        if (response.ok) {
+            showToast('Resume saved to profile', 'success');
+        } else {
+            throw new Error('Failed to save');
+        }
+    } catch (e) {
+        showToast('Error saving resume to profile', 'error');
+    }
+}
+
+// Save to Applications
+async function saveToApplication() {
+    const company = document.getElementById('cl-company').value || 'Unknown Company';
+    const role = document.getElementById('cl-role').value || 'Unknown Role';
+
+    document.getElementById('app-company').value = company;
+    document.getElementById('app-title').value = role;
+    document.getElementById('save-app-modal').classList.remove('hidden');
+}
+
+function openSaveToAppModal() {
+    const company = document.getElementById('cl-company').value;
+    const role = document.getElementById('cl-role').value;
+
+    document.getElementById('app-company').value = company;
+    document.getElementById('app-title').value = role;
+    document.getElementById('save-app-modal').classList.remove('hidden');
+}
+
+function closeSaveAppModal() {
+    document.getElementById('save-app-modal').classList.add('hidden');
+}
+
+document.getElementById('save-app-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const company = document.getElementById('app-company').value;
+    const title = document.getElementById('app-title').value;
+    const url = document.getElementById('app-url').value;
+    const includeCover = document.getElementById('app-include-cover').checked;
+    const coverLetter = document.getElementById('cover-letter-text').value;
+
+    let notes = '';
+    if (includeCover && coverLetter) {
+        notes = `Cover Letter:\n\n${coverLetter}`;
+    }
+
+    try {
+        const response = await fetch('/api/applications/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                company_name: company,
+                job_title: title,
+                job_url: url || null,
+                notes: notes || null,
+                status: 'saved'
+            })
+        });
+
+        if (response.ok) {
+            showToast('Application saved successfully!', 'success');
+            closeSaveAppModal();
+        } else {
+            throw new Error('Failed to save application');
+        }
+    } catch (e) {
+        showToast('Error saving application', 'error');
+    }
+});
+
+// Download cover letter
+function downloadCoverLetter() {
+    const text = document.getElementById('cover-letter-text').value;
+    const company = document.getElementById('cl-company').value || 'Company';
+    const role = document.getElementById('cl-role').value || 'Role';
+    const filename = `Cover_Letter_${company.replace(/\s+/g, '_')}_${role.replace(/\s+/g, '_')}.txt`;
+
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    showToast('Cover letter downloaded', 'success');
+}
+
+// Update word count
+function updateWordCount() {
+    const text = document.getElementById('cover-letter-text').value;
+    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    document.getElementById('word-count').textContent = `${words} words`;
+}
+
+// Load resume from profile on page load
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        const response = await fetch('/api/profile/');
+        if (response.ok) {
+            const profile = await response.json();
+            if (profile.resume_summary) {
+                document.getElementById('resume-text').value = profile.resume_summary;
+                document.getElementById('resume-source').classList.remove('hidden');
+            }
+        }
+    } catch (e) {
+        // Profile not available, that's fine
+    }
+
+    // Add word count listener
+    document.getElementById('cover-letter-text').addEventListener('input', updateWordCount);
+});
 
 document.getElementById('analyze-form').addEventListener('submit', async function(e) {
     e.preventDefault();
 
+    const submitBtn = this.querySelector('button[type="submit"]');
+    setButtonLoading(submitBtn, true);
+
     currentJobDescription = document.getElementById('job-description').value;
 
-    const response = await fetch('/api/resume/analyze-job', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ job_description: currentJobDescription })
-    });
+    try {
+        const response = await fetch('/api/resume/analyze-job', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ job_description: currentJobDescription })
+        });
 
-    const result = await response.json();
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to analyze job description');
+        }
 
-    document.getElementById('exp-level').textContent = result.experience_level;
+        const result = await response.json();
+        currentAnalysis = result;
 
-    document.getElementById('required-skills').innerHTML = result.required_skills
-        .map(s => `<span class="px-2 py-1 text-xs rounded bg-red-100 text-red-800">${s}</span>`).join('');
+        document.getElementById('exp-level').textContent = result.experience_level;
 
-    document.getElementById('preferred-skills').innerHTML = result.preferred_skills
-        .map(s => `<span class="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800">${s}</span>`).join('');
+        document.getElementById('required-skills').innerHTML = result.required_skills
+            .map(s => `<span class="px-2 py-1 text-xs rounded bg-red-100 text-red-800">${s}</span>`).join('');
 
-    document.getElementById('keywords').innerHTML = result.keywords
-        .map(s => `<span class="px-2 py-1 text-xs rounded bg-gray-100">${s}</span>`).join('');
+        document.getElementById('preferred-skills').innerHTML = result.preferred_skills
+            .map(s => `<span class="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800">${s}</span>`).join('');
 
-    document.getElementById('responsibilities').innerHTML = result.key_responsibilities
-        .map(r => `<li>${r}</li>`).join('');
+        document.getElementById('keywords').innerHTML = result.keywords
+            .map(s => `<span class="px-2 py-1 text-xs rounded bg-gray-100 text-gray-700">${s}</span>`).join('');
 
-    document.getElementById('analysis-results').classList.remove('hidden');
+        document.getElementById('responsibilities').innerHTML = result.key_responsibilities
+            .map(r => `<li>${r}</li>`).join('');
+
+        document.getElementById('analysis-results').classList.remove('hidden');
+
+        // Unlock other sections
+        unlockSections();
+        updateSteps(2);
+
+        showToast('Job description analyzed successfully', 'success');
+    } catch (e) {
+        showToast(e.message || 'Error analyzing job description', 'error');
+    } finally {
+        setButtonLoading(submitBtn, false);
+    }
 });
 
 document.getElementById('match-form').addEventListener('submit', async function(e) {
     e.preventDefault();
 
     if (!currentJobDescription) {
-        alert('Please analyze a job description first');
+        showToast('Please analyze a job description first', 'warning');
         return;
     }
 
+    const submitBtn = this.querySelector('button[type="submit"]');
+    setButtonLoading(submitBtn, true);
+
     const resumeText = document.getElementById('resume-text').value;
 
-    const response = await fetch('/api/resume/match-resume', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            resume_text: resumeText,
-            job_description: currentJobDescription
-        })
-    });
+    try {
+        const response = await fetch('/api/resume/match-resume', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                resume_text: resumeText,
+                job_description: currentJobDescription
+            })
+        });
 
-    const result = await response.json();
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to check resume match');
+        }
 
-    const scorePercent = Math.round(result.match_score * 100);
-    document.getElementById('match-score').textContent = scorePercent + '%';
+        const result = await response.json();
 
-    const matchBar = document.getElementById('match-bar');
-    matchBar.style.width = scorePercent + '%';
-    matchBar.className = 'h-2.5 rounded-full ' + (scorePercent >= 70 ? 'bg-green-600' : scorePercent >= 50 ? 'bg-yellow-500' : 'bg-red-500');
+        const scorePercent = Math.round(result.match_score * 100);
+        document.getElementById('match-score').textContent = scorePercent + '%';
+        document.getElementById('match-score').className = 'text-lg font-bold ' +
+            (scorePercent >= 70 ? 'text-green-600' : scorePercent >= 50 ? 'text-yellow-600' : 'text-red-600');
 
-    document.getElementById('matching-skills').innerHTML = result.matching_skills
-        .map(s => `<span class="px-2 py-1 text-xs rounded bg-green-100 text-green-800">${s}</span>`).join('');
+        const matchBar = document.getElementById('match-bar');
+        matchBar.style.width = scorePercent + '%';
+        matchBar.className = 'h-2.5 rounded-full transition-all duration-500 ' +
+            (scorePercent >= 70 ? 'bg-green-500' : scorePercent >= 50 ? 'bg-yellow-500' : 'bg-red-500');
 
-    document.getElementById('missing-skills').innerHTML = result.missing_skills
-        .map(s => `<span class="px-2 py-1 text-xs rounded bg-red-100 text-red-800">${s}</span>`).join('');
+        document.getElementById('matching-skills').innerHTML = result.matching_skills
+            .map(s => `<span class="px-2 py-1 text-xs rounded bg-green-100 text-green-800">${s}</span>`).join('');
 
-    document.getElementById('suggestions').innerHTML = result.suggestions
-        .map(s => `<li>${s}</li>`).join('');
+        document.getElementById('missing-skills').innerHTML = result.missing_skills
+            .map(s => `<span class="px-2 py-1 text-xs rounded bg-red-100 text-red-800">${s}</span>`).join('');
 
-    document.getElementById('match-results').classList.remove('hidden');
+        document.getElementById('suggestions').innerHTML = result.suggestions
+            .map(s => `<li>${s}</li>`).join('');
+
+        document.getElementById('match-results').classList.remove('hidden');
+        updateSteps(3);
+
+        showToast('Resume match analyzed', 'success');
+    } catch (e) {
+        showToast(e.message || 'Error checking resume match', 'error');
+    } finally {
+        setButtonLoading(submitBtn, false);
+    }
 });
 
 document.getElementById('cover-letter-form').addEventListener('submit', async function(e) {
     e.preventDefault();
 
     if (!currentJobDescription) {
-        alert('Please analyze a job description first');
+        showToast('Please analyze a job description first', 'warning');
         return;
     }
 
+    const submitBtn = this.querySelector('button[type="submit"]');
+    setButtonLoading(submitBtn, true);
+
     const companyName = document.getElementById('cl-company').value;
     const role = document.getElementById('cl-role').value;
+    const tone = document.getElementById('cl-tone').value;
+    const length = document.getElementById('cl-length').value;
     const pointsText = document.getElementById('cl-points').value;
     const customPoints = pointsText ? pointsText.split('\n').filter(p => p.trim()) : null;
 
@@ -241,28 +642,52 @@ document.getElementById('cover-letter-form').addEventListener('submit', async fu
                 job_description: currentJobDescription,
                 company_name: companyName,
                 role: role,
+                tone: tone,
+                length: length,
                 custom_points: customPoints
             })
         });
 
         if (!response.ok) {
             const error = await response.json();
-            alert(error.detail || 'Error generating cover letter');
-            return;
+            throw new Error(error.detail || 'Error generating cover letter');
         }
 
         const result = await response.json();
         document.getElementById('cover-letter-text').value = result.cover_letter;
         document.getElementById('cover-letter-result').classList.remove('hidden');
+        updateWordCount();
+
+        showToast('Cover letter generated', 'success');
     } catch (e) {
-        alert('Error generating cover letter. Make sure you have set up your profile in Settings.');
+        showToast(e.message || 'Error generating cover letter. Make sure you have set up your profile in Settings.', 'error');
+    } finally {
+        setButtonLoading(submitBtn, false);
     }
 });
 
 async function copyCoverLetter() {
-    const text = document.getElementById('cover-letter-text').value;
-    await navigator.clipboard.writeText(text);
-    alert('Cover letter copied to clipboard!');
+    try {
+        const text = document.getElementById('cover-letter-text').value;
+        await navigator.clipboard.writeText(text);
+        showToast('Cover letter copied to clipboard!', 'success');
+    } catch (e) {
+        showToast('Failed to copy to clipboard', 'error');
+    }
 }
+
+// Close modal on escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeSaveAppModal();
+    }
+});
+
+// Close modal on backdrop click
+document.getElementById('save-app-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeSaveAppModal();
+    }
+});
 </script>
 {% endblock %}

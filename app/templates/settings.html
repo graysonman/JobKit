@@ -5,8 +5,8 @@
 <div class="space-y-6">
     <div class="flex items-center justify-between">
         <h1 class="text-3xl font-bold text-gray-900">Settings</h1>
-        <button onclick="openProfilePreview()" class="btn-secondary text-sm">
-            <svg class="w-4 h-4 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button onclick="openProfilePreview()" class="btn btn-outline">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
             </svg>
@@ -56,6 +56,22 @@
                                 <input type="email" id="profile-email"
                                     class="mt-1 block w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     data-field="email">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Phone Number</label>
+                                <input type="tel" id="profile-phone"
+                                    class="mt-1 block w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="(555) 123-4567"
+                                    data-field="phone_number">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Location</label>
+                                <input type="text" id="profile-location"
+                                    class="mt-1 block w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="City, State"
+                                    data-field="location">
                             </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -153,6 +169,24 @@
                                 data-field="target_roles">
                             <p class="text-xs text-gray-500 mt-1">What types of roles are you looking for?</p>
                         </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Preferred Locations</label>
+                                <input type="text" id="profile-preferred-locations"
+                                    class="mt-1 block w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Remote, San Francisco, New York, etc."
+                                    data-field="preferred_locations">
+                                <p class="text-xs text-gray-500 mt-1">Where are you willing to work?</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Salary Expectations</label>
+                                <input type="text" id="profile-salary"
+                                    class="mt-1 block w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="$100k-$150k or negotiable"
+                                    data-field="salary_expectations">
+                                <p class="text-xs text-gray-500 mt-1">Your target compensation range</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -197,7 +231,7 @@
                 <div id="save-status" class="flex items-center text-sm text-gray-500">
                     <span id="save-text">All changes saved</span>
                 </div>
-                <button type="submit" class="btn-primary">
+                <button type="submit" class="btn btn-primary">
                     Save Now
                 </button>
             </div>
@@ -225,14 +259,14 @@
                 <p class="text-sm text-gray-600 mb-3">Download your data for backup or transfer.</p>
 
                 <div class="flex flex-wrap gap-2 mb-3">
-                    <button onclick="exportAllData('json')" class="btn-primary text-sm">
-                        <svg class="w-4 h-4 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button onclick="exportAllData('json')" class="btn btn-primary btn-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                         </svg>
                         Export All (JSON)
                     </button>
-                    <button onclick="exportAllData('csv')" class="btn-secondary text-sm">
-                        <svg class="w-4 h-4 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button onclick="exportAllData('csv')" class="btn btn-outline btn-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                         </svg>
                         Export All (CSV)
@@ -240,12 +274,12 @@
                 </div>
 
                 <details class="text-sm">
-                    <summary class="cursor-pointer text-gray-600 hover:text-gray-800">Export individual data types</summary>
+                    <summary class="cursor-pointer text-gray-600 hover:text-gray-800 py-2">Export individual data types</summary>
                     <div class="mt-2 flex flex-wrap gap-2 pl-4">
-                        <button onclick="exportData('contacts', 'json')" class="px-3 py-1 border rounded hover:bg-gray-50 text-sm">Contacts (JSON)</button>
-                        <button onclick="exportData('applications', 'json')" class="px-3 py-1 border rounded hover:bg-gray-50 text-sm">Applications (JSON)</button>
-                        <button onclick="exportData('companies', 'json')" class="px-3 py-1 border rounded hover:bg-gray-50 text-sm">Companies (JSON)</button>
-                        <button onclick="exportData('templates', 'json')" class="px-3 py-1 border rounded hover:bg-gray-50 text-sm">Templates (JSON)</button>
+                        <button onclick="exportData('contacts', 'json')" class="btn btn-ghost btn-sm">Contacts</button>
+                        <button onclick="exportData('applications', 'json')" class="btn btn-ghost btn-sm">Applications</button>
+                        <button onclick="exportData('companies', 'json')" class="btn btn-ghost btn-sm">Companies</button>
+                        <button onclick="exportData('templates', 'json')" class="btn btn-ghost btn-sm">Templates</button>
                     </div>
                 </details>
             </div>
@@ -256,8 +290,8 @@
                 <p class="text-sm text-gray-600 mb-3">Restore data from a previous backup.</p>
 
                 <div class="flex items-center gap-3">
-                    <label class="btn-secondary text-sm cursor-pointer">
-                        <svg class="w-4 h-4 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <label class="btn btn-outline btn-sm cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                         </svg>
                         Choose File
@@ -265,12 +299,12 @@
                     </label>
                     <span id="import-filename" class="text-sm text-gray-500">No file selected</span>
                 </div>
-                <div id="import-preview" class="hidden mt-3 p-3 bg-gray-50 rounded-lg">
+                <div id="import-preview" class="hidden mt-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <p class="text-sm font-medium mb-2">Import Preview:</p>
-                    <ul id="import-preview-list" class="text-sm text-gray-600 space-y-1"></ul>
-                    <div class="mt-3 flex gap-2">
-                        <button onclick="confirmImport()" class="btn-primary text-sm">Import Data</button>
-                        <button onclick="cancelImport()" class="btn-ghost text-sm">Cancel</button>
+                    <ul id="import-preview-list" class="text-sm text-gray-600 space-y-1 mb-3"></ul>
+                    <div class="flex gap-2">
+                        <button onclick="confirmImport()" class="btn btn-primary btn-sm">Import Data</button>
+                        <button onclick="cancelImport()" class="btn btn-ghost btn-sm">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -281,19 +315,19 @@
                 <p class="text-sm text-gray-600 mb-3">These actions cannot be undone. Make sure to export your data first.</p>
 
                 <div class="flex flex-wrap gap-2">
-                    <button onclick="openClearModal('contacts')" class="px-3 py-1 border border-red-300 text-red-600 rounded hover:bg-red-50 text-sm">
+                    <button onclick="openClearModal('contacts')" class="btn btn-sm border border-red-300 text-red-600 bg-white hover:bg-red-50">
                         Clear Contacts
                     </button>
-                    <button onclick="openClearModal('applications')" class="px-3 py-1 border border-red-300 text-red-600 rounded hover:bg-red-50 text-sm">
+                    <button onclick="openClearModal('applications')" class="btn btn-sm border border-red-300 text-red-600 bg-white hover:bg-red-50">
                         Clear Applications
                     </button>
-                    <button onclick="openClearModal('companies')" class="px-3 py-1 border border-red-300 text-red-600 rounded hover:bg-red-50 text-sm">
+                    <button onclick="openClearModal('companies')" class="btn btn-sm border border-red-300 text-red-600 bg-white hover:bg-red-50">
                         Clear Companies
                     </button>
-                    <button onclick="openClearModal('history')" class="px-3 py-1 border border-red-300 text-red-600 rounded hover:bg-red-50 text-sm">
-                        Clear Message History
+                    <button onclick="openClearModal('history')" class="btn btn-sm border border-red-300 text-red-600 bg-white hover:bg-red-50">
+                        Clear History
                     </button>
-                    <button onclick="openClearModal('all')" class="px-3 py-1 border border-red-600 text-red-600 rounded hover:bg-red-50 text-sm font-medium">
+                    <button onclick="openClearModal('all')" class="btn btn-danger btn-sm">
                         Clear All Data
                     </button>
                 </div>
@@ -327,7 +361,7 @@
         </div>
 
         <div class="mt-4 flex justify-end">
-            <button onclick="closeProfilePreview()" class="btn-secondary">Close</button>
+            <button onclick="closeProfilePreview()" class="btn btn-outline">Close</button>
         </div>
     </div>
 </div>
@@ -359,8 +393,8 @@
         </div>
 
         <div class="flex justify-end gap-2">
-            <button onclick="closeConfirmModal()" class="btn-secondary">Cancel</button>
-            <button id="confirm-action-btn" onclick="executeConfirmedAction()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed">
+            <button onclick="closeConfirmModal()" class="btn btn-outline">Cancel</button>
+            <button id="confirm-action-btn" onclick="executeConfirmedAction()" class="btn btn-danger">
                 Delete
             </button>
         </div>
@@ -375,6 +409,8 @@
 const profileFields = [
     { id: 'profile-name', weight: 2, label: 'Name' },
     { id: 'profile-email', weight: 1, label: 'Email' },
+    { id: 'profile-phone', weight: 0.5, label: 'Phone' },
+    { id: 'profile-location', weight: 0.5, label: 'Location' },
     { id: 'profile-linkedin', weight: 1, label: 'LinkedIn' },
     { id: 'profile-title', weight: 2, label: 'Title' },
     { id: 'profile-school', weight: 1, label: 'School' },
@@ -382,6 +418,8 @@ const profileFields = [
     { id: 'profile-experience', weight: 1, label: 'Experience' },
     { id: 'profile-skills', weight: 2, label: 'Skills' },
     { id: 'profile-roles', weight: 1.5, label: 'Target Roles' },
+    { id: 'profile-preferred-locations', weight: 0.5, label: 'Preferred Locations' },
+    { id: 'profile-salary', weight: 0.5, label: 'Salary Expectations' },
     { id: 'profile-pitch', weight: 2, label: 'Elevator Pitch' },
     { id: 'profile-resume', weight: 2, label: 'Resume Summary' }
 ];
@@ -410,6 +448,8 @@ async function loadProfile() {
             const profile = await response.json();
             document.getElementById('profile-name').value = profile.name || '';
             document.getElementById('profile-email').value = profile.email || '';
+            document.getElementById('profile-phone').value = profile.phone_number || '';
+            document.getElementById('profile-location').value = profile.location || '';
             document.getElementById('profile-linkedin').value = profile.linkedin_url || '';
             document.getElementById('profile-title').value = profile.current_title || '';
             document.getElementById('profile-school').value = profile.school || '';
@@ -417,6 +457,8 @@ async function loadProfile() {
             document.getElementById('profile-experience').value = profile.years_experience || '';
             document.getElementById('profile-skills').value = profile.skills || '';
             document.getElementById('profile-roles').value = profile.target_roles || '';
+            document.getElementById('profile-preferred-locations').value = profile.preferred_locations || '';
+            document.getElementById('profile-salary').value = profile.salary_expectations || '';
             document.getElementById('profile-pitch').value = profile.elevator_pitch || '';
             document.getElementById('profile-resume').value = profile.resume_summary || '';
         }
@@ -452,6 +494,8 @@ async function saveProfile() {
     const data = {
         name: document.getElementById('profile-name').value,
         email: document.getElementById('profile-email').value || null,
+        phone_number: document.getElementById('profile-phone').value || null,
+        location: document.getElementById('profile-location').value || null,
         linkedin_url: document.getElementById('profile-linkedin').value || null,
         current_title: document.getElementById('profile-title').value || null,
         school: document.getElementById('profile-school').value || null,
@@ -459,6 +503,8 @@ async function saveProfile() {
         years_experience: parseInt(document.getElementById('profile-experience').value) || null,
         skills: document.getElementById('profile-skills').value || null,
         target_roles: document.getElementById('profile-roles').value || null,
+        preferred_locations: document.getElementById('profile-preferred-locations').value || null,
+        salary_expectations: document.getElementById('profile-salary').value || null,
         elevator_pitch: document.getElementById('profile-pitch').value || null,
         resume_summary: document.getElementById('profile-resume').value || null
     };

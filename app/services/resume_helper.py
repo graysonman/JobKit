@@ -327,10 +327,16 @@ def generate_cover_letter(
     job_description: str,
     company_name: str,
     role: str,
-    custom_points: Optional[List[str]] = None
+    custom_points: Optional[List[str]] = None,
+    tone: str = "professional",
+    length: str = "medium"
 ) -> str:
     """
     Generate a personalized cover letter.
+
+    Args:
+        tone: professional, conversational, enthusiastic, or formal
+        length: short (~150 words), medium (~250 words), or detailed (~350 words)
     """
     name = user_profile.get("name", "")
     current_title = user_profile.get("current_title", "software developer")
@@ -343,44 +349,86 @@ def generate_cover_letter(
     job_analysis = extract_keywords_from_job(job_description)
     matching_skills = [s for s in job_analysis["required_skills"] if s.lower() in skills.lower()]
 
+    # Tone-specific openings and closings
+    tone_openers = {
+        "professional": f"I am writing to express my interest in the {role} position at {company_name}.",
+        "conversational": f"I was excited to see the {role} opening at {company_name} and knew I had to reach out.",
+        "enthusiastic": f"I'm thrilled to apply for the {role} position at {company_name}! This opportunity is exactly what I've been looking for.",
+        "formal": f"I respectfully submit my application for the {role} position currently available at {company_name}."
+    }
+
+    tone_closings = {
+        "professional": "I would welcome the opportunity to discuss how my skills and experience can contribute to your team's success.",
+        "conversational": "I'd love to chat more about how I could help your team. Let's connect!",
+        "enthusiastic": "I'm genuinely excited about this opportunity and can't wait to discuss how I can make an impact at your company!",
+        "formal": "I would be honored to discuss my qualifications further at your earliest convenience."
+    }
+
+    tone_signoffs = {
+        "professional": "Best regards",
+        "conversational": "Looking forward to connecting",
+        "enthusiastic": "With enthusiasm",
+        "formal": "Respectfully yours"
+    }
+
     # Build cover letter
-    cover_letter = f"""Dear Hiring Manager,
+    opener = tone_openers.get(tone, tone_openers["professional"])
+    closer = tone_closings.get(tone, tone_closings["professional"])
+    signoff = tone_signoffs.get(tone, tone_signoffs["professional"])
 
-I am writing to express my strong interest in the {role} position at {company_name}. """
+    cover_letter = f"Dear Hiring Manager,\n\n{opener} "
 
+    # Introduction based on profile
     if elevator_pitch:
         cover_letter += f"{elevator_pitch} "
     elif current_title:
         cover_letter += f"As a {current_title}"
         if experience:
             cover_letter += f" with {experience} years of experience"
-        cover_letter += ", I am excited about the opportunity to contribute to your team. "
+        cover_letter += ", I am confident I can contribute meaningfully to your team. "
 
     cover_letter += "\n\n"
 
     # Skills paragraph
     if matching_skills:
-        cover_letter += f"My experience with {', '.join(matching_skills[:4])} aligns well with your requirements. "
+        skill_intro = {
+            "professional": "My experience with",
+            "conversational": "I've worked extensively with",
+            "enthusiastic": "I'm passionate about working with",
+            "formal": "My technical proficiency includes"
+        }
+        intro = skill_intro.get(tone, skill_intro["professional"])
+        cover_letter += f"{intro} {', '.join(matching_skills[:4])} aligns well with your requirements. "
 
-    if resume_summary:
+    # Add resume summary for medium/detailed length
+    if length in ["medium", "detailed"] and resume_summary:
         cover_letter += resume_summary + " "
 
     cover_letter += "\n\n"
 
-    # Custom points
+    # Custom points (more for detailed, fewer for short)
     if custom_points:
-        cover_letter += "Specifically, I would like to highlight:\n"
-        for point in custom_points[:3]:
+        max_points = {"short": 2, "medium": 3, "detailed": 4}.get(length, 3)
+        cover_letter += "Key highlights from my background:\n"
+        for point in custom_points[:max_points]:
             cover_letter += f"- {point}\n"
         cover_letter += "\n"
 
+    # Additional detail for detailed length
+    if length == "detailed" and job_analysis.get("key_responsibilities"):
+        responsibilities = job_analysis["key_responsibilities"][:2]
+        if responsibilities:
+            cover_letter += "I am particularly prepared to take on responsibilities such as "
+            cover_letter += " and ".join(responsibilities[:2]) + ". "
+            cover_letter += "\n\n"
+
     # Closing
-    cover_letter += f"""I am particularly drawn to {company_name} because of [specific reason - research the company]. I would welcome the opportunity to discuss how my skills and experience can contribute to your team's success.
+    cover_letter += f"I am particularly drawn to {company_name} because of [specific reason - research the company]. {closer}\n\n"
 
-Thank you for considering my application. I look forward to hearing from you.
-
-Best regards,
-{name}"""
+    if length == "short":
+        cover_letter += f"Thank you for your time.\n\n{signoff},\n{name}"
+    else:
+        cover_letter += f"Thank you for considering my application. I look forward to hearing from you.\n\n{signoff},\n{name}"
 
     return cover_letter
 

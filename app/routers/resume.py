@@ -56,6 +56,8 @@ class CoverLetterRequest(BaseModel):
     company_name: str = Field(..., min_length=1)
     role: str = Field(..., min_length=1)
     custom_points: Optional[List[str]] = None
+    tone: Optional[str] = "professional"  # professional, conversational, enthusiastic, formal
+    length: Optional[str] = "medium"  # short, medium, detailed
 
 
 class CoverLetterResponse(BaseModel):
@@ -142,7 +144,9 @@ def generate_cover_letter_endpoint(
         job_description=request.job_description,
         company_name=request.company_name,
         role=request.role,
-        custom_points=request.custom_points
+        custom_points=request.custom_points,
+        tone=request.tone or "professional",
+        length=request.length or "medium"
     )
 
     return CoverLetterResponse(
