@@ -226,52 +226,145 @@
                 </div>
             </div>
 
-            <!-- TODO: Resume Management Section
-            ==========================================
-            Add a new collapsible section for structured resume management:
-
-            1. Resume Upload/Input
-               - File upload button (accepts .pdf, .docx, .txt)
-               - "Or paste text" textarea option
-               - "Parse Resume" button to extract sections
-
-            2. Parsed Resume View (after parsing)
-               - Summary section (editable textarea)
-               - Experience section:
-                 - List of jobs with company, title, dates
-                 - Editable bullet points for each
-                 - Add/remove job entries
-               - Education section:
-                 - List of education entries
-                 - School, degree, field, year
-               - Skills section:
-                 - Tag-style display of skills
-                 - Add/remove skills easily
-               - Projects section (optional):
-                 - Project name, description, technologies
-
-            3. Preview & Actions
-               - "Preview Full Resume" button
-               - "Export as Text" button
-               - Last updated timestamp
-
-            HTML Structure Example:
+            <!-- Resume Management Section -->
             <div class="collapsible border-t">
-                <button type="button" class="collapsible-header" onclick="toggleSection(this)">
+                <button type="button" class="collapsible-header" onclick="toggleSection(this)" aria-expanded="false">
                     <span class="flex items-center">
-                        <svg>...</svg>
+                        <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
                         Resume Management
                     </span>
+                    <svg class="collapsible-icon w-5 h-5 text-gray-500 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
                 </button>
                 <div class="collapsible-content">
-                    <div class="p-6 space-y-4">
-                        [Upload section]
-                        [Parsed sections]
+                    <div class="p-6 space-y-6">
+                        <!-- Upload/Input Section -->
+                        <div class="border-b pb-6">
+                            <h3 class="text-sm font-semibold text-gray-700 mb-3">Upload or Paste Resume</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center gap-4">
+                                    <label class="btn btn-primary cursor-pointer">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                                        </svg>
+                                        Upload Resume
+                                        <input type="file" id="resume-file-input" accept=".pdf,.docx,.doc,.txt" class="hidden" onchange="handleResumeUpload(this)">
+                                    </label>
+                                    <span id="resume-upload-status" class="text-sm text-gray-500">PDF, DOCX, or TXT (max 5MB)</span>
+                                </div>
+                                <div class="relative">
+                                    <div class="absolute inset-0 flex items-center">
+                                        <div class="w-full border-t border-gray-200"></div>
+                                    </div>
+                                    <div class="relative flex justify-center text-sm">
+                                        <span class="px-2 bg-white text-gray-500">or paste text</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <textarea id="resume-paste-text" rows="4"
+                                        class="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                        placeholder="Paste your resume text here..."></textarea>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button type="button" onclick="parseResumeText()" class="btn btn-outline btn-sm">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                        </svg>
+                                        Parse Text
+                                    </button>
+                                    <button type="button" onclick="clearResumePaste()" class="btn btn-ghost btn-sm">Clear</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Parsed Resume Display -->
+                        <div id="resume-parsed-section" class="hidden space-y-6">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-sm font-semibold text-gray-700">Parsed Resume Data</h3>
+                                <div class="flex gap-2">
+                                    <button type="button" onclick="previewResume()" class="btn btn-ghost btn-sm">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        </svg>
+                                        Preview
+                                    </button>
+                                    <button type="button" onclick="exportResumeText()" class="btn btn-ghost btn-sm">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                        </svg>
+                                        Export
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Summary -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Summary</label>
+                                <textarea id="resume-summary" rows="3"
+                                    class="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                    placeholder="Professional summary..."
+                                    onchange="markResumeChanged()"></textarea>
+                            </div>
+
+                            <!-- Skills -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Skills</label>
+                                <div id="resume-skills-container" class="flex flex-wrap gap-2 mb-2"></div>
+                                <div class="flex gap-2">
+                                    <input type="text" id="resume-skill-input"
+                                        class="flex-1 border rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="Add a skill..."
+                                        onkeypress="if(event.key==='Enter'){event.preventDefault();addResumeSkill();}">
+                                    <button type="button" onclick="addResumeSkill()" class="btn btn-outline btn-sm">Add</button>
+                                </div>
+                            </div>
+
+                            <!-- Experience -->
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-sm font-medium text-gray-700">Experience</label>
+                                    <button type="button" onclick="addExperienceEntry()" class="btn btn-ghost btn-sm">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                        </svg>
+                                        Add
+                                    </button>
+                                </div>
+                                <div id="resume-experience-list" class="space-y-3"></div>
+                            </div>
+
+                            <!-- Education -->
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-sm font-medium text-gray-700">Education</label>
+                                    <button type="button" onclick="addEducationEntry()" class="btn btn-ghost btn-sm">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                        </svg>
+                                        Add
+                                    </button>
+                                </div>
+                                <div id="resume-education-list" class="space-y-3"></div>
+                            </div>
+
+                            <!-- Save Button -->
+                            <div class="pt-4 border-t flex items-center justify-between">
+                                <span id="resume-save-status" class="text-sm text-gray-500"></span>
+                                <button type="button" onclick="saveResumeToProfile()" class="btn btn-primary">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Save to Profile
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            ==========================================
-            -->
 
             <!-- Save Status -->
             <div class="p-4 border-t bg-gray-50 rounded-b-lg flex items-center justify-between">
@@ -1027,6 +1120,428 @@ document.querySelectorAll('.modal-backdrop').forEach(modal => {
             closeConfirmModal();
         }
     });
+});
+
+// =============================================
+// Resume Management Functions
+// =============================================
+
+let resumeData = null;
+let resumeChanged = false;
+
+// Handle file upload
+async function handleResumeUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const statusEl = document.getElementById('resume-upload-status');
+    statusEl.innerHTML = '<span class="text-blue-600">Uploading...</span>';
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        const response = await fetch('/api/resume/upload-resume?save_to_profile=false', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Upload failed');
+        }
+
+        const result = await response.json();
+        resumeData = result.resume;
+        displayParsedResume(resumeData);
+        statusEl.innerHTML = `<span class="text-green-600">✓ ${file.name} parsed</span>`;
+        showToast('Resume parsed successfully!', 'success');
+    } catch (e) {
+        statusEl.innerHTML = `<span class="text-red-600">Error: ${e.message}</span>`;
+        showToast('Failed to parse resume: ' + e.message, 'error');
+    }
+
+    input.value = ''; // Reset file input
+}
+
+// Parse pasted text
+async function parseResumeText() {
+    const text = document.getElementById('resume-paste-text').value.trim();
+    if (!text || text.length < 50) {
+        showToast('Please paste more resume text (at least 50 characters)', 'warning');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/resume/parse-resume-text', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ resume_text: text })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Parse failed');
+        }
+
+        resumeData = await response.json();
+        displayParsedResume(resumeData);
+        showToast('Resume text parsed successfully!', 'success');
+    } catch (e) {
+        showToast('Failed to parse resume: ' + e.message, 'error');
+    }
+}
+
+function clearResumePaste() {
+    document.getElementById('resume-paste-text').value = '';
+}
+
+// Display parsed resume data
+function displayParsedResume(data) {
+    document.getElementById('resume-parsed-section').classList.remove('hidden');
+
+    // Summary
+    document.getElementById('resume-summary').value = data.summary || '';
+
+    // Skills
+    renderSkillsTags(data.skills || []);
+
+    // Experience
+    renderExperienceList(data.experience || []);
+
+    // Education
+    renderEducationList(data.education || []);
+
+    resumeChanged = false;
+    updateResumeSaveStatus('');
+}
+
+function renderSkillsTags(skills) {
+    const container = document.getElementById('resume-skills-container');
+    container.innerHTML = '';
+
+    skills.forEach((skill, index) => {
+        const tag = document.createElement('span');
+        tag.className = 'inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm';
+        tag.innerHTML = `
+            ${skill}
+            <button type="button" onclick="removeResumeSkill(${index})" class="hover:text-blue-600">&times;</button>
+        `;
+        container.appendChild(tag);
+    });
+}
+
+function addResumeSkill() {
+    const input = document.getElementById('resume-skill-input');
+    const skill = input.value.trim();
+    if (!skill) return;
+
+    if (!resumeData) resumeData = { skills: [] };
+    if (!resumeData.skills) resumeData.skills = [];
+
+    if (!resumeData.skills.includes(skill)) {
+        resumeData.skills.push(skill);
+        renderSkillsTags(resumeData.skills);
+        markResumeChanged();
+    }
+
+    input.value = '';
+}
+
+function removeResumeSkill(index) {
+    if (resumeData && resumeData.skills) {
+        resumeData.skills.splice(index, 1);
+        renderSkillsTags(resumeData.skills);
+        markResumeChanged();
+    }
+}
+
+function renderExperienceList(experiences) {
+    const container = document.getElementById('resume-experience-list');
+    container.innerHTML = '';
+
+    experiences.forEach((exp, index) => {
+        const div = document.createElement('div');
+        div.className = 'border rounded-lg p-3 bg-gray-50';
+        div.innerHTML = `
+            <div class="flex items-start justify-between mb-2">
+                <div class="flex-1 grid grid-cols-2 gap-2">
+                    <input type="text" value="${escapeHtml(exp.title || '')}"
+                        class="border rounded px-2 py-1 text-sm"
+                        placeholder="Title"
+                        onchange="updateExperience(${index}, 'title', this.value)">
+                    <input type="text" value="${escapeHtml(exp.company || '')}"
+                        class="border rounded px-2 py-1 text-sm"
+                        placeholder="Company"
+                        onchange="updateExperience(${index}, 'company', this.value)">
+                </div>
+                <button type="button" onclick="removeExperience(${index})" class="ml-2 text-red-500 hover:text-red-700">&times;</button>
+            </div>
+            <div class="grid grid-cols-3 gap-2 mb-2">
+                <input type="text" value="${escapeHtml(exp.start_date || '')}"
+                    class="border rounded px-2 py-1 text-sm"
+                    placeholder="Start Date"
+                    onchange="updateExperience(${index}, 'start_date', this.value)">
+                <input type="text" value="${escapeHtml(exp.end_date || '')}"
+                    class="border rounded px-2 py-1 text-sm"
+                    placeholder="End Date"
+                    onchange="updateExperience(${index}, 'end_date', this.value)">
+                <input type="text" value="${escapeHtml(exp.location || '')}"
+                    class="border rounded px-2 py-1 text-sm"
+                    placeholder="Location"
+                    onchange="updateExperience(${index}, 'location', this.value)">
+            </div>
+            <div>
+                <label class="text-xs text-gray-500">Bullets (one per line)</label>
+                <textarea rows="3" class="w-full border rounded px-2 py-1 text-sm"
+                    placeholder="• Achievement or responsibility"
+                    onchange="updateExperienceBullets(${index}, this.value)">${(exp.bullets || []).join('\n')}</textarea>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function addExperienceEntry() {
+    if (!resumeData) resumeData = { experience: [] };
+    if (!resumeData.experience) resumeData.experience = [];
+
+    resumeData.experience.push({
+        title: '',
+        company: '',
+        start_date: '',
+        end_date: '',
+        location: '',
+        bullets: []
+    });
+
+    renderExperienceList(resumeData.experience);
+    markResumeChanged();
+}
+
+function updateExperience(index, field, value) {
+    if (resumeData && resumeData.experience && resumeData.experience[index]) {
+        resumeData.experience[index][field] = value;
+        markResumeChanged();
+    }
+}
+
+function updateExperienceBullets(index, text) {
+    if (resumeData && resumeData.experience && resumeData.experience[index]) {
+        resumeData.experience[index].bullets = text.split('\n').filter(b => b.trim());
+        markResumeChanged();
+    }
+}
+
+function removeExperience(index) {
+    if (resumeData && resumeData.experience) {
+        resumeData.experience.splice(index, 1);
+        renderExperienceList(resumeData.experience);
+        markResumeChanged();
+    }
+}
+
+function renderEducationList(education) {
+    const container = document.getElementById('resume-education-list');
+    container.innerHTML = '';
+
+    education.forEach((edu, index) => {
+        const div = document.createElement('div');
+        div.className = 'border rounded-lg p-3 bg-gray-50';
+        div.innerHTML = `
+            <div class="flex items-start justify-between">
+                <div class="flex-1 grid grid-cols-2 gap-2">
+                    <input type="text" value="${escapeHtml(edu.school || '')}"
+                        class="border rounded px-2 py-1 text-sm"
+                        placeholder="School"
+                        onchange="updateEducation(${index}, 'school', this.value)">
+                    <input type="text" value="${escapeHtml(edu.degree || '')}"
+                        class="border rounded px-2 py-1 text-sm"
+                        placeholder="Degree (e.g., B.S.)"
+                        onchange="updateEducation(${index}, 'degree', this.value)">
+                    <input type="text" value="${escapeHtml(edu.field || '')}"
+                        class="border rounded px-2 py-1 text-sm"
+                        placeholder="Field of Study"
+                        onchange="updateEducation(${index}, 'field', this.value)">
+                    <input type="text" value="${escapeHtml(edu.year || '')}"
+                        class="border rounded px-2 py-1 text-sm"
+                        placeholder="Year"
+                        onchange="updateEducation(${index}, 'year', this.value)">
+                </div>
+                <button type="button" onclick="removeEducation(${index})" class="ml-2 text-red-500 hover:text-red-700">&times;</button>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function addEducationEntry() {
+    if (!resumeData) resumeData = { education: [] };
+    if (!resumeData.education) resumeData.education = [];
+
+    resumeData.education.push({
+        school: '',
+        degree: '',
+        field: '',
+        year: ''
+    });
+
+    renderEducationList(resumeData.education);
+    markResumeChanged();
+}
+
+function updateEducation(index, field, value) {
+    if (resumeData && resumeData.education && resumeData.education[index]) {
+        resumeData.education[index][field] = value;
+        markResumeChanged();
+    }
+}
+
+function removeEducation(index) {
+    if (resumeData && resumeData.education) {
+        resumeData.education.splice(index, 1);
+        renderEducationList(resumeData.education);
+        markResumeChanged();
+    }
+}
+
+function markResumeChanged() {
+    resumeChanged = true;
+    updateResumeSaveStatus('unsaved');
+}
+
+function updateResumeSaveStatus(status) {
+    const el = document.getElementById('resume-save-status');
+    switch (status) {
+        case 'unsaved':
+            el.innerHTML = '<span class="text-yellow-600">Unsaved changes</span>';
+            break;
+        case 'saving':
+            el.innerHTML = '<span class="text-blue-600">Saving...</span>';
+            break;
+        case 'saved':
+            el.innerHTML = '<span class="text-green-600">✓ Saved to profile</span>';
+            break;
+        default:
+            el.innerHTML = '';
+    }
+}
+
+async function saveResumeToProfile() {
+    if (!resumeData) {
+        showToast('No resume data to save', 'warning');
+        return;
+    }
+
+    // Update summary from textarea
+    resumeData.summary = document.getElementById('resume-summary').value;
+
+    updateResumeSaveStatus('saving');
+
+    try {
+        const response = await fetch('/api/resume/profile-resume', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(resumeData)
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Save failed');
+        }
+
+        resumeChanged = false;
+        updateResumeSaveStatus('saved');
+        showToast('Resume saved to profile!', 'success');
+
+        // Also update the resume summary textarea in the Messaging section
+        if (resumeData.summary) {
+            document.getElementById('profile-resume').value = resumeData.summary;
+        }
+        if (resumeData.skills && resumeData.skills.length > 0) {
+            document.getElementById('profile-skills').value = resumeData.skills.join(', ');
+        }
+    } catch (e) {
+        updateResumeSaveStatus('unsaved');
+        showToast('Failed to save resume: ' + e.message, 'error');
+    }
+}
+
+async function previewResume() {
+    try {
+        const response = await fetch('/api/profile/resume/text');
+        if (!response.ok) throw new Error('No resume data');
+
+        const data = await response.json();
+        const text = data.text || 'No resume data available';
+
+        // Create a simple preview modal
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        modal.innerHTML = `
+            <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-auto m-4">
+                <div class="sticky top-0 bg-white border-b px-4 py-3 flex items-center justify-between">
+                    <h3 class="font-semibold">Resume Preview</h3>
+                    <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">&times;</button>
+                </div>
+                <pre class="p-4 text-sm whitespace-pre-wrap font-mono">${escapeHtml(text)}</pre>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    } catch (e) {
+        showToast('No resume data to preview', 'warning');
+    }
+}
+
+async function exportResumeText() {
+    try {
+        const response = await fetch('/api/profile/resume/text');
+        if (!response.ok) throw new Error('No resume data');
+
+        const data = await response.json();
+        const text = data.text || '';
+
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'resume_export.txt';
+        a.click();
+        URL.revokeObjectURL(url);
+
+        showToast('Resume exported!', 'success');
+    } catch (e) {
+        showToast('Failed to export resume', 'error');
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Load existing resume data on page load
+async function loadExistingResume() {
+    try {
+        const response = await fetch('/api/resume/profile-resume');
+        if (response.ok) {
+            const data = await response.json();
+            if (data && (data.summary || data.experience?.length || data.skills?.length)) {
+                resumeData = data;
+                displayParsedResume(data);
+            }
+        }
+    } catch (e) {
+        // No existing resume data
+    }
+}
+
+// Add to DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function() {
+    loadExistingResume();
 });
 </script>
 {% endblock %}

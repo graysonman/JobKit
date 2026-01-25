@@ -96,53 +96,6 @@
         </div>
 
         <!-- Resume Match Analysis -->
-        <!-- TODO: Resume Input Options
-        ==========================================
-        Replace the current textarea-only input with multiple input options:
-
-        1. Radio button group for input source:
-           ○ Use profile resume (recommended) - loads structured resume from profile
-           ○ Paste text manually - shows textarea
-           ○ Upload file - shows file input (.pdf, .docx, .txt)
-
-        2. When "Use profile resume" is selected:
-           - Show preview of stored resume sections
-           - "Edit in Settings" link
-           - Option to select which sections to include
-
-        3. When "Upload file" is selected:
-           - File input with drag-and-drop
-           - Supported formats: .pdf, .docx, .txt
-           - Preview extracted text before analysis
-           - Option to save to profile after upload
-
-        4. Resume Tailoring Results (after job analysis):
-           - Show tailored suggestions specific to this job
-           - "Keywords to add" with suggested placements
-           - "Skills to emphasize" based on job requirements
-           - "Bullet improvements" with before/after suggestions
-           - "Download Tailored Resume" button
-
-        HTML Structure Example:
-        <div class="space-y-4">
-            <div class="flex flex-col gap-2">
-                <label class="flex items-center gap-2">
-                    <input type="radio" name="resume-source" value="profile" checked>
-                    <span>Use profile resume</span>
-                </label>
-                <label class="flex items-center gap-2">
-                    <input type="radio" name="resume-source" value="paste">
-                    <span>Paste text manually</span>
-                </label>
-                <label class="flex items-center gap-2">
-                    <input type="radio" name="resume-source" value="upload">
-                    <span>Upload file</span>
-                </label>
-            </div>
-            [Conditional content based on selection]
-        </div>
-        ==========================================
-        -->
         <div id="match-section" class="bg-white p-6 rounded-lg shadow relative">
             <!-- Overlay when disabled -->
             <div id="match-overlay" class="absolute inset-0 bg-gray-100 bg-opacity-75 rounded-lg flex items-center justify-center z-10">
@@ -160,9 +113,69 @@
                 Check Resume Match
             </h2>
             <form id="match-form" class="space-y-4">
-                <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <label class="block text-sm font-medium text-gray-700">Your Resume (text)</label>
+                <!-- Resume Source Selection -->
+                <div class="space-y-3">
+                    <label class="block text-sm font-medium text-gray-700">Resume Source</label>
+                    <div class="flex flex-col gap-2">
+                        <label class="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors" id="source-profile-label">
+                            <input type="radio" name="resume-source" value="profile" checked onchange="switchResumeSource('profile')" class="text-green-600 focus:ring-green-500">
+                            <div class="flex-1">
+                                <span class="font-medium">Use profile resume</span>
+                                <span class="text-xs text-green-600 ml-1">(Recommended)</span>
+                                <p class="text-xs text-gray-500">Uses your saved resume from Settings</p>
+                            </div>
+                            <span id="profile-resume-status" class="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600">Checking...</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                            <input type="radio" name="resume-source" value="paste" onchange="switchResumeSource('paste')" class="text-green-600 focus:ring-green-500">
+                            <div class="flex-1">
+                                <span class="font-medium">Paste text manually</span>
+                                <p class="text-xs text-gray-500">Copy and paste your resume content</p>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                            <input type="radio" name="resume-source" value="upload" onchange="switchResumeSource('upload')" class="text-green-600 focus:ring-green-500">
+                            <div class="flex-1">
+                                <span class="font-medium">Upload file</span>
+                                <p class="text-xs text-gray-500">PDF, DOCX, or TXT files</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Profile Resume Panel -->
+                <div id="resume-panel-profile" class="space-y-3">
+                    <div id="profile-resume-preview" class="border rounded-lg p-4 bg-gray-50">
+                        <div id="profile-resume-loading" class="text-center py-4 text-gray-500">
+                            <span class="inline-block w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2"></span>
+                            Loading resume...
+                        </div>
+                        <div id="profile-resume-empty" class="hidden text-center py-4">
+                            <svg class="w-10 h-10 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <p class="text-gray-600 mb-2">No resume saved in your profile</p>
+                            <a href="/settings" class="text-green-600 hover:underline text-sm">Add resume in Settings →</a>
+                        </div>
+                        <div id="profile-resume-content" class="hidden space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-700">Resume Summary</span>
+                                <a href="/settings" class="text-xs text-green-600 hover:underline">Edit in Settings</a>
+                            </div>
+                            <div id="profile-summary-preview" class="text-sm text-gray-600 line-clamp-3"></div>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="text-xs text-gray-500">Skills:</span>
+                                <div id="profile-skills-preview" class="flex flex-wrap gap-1"></div>
+                            </div>
+                            <div id="profile-experience-count" class="text-xs text-gray-500"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paste Text Panel -->
+                <div id="resume-panel-paste" class="hidden space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-sm font-medium text-gray-700">Paste Resume Text</label>
                         <div class="flex gap-2">
                             <button type="button" onclick="pasteFromClipboard('resume-text')" class="btn btn-ghost btn-sm">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -170,7 +183,7 @@
                                 </svg>
                                 Paste
                             </button>
-                            <button type="button" onclick="saveResumeToProfile()" class="btn btn-ghost btn-sm">
+                            <button type="button" onclick="saveResumeTextToProfile()" class="btn btn-ghost btn-sm">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
                                 </svg>
@@ -178,9 +191,41 @@
                             </button>
                         </div>
                     </div>
-                    <textarea id="resume-text" rows="8" required class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Paste your resume text here..."></textarea>
-                    <p id="resume-source" class="text-xs text-gray-500 mt-1 hidden">Pre-filled from your profile</p>
+                    <textarea id="resume-text" rows="8" class="block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Paste your resume text here..."></textarea>
                 </div>
+
+                <!-- Upload File Panel -->
+                <div id="resume-panel-upload" class="hidden space-y-3">
+                    <label class="block text-sm font-medium text-gray-700">Upload Resume File</label>
+                    <div id="upload-dropzone" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-400 transition-colors cursor-pointer"
+                         ondrop="handleResumeDrop(event)" ondragover="event.preventDefault(); this.classList.add('border-green-400', 'bg-green-50');" ondragleave="this.classList.remove('border-green-400', 'bg-green-50');">
+                        <svg class="w-10 h-10 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                        </svg>
+                        <p class="text-gray-600 mb-1">Drag & drop your resume here</p>
+                        <p class="text-xs text-gray-500 mb-3">or</p>
+                        <label class="btn btn-outline btn-sm cursor-pointer">
+                            Browse Files
+                            <input type="file" id="resume-file-input" accept=".pdf,.docx,.doc,.txt" class="hidden" onchange="handleResumeFileSelect(this)">
+                        </label>
+                        <p class="text-xs text-gray-500 mt-2">PDF, DOCX, or TXT (max 5MB)</p>
+                    </div>
+                    <div id="upload-result" class="hidden">
+                        <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <span id="upload-filename" class="text-sm text-green-700"></span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button type="button" onclick="saveUploadedToProfile()" class="text-xs text-green-600 hover:underline">Save to Profile</button>
+                                <button type="button" onclick="clearUpload()" class="text-xs text-gray-500 hover:text-gray-700">Clear</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <button type="submit" class="btn btn-success w-full">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -216,6 +261,37 @@
                     <div>
                         <span class="text-sm font-medium text-gray-700">Suggestions:</span>
                         <ul id="suggestions" class="mt-1 text-sm text-gray-600 list-disc list-inside"></ul>
+                    </div>
+                </div>
+
+                <!-- Tailoring Results -->
+                <div id="tailoring-results" class="hidden mt-4 pt-4 border-t">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-gray-800">Resume Tailoring Suggestions</h4>
+                        <button type="button" onclick="getTailoringSuggestions()" class="btn btn-outline btn-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                            </svg>
+                            Get Tailoring Tips
+                        </button>
+                    </div>
+                    <div id="tailoring-content" class="hidden space-y-4">
+                        <div id="skills-to-add" class="hidden">
+                            <span class="text-sm font-medium text-blue-700">Skills to Add:</span>
+                            <div class="mt-1 flex flex-wrap gap-1"></div>
+                        </div>
+                        <div id="skills-to-emphasize" class="hidden">
+                            <span class="text-sm font-medium text-green-700">Skills to Emphasize:</span>
+                            <div class="mt-1 flex flex-wrap gap-1"></div>
+                        </div>
+                        <div id="tailoring-suggestions" class="hidden">
+                            <span class="text-sm font-medium text-gray-700">Detailed Suggestions:</span>
+                            <div class="mt-2 space-y-2"></div>
+                        </div>
+                    </div>
+                    <div id="tailoring-loading" class="hidden text-center py-4 text-gray-500">
+                        <span class="inline-block w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2"></span>
+                        Analyzing your resume...
                     </div>
                 </div>
             </div>
@@ -533,22 +609,9 @@ function updateWordCount() {
     document.getElementById('word-count').textContent = `${words} words`;
 }
 
-// Load resume from profile on page load
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', async function() {
-    try {
-        const response = await fetch('/api/profile/');
-        if (response.ok) {
-            const profile = await response.json();
-            if (profile.resume_summary) {
-                document.getElementById('resume-text').value = profile.resume_summary;
-                document.getElementById('resume-source').classList.remove('hidden');
-            }
-        }
-    } catch (e) {
-        // Profile not available, that's fine
-    }
-
-    // Add word count listener
+    // Add word count listener for cover letter
     document.getElementById('cover-letter-text').addEventListener('input', updateWordCount);
 });
 
@@ -614,7 +677,13 @@ document.getElementById('match-form').addEventListener('submit', async function(
     const submitBtn = this.querySelector('button[type="submit"]');
     setButtonLoading(submitBtn, true);
 
-    const resumeText = document.getElementById('resume-text').value;
+    const resumeText = await getResumeText();
+
+    if (!resumeText || resumeText.length < 50) {
+        showToast('Please provide your resume text (at least 50 characters)', 'warning');
+        setButtonLoading(submitBtn, false);
+        return;
+    }
 
     try {
         const response = await fetch('/api/resume/match-resume', {
@@ -735,6 +804,374 @@ document.getElementById('save-app-modal').addEventListener('click', function(e) 
     if (e.target === this) {
         closeSaveAppModal();
     }
+});
+
+// =============================================
+// Resume Source Handling
+// =============================================
+
+let profileResumeData = null;
+let uploadedResumeText = null;
+let currentResumeSource = 'profile';
+
+function switchResumeSource(source) {
+    currentResumeSource = source;
+
+    // Hide all panels
+    document.getElementById('resume-panel-profile').classList.add('hidden');
+    document.getElementById('resume-panel-paste').classList.add('hidden');
+    document.getElementById('resume-panel-upload').classList.add('hidden');
+
+    // Show selected panel
+    document.getElementById(`resume-panel-${source}`).classList.remove('hidden');
+}
+
+async function loadProfileResume() {
+    const loading = document.getElementById('profile-resume-loading');
+    const empty = document.getElementById('profile-resume-empty');
+    const content = document.getElementById('profile-resume-content');
+    const status = document.getElementById('profile-resume-status');
+
+    loading.classList.remove('hidden');
+    empty.classList.add('hidden');
+    content.classList.add('hidden');
+
+    try {
+        const response = await fetch('/api/resume/profile-resume');
+        if (!response.ok) {
+            throw new Error('No profile');
+        }
+
+        const data = await response.json();
+        profileResumeData = data;
+
+        // Check if we have meaningful data
+        const hasData = data.summary || (data.skills && data.skills.length) || (data.experience && data.experience.length);
+
+        if (hasData) {
+            // Show preview
+            document.getElementById('profile-summary-preview').textContent = data.summary || 'No summary';
+
+            const skillsPreview = document.getElementById('profile-skills-preview');
+            skillsPreview.innerHTML = (data.skills || []).slice(0, 8)
+                .map(s => `<span class="px-2 py-0.5 text-xs rounded bg-blue-100 text-blue-800">${s}</span>`).join('');
+            if (data.skills && data.skills.length > 8) {
+                skillsPreview.innerHTML += `<span class="text-xs text-gray-500">+${data.skills.length - 8} more</span>`;
+            }
+
+            const expCount = data.experience ? data.experience.length : 0;
+            document.getElementById('profile-experience-count').textContent =
+                expCount > 0 ? `${expCount} experience entries` : '';
+
+            content.classList.remove('hidden');
+            status.textContent = 'Available';
+            status.className = 'text-xs px-2 py-0.5 rounded bg-green-100 text-green-600';
+        } else {
+            empty.classList.remove('hidden');
+            status.textContent = 'Not set up';
+            status.className = 'text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-600';
+        }
+    } catch (e) {
+        empty.classList.remove('hidden');
+        status.textContent = 'Not set up';
+        status.className = 'text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-600';
+    } finally {
+        loading.classList.add('hidden');
+    }
+}
+
+// Get resume text based on selected source
+async function getResumeText() {
+    switch (currentResumeSource) {
+        case 'profile':
+            if (profileResumeData) {
+                // Build text from structured data
+                let parts = [];
+                if (profileResumeData.summary) parts.push(profileResumeData.summary);
+                if (profileResumeData.skills && profileResumeData.skills.length) {
+                    parts.push('Skills: ' + profileResumeData.skills.join(', '));
+                }
+                if (profileResumeData.experience) {
+                    for (const exp of profileResumeData.experience) {
+                        parts.push(`${exp.title} at ${exp.company}`);
+                        if (exp.bullets) parts.push(exp.bullets.join('\n'));
+                    }
+                }
+                return parts.join('\n\n');
+            }
+            // Fallback to text endpoint
+            try {
+                const resp = await fetch('/api/profile/resume/text');
+                if (resp.ok) {
+                    const data = await resp.json();
+                    return data.text || '';
+                }
+            } catch (e) {}
+            return '';
+
+        case 'paste':
+            return document.getElementById('resume-text').value || '';
+
+        case 'upload':
+            return uploadedResumeText || '';
+
+        default:
+            return '';
+    }
+}
+
+// File upload handling
+function handleResumeDrop(e) {
+    e.preventDefault();
+    e.target.classList.remove('border-green-400', 'bg-green-50');
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        processResumeFile(files[0]);
+    }
+}
+
+function handleResumeFileSelect(input) {
+    if (input.files.length > 0) {
+        processResumeFile(input.files[0]);
+    }
+}
+
+async function processResumeFile(file) {
+    const allowedTypes = ['.pdf', '.docx', '.doc', '.txt'];
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+
+    if (!allowedTypes.includes(ext)) {
+        showToast('Unsupported file type. Please use PDF, DOCX, or TXT.', 'error');
+        return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+        showToast('File too large. Maximum size is 5MB.', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        showToast('Parsing resume...', 'info');
+
+        const response = await fetch('/api/resume/upload-resume', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Upload failed');
+        }
+
+        const result = await response.json();
+
+        // Build text from structured data
+        let textParts = [];
+        if (result.resume.summary) textParts.push(result.resume.summary);
+        if (result.resume.skills && result.resume.skills.length) {
+            textParts.push('Skills: ' + result.resume.skills.join(', '));
+        }
+        if (result.resume.experience) {
+            for (const exp of result.resume.experience) {
+                textParts.push(`${exp.title} at ${exp.company}`);
+                if (exp.bullets) textParts.push(exp.bullets.join('\n'));
+            }
+        }
+        uploadedResumeText = textParts.join('\n\n');
+
+        // Show success
+        document.getElementById('upload-filename').textContent = file.name;
+        document.getElementById('upload-result').classList.remove('hidden');
+        document.getElementById('upload-dropzone').classList.add('hidden');
+
+        showToast('Resume parsed successfully!', 'success');
+    } catch (e) {
+        showToast('Error parsing resume: ' + e.message, 'error');
+    }
+}
+
+function clearUpload() {
+    uploadedResumeText = null;
+    document.getElementById('upload-result').classList.add('hidden');
+    document.getElementById('upload-dropzone').classList.remove('hidden');
+    document.getElementById('resume-file-input').value = '';
+}
+
+async function saveUploadedToProfile() {
+    if (!uploadedResumeText) {
+        showToast('No resume to save', 'warning');
+        return;
+    }
+
+    try {
+        // Parse the uploaded text and save to profile
+        const parseResp = await fetch('/api/resume/parse-resume-text', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ resume_text: uploadedResumeText })
+        });
+
+        if (!parseResp.ok) throw new Error('Parse failed');
+
+        const parsed = await parseResp.json();
+
+        const saveResp = await fetch('/api/resume/profile-resume', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(parsed)
+        });
+
+        if (saveResp.ok) {
+            showToast('Resume saved to profile!', 'success');
+            loadProfileResume();
+        } else {
+            throw new Error('Save failed');
+        }
+    } catch (e) {
+        showToast('Error saving to profile', 'error');
+    }
+}
+
+async function saveResumeTextToProfile() {
+    const text = document.getElementById('resume-text').value;
+    if (!text.trim()) {
+        showToast('Please enter resume text first', 'warning');
+        return;
+    }
+
+    try {
+        // Parse and save
+        const parseResp = await fetch('/api/resume/parse-resume-text', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ resume_text: text })
+        });
+
+        if (!parseResp.ok) throw new Error('Parse failed');
+
+        const parsed = await parseResp.json();
+
+        const saveResp = await fetch('/api/resume/profile-resume', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(parsed)
+        });
+
+        if (saveResp.ok) {
+            showToast('Resume saved to profile!', 'success');
+            loadProfileResume();
+        } else {
+            throw new Error('Save failed');
+        }
+    } catch (e) {
+        showToast('Error saving to profile', 'error');
+    }
+}
+
+// Tailoring suggestions
+async function getTailoringSuggestions() {
+    if (!currentJobDescription) {
+        showToast('Please analyze a job description first', 'warning');
+        return;
+    }
+
+    const loadingEl = document.getElementById('tailoring-loading');
+    const contentEl = document.getElementById('tailoring-content');
+
+    loadingEl.classList.remove('hidden');
+    contentEl.classList.add('hidden');
+
+    try {
+        const resumeText = await getResumeText();
+        if (!resumeText) {
+            throw new Error('No resume available');
+        }
+
+        const response = await fetch('/api/resume/tailor-resume', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                job_description: currentJobDescription,
+                use_profile_resume: false,
+                resume_text: resumeText
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to get tailoring suggestions');
+        }
+
+        const result = await response.json();
+
+        // Skills to add
+        const skillsToAdd = document.getElementById('skills-to-add');
+        if (result.skills_to_add && result.skills_to_add.length) {
+            skillsToAdd.querySelector('div').innerHTML = result.skills_to_add
+                .map(s => `<span class="px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">${s}</span>`).join('');
+            skillsToAdd.classList.remove('hidden');
+        } else {
+            skillsToAdd.classList.add('hidden');
+        }
+
+        // Skills to emphasize
+        const skillsToEmphasize = document.getElementById('skills-to-emphasize');
+        if (result.skills_to_emphasize && result.skills_to_emphasize.length) {
+            skillsToEmphasize.querySelector('div').innerHTML = result.skills_to_emphasize
+                .map(s => `<span class="px-2 py-1 text-xs rounded bg-green-100 text-green-800">${s}</span>`).join('');
+            skillsToEmphasize.classList.remove('hidden');
+        } else {
+            skillsToEmphasize.classList.add('hidden');
+        }
+
+        // Detailed suggestions
+        const suggestionsEl = document.getElementById('tailoring-suggestions');
+        if (result.suggestions && result.suggestions.length) {
+            suggestionsEl.querySelector('div').innerHTML = result.suggestions
+                .map(s => {
+                    const priorityColors = {
+                        high: 'border-red-200 bg-red-50',
+                        medium: 'border-yellow-200 bg-yellow-50',
+                        low: 'border-gray-200 bg-gray-50'
+                    };
+                    return `
+                        <div class="p-3 rounded border ${priorityColors[s.priority] || priorityColors.medium}">
+                            <div class="flex items-start justify-between">
+                                <span class="text-sm font-medium">${s.section}</span>
+                                <span class="text-xs px-1.5 py-0.5 rounded ${
+                                    s.priority === 'high' ? 'bg-red-100 text-red-700' :
+                                    s.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-gray-100 text-gray-700'
+                                }">${s.priority}</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mt-1">${s.suggestion}</p>
+                            ${s.reason ? `<p class="text-xs text-gray-500 mt-1">${s.reason}</p>` : ''}
+                        </div>
+                    `;
+                }).join('');
+            suggestionsEl.classList.remove('hidden');
+        } else {
+            suggestionsEl.classList.add('hidden');
+        }
+
+        contentEl.classList.remove('hidden');
+        showToast('Tailoring suggestions loaded', 'success');
+    } catch (e) {
+        showToast(e.message || 'Error getting tailoring suggestions', 'error');
+    } finally {
+        loadingEl.classList.add('hidden');
+    }
+}
+
+// Initialize resume source on load
+document.addEventListener('DOMContentLoaded', function() {
+    loadProfileResume();
+    switchResumeSource('profile');
+    document.getElementById('tailoring-results').classList.remove('hidden');
 });
 </script>
 {% endblock %}

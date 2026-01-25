@@ -2,54 +2,9 @@
 JobKit - Resume and cover letter API endpoints.
 
 Endpoints for analyzing job descriptions, matching resumes to jobs,
-generating cover letters, and suggesting resume improvements.
-
-TODO: File Upload & Structured Resume Endpoints
-==============================================
-1. POST /upload-resume
-   - Accept file upload (PDF, DOCX, TXT)
-   - Use UploadFile from fastapi
-   - Extract text using pdfplumber/python-docx
-   - Parse into structured sections
-   - Return parsed resume data
-   - Optionally save to user profile
-
-   Example:
-   @router.post("/upload-resume")
-   async def upload_resume(
-       file: UploadFile = File(...),
-       save_to_profile: bool = Query(False),
-       db: Session = Depends(get_db)
-   ):
-       # Validate file type
-       # Extract text based on extension
-       # Parse into structured data
-       # Optionally save to profile
-       pass
-
-2. POST /parse-resume-text
-   - Accept raw resume text
-   - Parse into structured sections
-   - Return structured resume data
-
-3. GET /profile-resume
-   - Get the user's stored structured resume
-   - Used by frontend to load resume from profile
-
-4. PUT /profile-resume
-   - Update specific sections of stored resume
-   - Allow editing experience, skills, education individually
-
-5. POST /tailor-resume
-   - Accept resume (from profile or uploaded) + job description
-   - Return tailored suggestions:
-     - Keywords to add
-     - Bullets to modify
-     - Skills to emphasize
-     - Section reordering recommendations
-==============================================
+generating cover letters, parsing resumes, and suggesting improvements.
 """
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -57,14 +12,21 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import date, datetime
 import re
+import os
+import tempfile
+import json
 
 from ..database import get_db
 from ..models import UserProfile, Application
+from ..schemas import StructuredResume, ResumeExperience, ResumeEducation, ResumeProject
 from ..services.resume_helper import (
     extract_keywords_from_job,
     analyze_resume_match,
     generate_cover_letter,
-    suggest_resume_tweaks
+    suggest_resume_tweaks,
+    parse_resume_text,
+    parse_resume_file,
+    tailor_resume_for_job
 )
 
 router = APIRouter()
@@ -144,6 +106,332 @@ class KeywordDensityResponse(BaseModel):
     missing_keywords: List[str]
     density_score: float
     suggestions: List[str]
+
+
+class ParseResumeTextRequest(BaseModel):
+    resume_text: str = Field(..., min_length=50)
+
+
+class ResumeUploadResponse(BaseModel):
+    message: str
+    resume: StructuredResume
+    saved_to_profile: bool = False
+
+
+class TailorResumeRequest(BaseModel):
+    job_description: str = Field(..., min_length=50)
+    use_profile_resume: bool = True  # If false, resume_text is required
+    resume_text: Optional[str] = None
+
+
+class TailorSuggestion(BaseModel):
+    section: str
+    original: Optional[str] = None
+    suggestion: str
+    priority: str
+    reason: str
+
+
+class TailorResumeResponse(BaseModel):
+    match_score: float
+    keywords_to_add: List[str]
+    skills_to_emphasize: List[str]
+    skills_to_add: List[str]
+    suggestions: List[TailorSuggestion]
+
+
+class ProfileResumeUpdateRequest(BaseModel):
+    """Request to update specific sections of the profile resume."""
+    summary: Optional[str] = None
+    experience: Optional[List[ResumeExperience]] = None
+    education: Optional[List[ResumeEducation]] = None
+    skills: Optional[List[str]] = None
+    projects: Optional[List[ResumeProject]] = None
+    certifications: Optional[List[str]] = None
+
+
+# --- Resume Upload & Parsing Endpoints ---
+
+ALLOWED_EXTENSIONS = {'.pdf', '.docx', '.doc', '.txt'}
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+
+
+def _serialize_resume_data(resume_data: StructuredResume) -> str:
+    """Convert StructuredResume to JSON string for database storage."""
+    if resume_data is None:
+        return None
+    return json.dumps(resume_data.model_dump())
+
+
+def _deserialize_resume_data(json_str: str) -> Optional[StructuredResume]:
+    """Convert JSON string from database to StructuredResume object."""
+    if json_str is None:
+        return None
+    try:
+        data = json.loads(json_str)
+        return StructuredResume(**data)
+    except (json.JSONDecodeError, Exception):
+        return None
+
+
+@router.post("/upload-resume", response_model=ResumeUploadResponse)
+async def upload_resume(
+    file: UploadFile = File(...),
+    save_to_profile: bool = Query(False, description="Save parsed resume to user profile"),
+    db: Session = Depends(get_db)
+):
+    """
+    Upload and parse a resume file.
+
+    Supports PDF, DOCX, and TXT files. Optionally saves to user profile.
+
+    Note: PDF parsing requires pdfplumber, DOCX requires python-docx.
+    Install with: pip install pdfplumber python-docx
+    """
+    # Validate file extension
+    ext = os.path.splitext(file.filename)[1].lower() if file.filename else ''
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type: {ext}. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
+        )
+
+    # Read file content
+    content = await file.read()
+
+    # Check file size
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File too large. Maximum size: {MAX_FILE_SIZE // (1024*1024)}MB"
+        )
+
+    # Parse based on file type
+    try:
+        if ext == '.txt':
+            # Direct text parsing
+            text = content.decode('utf-8')
+            resume = parse_resume_text(text)
+        else:
+            # Save to temp file for PDF/DOCX parsing
+            with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
+                tmp.write(content)
+                tmp_path = tmp.name
+
+            try:
+                resume = parse_resume_file(tmp_path)
+            finally:
+                # Clean up temp file
+                os.unlink(tmp_path)
+
+    except ImportError as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Failed to parse resume: {str(e)}"
+        )
+
+    # Optionally save to profile
+    saved = False
+    if save_to_profile:
+        profile = db.query(UserProfile).first()
+        if profile:
+            profile.resume_data = _serialize_resume_data(resume)
+            # Also update resume_summary for backward compatibility
+            if resume.summary:
+                profile.resume_summary = resume.summary
+            if resume.skills:
+                profile.skills = ', '.join(resume.skills)
+            db.commit()
+            saved = True
+        else:
+            # Create new profile with resume data
+            new_profile = UserProfile(
+                id=1,
+                name="",  # Will need to be filled in
+                resume_data=_serialize_resume_data(resume),
+                resume_summary=resume.summary,
+                skills=', '.join(resume.skills) if resume.skills else None
+            )
+            db.add(new_profile)
+            db.commit()
+            saved = True
+
+    return ResumeUploadResponse(
+        message="Resume parsed successfully",
+        resume=resume,
+        saved_to_profile=saved
+    )
+
+
+@router.post("/parse-resume-text", response_model=StructuredResume)
+def parse_resume_text_endpoint(request: ParseResumeTextRequest):
+    """
+    Parse raw resume text into structured sections.
+
+    Identifies and extracts:
+    - Summary/Objective
+    - Work Experience (with company, title, dates, bullets)
+    - Education (school, degree, field, year)
+    - Skills
+    - Projects
+    - Certifications
+    """
+    try:
+        resume = parse_resume_text(request.resume_text)
+        return resume
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Failed to parse resume text: {str(e)}"
+        )
+
+
+@router.get("/profile-resume", response_model=StructuredResume)
+def get_profile_resume(db: Session = Depends(get_db)):
+    """
+    Get the user's stored structured resume from their profile.
+
+    Returns an empty StructuredResume if no resume data exists.
+    """
+    profile = db.query(UserProfile).first()
+    if not profile:
+        raise HTTPException(
+            status_code=404,
+            detail="Profile not found. Please create a profile first."
+        )
+
+    resume = _deserialize_resume_data(profile.resume_data)
+    if not resume:
+        # Return empty structure with any available data
+        return StructuredResume(
+            summary=profile.resume_summary,
+            skills=profile.skills.split(', ') if profile.skills else []
+        )
+
+    return resume
+
+
+@router.put("/profile-resume", response_model=StructuredResume)
+def update_profile_resume(
+    request: ProfileResumeUpdateRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Update specific sections of the user's stored resume.
+
+    Only provided fields are updated; others remain unchanged.
+    """
+    profile = db.query(UserProfile).first()
+    if not profile:
+        raise HTTPException(
+            status_code=404,
+            detail="Profile not found. Please create a profile first."
+        )
+
+    # Get existing resume or create empty one
+    resume = _deserialize_resume_data(profile.resume_data)
+    if not resume:
+        resume = StructuredResume()
+
+    # Update only provided fields
+    update_data = request.model_dump(exclude_unset=True)
+
+    if 'summary' in update_data:
+        resume.summary = update_data['summary']
+    if 'experience' in update_data:
+        resume.experience = update_data['experience']
+    if 'education' in update_data:
+        resume.education = update_data['education']
+    if 'skills' in update_data:
+        resume.skills = update_data['skills']
+    if 'projects' in update_data:
+        resume.projects = update_data['projects']
+    if 'certifications' in update_data:
+        resume.certifications = update_data['certifications']
+
+    # Save back to profile
+    profile.resume_data = _serialize_resume_data(resume)
+
+    # Also update backward-compatible fields
+    if resume.summary:
+        profile.resume_summary = resume.summary
+    if resume.skills:
+        profile.skills = ', '.join(resume.skills)
+
+    db.commit()
+    db.refresh(profile)
+
+    return resume
+
+
+@router.post("/tailor-resume", response_model=TailorResumeResponse)
+def tailor_resume_endpoint(
+    request: TailorResumeRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Get tailored suggestions for a resume based on a job description.
+
+    Can use resume from profile or provide resume text directly.
+    Returns suggestions for improving the resume to match the job.
+    """
+    # Get resume
+    if request.use_profile_resume:
+        profile = db.query(UserProfile).first()
+        if not profile:
+            raise HTTPException(
+                status_code=404,
+                detail="Profile not found. Please create a profile first."
+            )
+
+        resume = _deserialize_resume_data(profile.resume_data)
+        if not resume:
+            # Try to build from profile fields
+            if profile.resume_summary or profile.skills:
+                resume = StructuredResume(
+                    summary=profile.resume_summary,
+                    skills=profile.skills.split(', ') if profile.skills else []
+                )
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail="No resume data in profile. Upload a resume or provide resume_text."
+                )
+    else:
+        if not request.resume_text:
+            raise HTTPException(
+                status_code=400,
+                detail="resume_text is required when use_profile_resume is false"
+            )
+        resume = parse_resume_text(request.resume_text)
+
+    # Get tailoring suggestions
+    result = tailor_resume_for_job(resume, request.job_description)
+
+    # Convert to response model
+    suggestions = [
+        TailorSuggestion(
+            section=s.section,
+            original=s.original,
+            suggestion=s.suggestion,
+            priority=s.priority,
+            reason=s.reason
+        )
+        for s in result.suggestions
+    ]
+
+    return TailorResumeResponse(
+        match_score=result.match_score,
+        keywords_to_add=result.keywords_to_add,
+        skills_to_emphasize=result.skills_to_emphasize,
+        skills_to_add=result.skills_to_add,
+        suggestions=suggestions
+    )
 
 
 # --- Job Analysis Endpoints ---
