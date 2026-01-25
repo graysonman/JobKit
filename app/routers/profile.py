@@ -3,6 +3,57 @@ JobKit - User profile management API.
 
 Endpoints for managing the user's personal profile, which is used
 for personalizing message templates and cover letters.
+
+# =============================================================================
+# TODO: Multi-User Authentication (Feature 2)
+# =============================================================================
+# IMPORTANT: Remove hardcoded id=1 pattern and use current_user.id instead
+#
+# from ..auth.dependencies import get_current_active_user
+# from ..auth.models import User
+#
+# @router.get("/", response_model=UserProfileResponse)
+# def get_profile(
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_active_user)  # ADD THIS
+# ):
+#     # Get profile by user_id, not by first()
+#     profile = db.query(UserProfile).filter(
+#         UserProfile.user_id == current_user.id
+#     ).first()
+#     ...
+#
+# @router.post("/", response_model=UserProfileResponse)
+# def create_profile(
+#     profile: UserProfileBase,
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_active_user)  # ADD THIS
+# ):
+#     existing = db.query(UserProfile).filter(
+#         UserProfile.user_id == current_user.id
+#     ).first()
+#
+#     if existing:
+#         # Update existing profile for this user
+#         ...
+#     else:
+#         # Create new profile - REMOVE id=1, use user_id instead
+#         db_profile = UserProfile(user_id=current_user.id, **update_data)
+#         ...
+#
+# @router.patch("/", response_model=UserProfileResponse)
+# def update_profile(
+#     profile: UserProfileUpdate,
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_active_user)  # ADD THIS
+# ):
+#     existing = db.query(UserProfile).filter(
+#         UserProfile.user_id == current_user.id
+#     ).first()
+#     ...
+#
+# Apply same pattern to all other profile endpoints
+# =============================================================================
 """
 import json
 from fastapi import APIRouter, Depends, HTTPException

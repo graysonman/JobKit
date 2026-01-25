@@ -2,6 +2,47 @@
 JobKit - SQLAlchemy ORM models
 
 Database models for contacts, companies, applications, messages, and user profile.
+
+# =============================================================================
+# TODO: Multi-User Authentication (Feature 2) - Data Isolation
+# =============================================================================
+# 1. Add User and OAuthAccount models:
+#    class User(Base):
+#        __tablename__ = "users"
+#        id = Column(Integer, primary_key=True)
+#        email = Column(String, unique=True, index=True, nullable=False)
+#        hashed_password = Column(String, nullable=True)  # Null for OAuth-only
+#        name = Column(String)
+#        is_active = Column(Boolean, default=True)
+#        is_verified = Column(Boolean, default=False)
+#        created_at = Column(DateTime, default=datetime.utcnow)
+#        oauth_accounts = relationship("OAuthAccount", back_populates="user")
+#        profile = relationship("UserProfile", back_populates="user", uselist=False)
+#
+#    class OAuthAccount(Base):
+#        __tablename__ = "oauth_accounts"
+#        id = Column(Integer, primary_key=True)
+#        user_id = Column(Integer, ForeignKey("users.id"))
+#        provider = Column(String)  # "google", "github"
+#        provider_user_id = Column(String)
+#        access_token = Column(String)
+#        user = relationship("User", back_populates="oauth_accounts")
+#
+# 2. Add user_id foreign key to ALL models:
+#    - Contact: user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+#    - Company: user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+#    - Application: user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+#    - MessageTemplate: user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # NULL = system template
+#    - MessageHistory: user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+#    - UserProfile: user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+#    - Interaction: user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+#
+# 3. Database migration sequence (Alembic):
+#    - 001_add_users_table.py: Create users and oauth_accounts tables
+#    - 002_add_user_id_columns.py: Add nullable user_id to all tables
+#    - 003_migrate_existing_data.py: Create default user, assign existing data
+#    - 004_make_user_id_required.py: Make user_id non-nullable, add foreign keys
+# =============================================================================
 """
 from sqlalchemy import Column, Integer, String, Boolean, Date, DateTime, Float, Text, ForeignKey, CheckConstraint
 from sqlalchemy.orm import relationship

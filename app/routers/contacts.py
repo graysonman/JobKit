@@ -3,6 +3,51 @@ JobKit - CRUD API for networking contacts.
 
 Endpoints for managing professional networking contacts including
 recruiters, developers, hiring managers, and alumni connections.
+
+# =============================================================================
+# TODO: Multi-User Authentication (Feature 2)
+# =============================================================================
+# Add authentication dependency to all endpoints for data isolation:
+#
+# from ..auth.dependencies import get_current_active_user
+# from ..auth.models import User
+#
+# @router.get("/", response_model=List[ContactResponse])
+# def list_contacts(
+#     ...,
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_active_user)  # ADD THIS
+# ):
+#     # Filter by user_id for data isolation
+#     query = db.query(Contact).filter(Contact.user_id == current_user.id)
+#     ...
+#
+# @router.post("/", response_model=ContactResponse)
+# def create_contact(
+#     contact: ContactCreate,
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_active_user)  # ADD THIS
+# ):
+#     # Set user_id on creation
+#     db_contact = Contact(**contact.model_dump(), user_id=current_user.id)
+#     ...
+#
+# @router.get("/{contact_id}", response_model=ContactResponse)
+# def get_contact(
+#     contact_id: int,
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_active_user)  # ADD THIS
+# ):
+#     # Filter by both contact_id AND user_id to prevent unauthorized access
+#     contact = db.query(Contact).filter(
+#         Contact.id == contact_id,
+#         Contact.user_id == current_user.id
+#     ).first()
+#     ...
+#
+# Apply same pattern to: update_contact, delete_contact, snooze_followup,
+# get_contact_interactions, create_interaction, get_contact_messages, bulk_create_contacts
+# =============================================================================
 """
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session

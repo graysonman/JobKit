@@ -3,6 +3,52 @@ JobKit - CRUD API for job applications.
 
 Endpoints for tracking job applications through the hiring pipeline,
 from initial save through offer/rejection.
+
+# =============================================================================
+# TODO: Multi-User Authentication (Feature 2)
+# =============================================================================
+# Add authentication dependency to all endpoints for data isolation:
+#
+# from ..auth.dependencies import get_current_active_user
+# from ..auth.models import User
+#
+# @router.get("/", response_model=List[ApplicationResponse])
+# def list_applications(
+#     ...,
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_active_user)  # ADD THIS
+# ):
+#     # Filter by user_id for data isolation
+#     query = db.query(Application).filter(Application.user_id == current_user.id)
+#     ...
+#
+# @router.post("/", response_model=ApplicationResponse)
+# def create_application(
+#     application: ApplicationCreate,
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_active_user)  # ADD THIS
+# ):
+#     # Set user_id on creation
+#     db_application = Application(**application.model_dump(), user_id=current_user.id)
+#     ...
+#
+# @router.get("/{application_id}", response_model=ApplicationResponse)
+# def get_application(
+#     application_id: int,
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_active_user)  # ADD THIS
+# ):
+#     # Filter by both application_id AND user_id to prevent unauthorized access
+#     application = db.query(Application).filter(
+#         Application.id == application_id,
+#         Application.user_id == current_user.id
+#     ).first()
+#     ...
+#
+# Apply same pattern to: update_application, delete_application, mark_as_ghosted,
+# advance_application, get_stale_applications, get_upcoming_steps, get_application_funnel,
+# get_application_stats, bulk_create_applications
+# =============================================================================
 """
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session

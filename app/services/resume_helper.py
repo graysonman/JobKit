@@ -14,6 +14,53 @@ Features:
 Resume parsing requires optional dependencies:
 - PDF: pip install pdfplumber
 - DOCX: pip install python-docx
+
+# =============================================================================
+# TODO: Local AI Integration (Feature 1)
+# =============================================================================
+# Add AI-enhanced cover letter generation:
+#
+# async def generate_cover_letter_enhanced(
+#     profile: Dict,
+#     job_description: str,
+#     company_name: str,
+#     role: str,
+#     tone: str = "professional",
+#     length: str = "medium"
+# ) -> Tuple[str, bool]:
+#     '''
+#     Generate cover letter using AI when available, fallback to template.
+#
+#     Returns:
+#         Tuple[str, bool]: (cover_letter_text, was_ai_generated)
+#     '''
+#     from .ai_service import AIService
+#     ai = AIService()
+#
+#     if await ai.is_available():
+#         return await ai.generate_cover_letter_ai(
+#             profile, job_description, company_name, role, tone, length
+#         )
+#
+#     # Fallback to template-based generation
+#     return generate_cover_letter(profile, job_description, company_name, role, tone=tone, length=length), False
+#
+# Add AI-enhanced skill extraction:
+#
+# async def extract_skills_semantic(text: str, context: str = "resume") -> List[Dict]:
+#     '''
+#     Use AI to semantically extract and categorize skills from text.
+#     Falls back to keyword matching if AI unavailable.
+#     '''
+#     from .ai_service import AIService
+#     ai = AIService()
+#
+#     if await ai.is_available():
+#         return await ai.extract_skills_semantic(text, context)
+#
+#     # Fallback to existing keyword extraction
+#     return extract_keywords_from_job(text) if context == "job" else []
+# =============================================================================
 """
 import re
 import os

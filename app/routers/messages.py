@@ -3,6 +3,76 @@ JobKit - Message template management and generation API.
 
 Endpoints for creating message templates, generating personalized outreach
 messages, and tracking sent message history.
+
+# =============================================================================
+# TODO: Local AI Integration (Feature 1)
+# =============================================================================
+# Add AI-powered message generation endpoint:
+#
+# @router.post("/generate-ai", response_model=MessageGenerateResponse)
+# async def generate_message_ai_endpoint(
+#     contact_id: int,
+#     message_type: MessageType,
+#     context: Optional[str] = None,
+#     db: Session = Depends(get_db)
+# ):
+#     '''
+#     Generate AI-powered personalized message for a contact.
+#     Falls back to template-based generation if AI unavailable.
+#     '''
+#     from ..services.message_generator import generate_message_ai
+#
+#     contact = db.query(Contact).filter(Contact.id == contact_id).first()
+#     if not contact:
+#         raise HTTPException(status_code=404, detail="Contact not found")
+#
+#     user_profile = db.query(UserProfile).first()
+#     if not user_profile:
+#         raise HTTPException(status_code=400, detail="Please set up your profile first")
+#
+#     message, was_ai = await generate_message_ai(contact, user_profile, message_type, context)
+#
+#     return MessageGenerateResponse(
+#         message=message,
+#         contact_name=contact.name,
+#         message_type=message_type,
+#         character_count=len(message),
+#         ai_generated=was_ai  # Add this field to response schema
+#     )
+# =============================================================================
+
+# =============================================================================
+# TODO: Multi-User Authentication (Feature 2)
+# =============================================================================
+# Add authentication dependency to all endpoints:
+#
+# from ..auth.dependencies import get_current_active_user
+# from ..auth.models import User
+#
+# @router.get("/templates", response_model=List[MessageTemplateResponse])
+# def list_templates(
+#     message_type: Optional[str] = None,
+#     target_type: Optional[str] = None,
+#     is_default: Optional[bool] = None,
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_active_user)  # ADD THIS
+# ):
+#     # Filter: show user's templates + system templates (user_id is NULL)
+#     query = db.query(MessageTemplate).filter(
+#         or_(
+#             MessageTemplate.user_id == current_user.id,
+#             MessageTemplate.user_id.is_(None)
+#         )
+#     )
+#
+# @router.get("/history", response_model=List[MessageHistoryResponse])
+# def get_message_history(
+#     ...,
+#     current_user: User = Depends(get_current_active_user)  # ADD THIS
+# ):
+#     # Filter by user_id
+#     query = query.filter(MessageHistory.user_id == current_user.id)
+# =============================================================================
 """
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse

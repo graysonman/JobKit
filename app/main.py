@@ -3,6 +3,17 @@ JobKit - FastAPI application entry point.
 
 A personal job search toolkit for tracking applications, networking contacts,
 and generating outreach messages.
+
+# =============================================================================
+# TODO: Multi-User Authentication (Feature 2)
+# =============================================================================
+# - Add auth router: from .auth import router as auth_router
+# - Include router: app.include_router(auth_router, prefix="/auth", tags=["auth"])
+# - Update CORS: specify actual origins in production
+# - Protect page routes with authentication middleware
+# - Add login/register pages to templates
+# - Add JOBKIT_SINGLE_USER_MODE env check for backwards compatibility
+# =============================================================================
 """
 from fastapi import FastAPI, Request, Depends, Query
 from fastapi.staticfiles import StaticFiles

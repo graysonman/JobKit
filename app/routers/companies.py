@@ -3,6 +3,55 @@ JobKit - CRUD API for company research.
 
 Endpoints for managing target companies, including research notes,
 tech stack, culture, and interview process information.
+
+# =============================================================================
+# TODO: Multi-User Authentication (Feature 2)
+# =============================================================================
+# Add authentication dependency to all endpoints for data isolation:
+#
+# from ..auth.dependencies import get_current_active_user
+# from ..auth.models import User
+#
+# @router.get("/", response_model=List[CompanyResponse])
+# def list_companies(
+#     ...,
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_active_user)  # ADD THIS
+# ):
+#     # Filter by user_id for data isolation
+#     query = db.query(Company).filter(Company.user_id == current_user.id)
+#     ...
+#
+# @router.post("/", response_model=CompanyResponse)
+# def create_company(
+#     company: CompanyCreate,
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_active_user)  # ADD THIS
+# ):
+#     # Check duplicate within user's companies only
+#     existing = db.query(Company).filter(
+#         Company.name == company.name,
+#         Company.user_id == current_user.id
+#     ).first()
+#     # Set user_id on creation
+#     db_company = Company(**company.model_dump(), user_id=current_user.id)
+#     ...
+#
+# @router.get("/{company_id}", response_model=CompanyResponse)
+# def get_company(
+#     company_id: int,
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_active_user)  # ADD THIS
+# ):
+#     # Filter by both company_id AND user_id to prevent unauthorized access
+#     company = db.query(Company).filter(
+#         Company.id == company_id,
+#         Company.user_id == current_user.id
+#     ).first()
+#     ...
+#
+# Apply same pattern to all other endpoints
+# =============================================================================
 """
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session

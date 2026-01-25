@@ -3,6 +3,59 @@ JobKit - Resume and cover letter API endpoints.
 
 Endpoints for analyzing job descriptions, matching resumes to jobs,
 generating cover letters, parsing resumes, and suggesting improvements.
+
+# =============================================================================
+# TODO: Local AI Integration (Feature 1)
+# =============================================================================
+# Add new AI-powered endpoints:
+#
+# @router.get("/ai/status")
+# async def get_ai_status():
+#     '''Check if AI (Ollama) is available and configured.'''
+#     from ..services.ai_service import AIService
+#     ai = AIService()
+#     return {
+#         "available": await ai.is_available(),
+#         "model": settings.ollama_model,
+#         "base_url": settings.ollama_base_url
+#     }
+#
+# @router.get("/ai/models")
+# async def list_ai_models():
+#     '''List available Ollama models for UI model selector.'''
+#     from ..services.ai_service import AIService
+#     ai = AIService()
+#     return {"models": await ai.list_models()}
+#
+# @router.post("/generate-cover-letter-ai")
+# async def generate_cover_letter_ai_endpoint(request: CoverLetterRequest, db: Session = Depends(get_db)):
+#     '''Generate AI-powered cover letter with fallback to template.'''
+#     # Uses generate_cover_letter_enhanced() from resume_helper
+#
+# @router.post("/analyze-job-ai")
+# async def analyze_job_ai_endpoint(request: JobAnalysisRequest):
+#     '''AI-enhanced job description analysis with semantic skill extraction.'''
+#     # Uses extract_skills_semantic() from resume_helper
+# =============================================================================
+
+# =============================================================================
+# TODO: Multi-User Authentication (Feature 2)
+# =============================================================================
+# Add authentication dependency to all endpoints:
+#
+# from ..auth.dependencies import get_current_active_user
+# from ..auth.models import User
+#
+# @router.post("/upload-resume", response_model=ResumeUploadResponse)
+# async def upload_resume(
+#     file: UploadFile = File(...),
+#     save_to_profile: bool = Query(False),
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_active_user)  # ADD THIS
+# ):
+#     # Filter by current_user.id when accessing UserProfile
+#     profile = db.query(UserProfile).filter(UserProfile.user_id == current_user.id).first()
+# =============================================================================
 """
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from fastapi.responses import JSONResponse
