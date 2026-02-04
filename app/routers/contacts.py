@@ -3,51 +3,6 @@ JobKit - CRUD API for networking contacts.
 
 Endpoints for managing professional networking contacts including
 recruiters, developers, hiring managers, and alumni connections.
-
-# =============================================================================
-# TODO: Multi-User Authentication (Feature 2)
-# =============================================================================
-# Add authentication dependency to all endpoints for data isolation:
-#
-# from ..auth.dependencies import get_current_active_user
-# from ..auth.models import User
-#
-# @router.get("/", response_model=List[ContactResponse])
-# def list_contacts(
-#     ...,
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(get_current_active_user)  # ADD THIS
-# ):
-#     # Filter by user_id for data isolation
-#     query = db.query(Contact).filter(Contact.user_id == current_user.id)
-#     ...
-#
-# @router.post("/", response_model=ContactResponse)
-# def create_contact(
-#     contact: ContactCreate,
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(get_current_active_user)  # ADD THIS
-# ):
-#     # Set user_id on creation
-#     db_contact = Contact(**contact.model_dump(), user_id=current_user.id)
-#     ...
-#
-# @router.get("/{contact_id}", response_model=ContactResponse)
-# def get_contact(
-#     contact_id: int,
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(get_current_active_user)  # ADD THIS
-# ):
-#     # Filter by both contact_id AND user_id to prevent unauthorized access
-#     contact = db.query(Contact).filter(
-#         Contact.id == contact_id,
-#         Contact.user_id == current_user.id
-#     ).first()
-#     ...
-#
-# Apply same pattern to: update_contact, delete_contact, snooze_followup,
-# get_contact_interactions, create_interaction, get_contact_messages, bulk_create_contacts
-# =============================================================================
 """
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -62,6 +17,9 @@ from ..schemas import (
     InteractionCreate, InteractionResponse,
     ContactStats, MessageHistoryResponse
 )
+from ..auth.dependencies import get_current_active_user
+from ..auth.models import User
+from ..query_helpers import user_query, get_owned_or_404
 
 router = APIRouter()
 
@@ -78,10 +36,11 @@ def list_contacts(
     search: Optional[str] = None,
     sort_by: Optional[str] = Query(None, pattern="^(name|company|created_at|last_contacted|next_follow_up)$"),
     sort_order: Optional[str] = Query("asc", pattern="^(asc|desc)$"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
     """List contacts with optional filters, search, and sorting."""
-    query = db.query(Contact)
+    query = user_query(db, Contact, current_user)
 
     # Filters
     if contact_type:
@@ -122,38 +81,40 @@ def list_contacts(
 
 
 @router.get("/stats", response_model=ContactStats)
-def get_contact_stats(db: Session = Depends(get_db)):
+def get_contact_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Get contact statistics."""
-    total = db.query(func.count(Contact.id)).scalar() or 0
+    base = user_query(db, Contact, current_user)
+    total = base.count()
 
     # Count by type
     by_type = {}
-    type_counts = db.query(Contact.contact_type, func.count(Contact.id)).group_by(Contact.contact_type).all()
+    type_counts = base.with_entities(
+        Contact.contact_type, func.count(Contact.id)
+    ).group_by(Contact.contact_type).all()
     for contact_type, count in type_counts:
         by_type[contact_type or "unspecified"] = count
 
     # Count by status
     by_status = {}
-    status_counts = db.query(Contact.connection_status, func.count(Contact.id)).group_by(Contact.connection_status).all()
+    status_counts = base.with_entities(
+        Contact.connection_status, func.count(Contact.id)
+    ).group_by(Contact.connection_status).all()
     for status, count in status_counts:
         by_status[status] = count
 
     # Needs follow-up
-    needs_follow_up = db.query(func.count(Contact.id)).filter(
-        Contact.next_follow_up <= date.today()
-    ).scalar() or 0
+    needs_follow_up = base.filter(Contact.next_follow_up <= date.today()).count()
 
     # Contacted this week
     week_ago = date.today() - timedelta(days=7)
-    contacted_this_week = db.query(func.count(Contact.id)).filter(
-        Contact.last_contacted >= week_ago
-    ).scalar() or 0
+    contacted_this_week = base.filter(Contact.last_contacted >= week_ago).count()
 
     # Contacted this month
     month_ago = date.today() - timedelta(days=30)
-    contacted_this_month = db.query(func.count(Contact.id)).filter(
-        Contact.last_contacted >= month_ago
-    ).scalar() or 0
+    contacted_this_month = base.filter(Contact.last_contacted >= month_ago).count()
 
     return ContactStats(
         total=total,
@@ -168,11 +129,12 @@ def get_contact_stats(db: Session = Depends(get_db)):
 @router.get("/upcoming-followups", response_model=List[ContactResponse])
 def get_upcoming_followups(
     days: int = Query(7, ge=1, le=30),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
     """Get contacts with follow-ups due in the next N days."""
     future_date = date.today() + timedelta(days=days)
-    contacts = db.query(Contact).filter(
+    contacts = user_query(db, Contact, current_user).filter(
         Contact.next_follow_up <= future_date,
         Contact.next_follow_up >= date.today()
     ).order_by(Contact.next_follow_up.asc()).all()
@@ -180,18 +142,23 @@ def get_upcoming_followups(
 
 
 @router.get("/{contact_id}", response_model=ContactResponse)
-def get_contact(contact_id: int, db: Session = Depends(get_db)):
+def get_contact(
+    contact_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Get a specific contact."""
-    contact = db.query(Contact).filter(Contact.id == contact_id).first()
-    if not contact:
-        raise HTTPException(status_code=404, detail="Contact not found")
-    return contact
+    return get_owned_or_404(db, Contact, contact_id, current_user, "Contact")
 
 
 @router.post("/", response_model=ContactResponse)
-def create_contact(contact: ContactCreate, db: Session = Depends(get_db)):
+def create_contact(
+    contact: ContactCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Create a new contact."""
-    db_contact = Contact(**contact.model_dump())
+    db_contact = Contact(**contact.model_dump(), user_id=current_user.id)
     db.add(db_contact)
     db.commit()
     db.refresh(db_contact)
@@ -199,11 +166,14 @@ def create_contact(contact: ContactCreate, db: Session = Depends(get_db)):
 
 
 @router.patch("/{contact_id}", response_model=ContactResponse)
-def update_contact(contact_id: int, contact: ContactUpdate, db: Session = Depends(get_db)):
+def update_contact(
+    contact_id: int,
+    contact: ContactUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Update a contact."""
-    db_contact = db.query(Contact).filter(Contact.id == contact_id).first()
-    if not db_contact:
-        raise HTTPException(status_code=404, detail="Contact not found")
+    db_contact = get_owned_or_404(db, Contact, contact_id, current_user, "Contact")
 
     update_data = contact.model_dump(exclude_unset=True)
     for key, value in update_data.items():
@@ -215,12 +185,13 @@ def update_contact(contact_id: int, contact: ContactUpdate, db: Session = Depend
 
 
 @router.delete("/{contact_id}")
-def delete_contact(contact_id: int, db: Session = Depends(get_db)):
+def delete_contact(
+    contact_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Delete a contact."""
-    db_contact = db.query(Contact).filter(Contact.id == contact_id).first()
-    if not db_contact:
-        raise HTTPException(status_code=404, detail="Contact not found")
-
+    db_contact = get_owned_or_404(db, Contact, contact_id, current_user, "Contact")
     db.delete(db_contact)
     db.commit()
     return {"message": "Contact deleted"}
@@ -230,13 +201,11 @@ def delete_contact(contact_id: int, db: Session = Depends(get_db)):
 def snooze_followup(
     contact_id: int,
     days: int = Query(7, ge=1, le=90),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
     """Snooze a contact's follow-up date."""
-    db_contact = db.query(Contact).filter(Contact.id == contact_id).first()
-    if not db_contact:
-        raise HTTPException(status_code=404, detail="Contact not found")
-
+    db_contact = get_owned_or_404(db, Contact, contact_id, current_user, "Contact")
     db_contact.next_follow_up = date.today() + timedelta(days=days)
     db.commit()
     db.refresh(db_contact)
@@ -249,15 +218,15 @@ def snooze_followup(
 def get_contact_interactions(
     contact_id: int,
     limit: int = 50,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
     """Get interactions for a contact."""
-    contact = db.query(Contact).filter(Contact.id == contact_id).first()
-    if not contact:
-        raise HTTPException(status_code=404, detail="Contact not found")
+    get_owned_or_404(db, Contact, contact_id, current_user, "Contact")
 
     interactions = db.query(Interaction).filter(
-        Interaction.contact_id == contact_id
+        Interaction.contact_id == contact_id,
+        Interaction.user_id == current_user.id
     ).order_by(Interaction.interaction_date.desc()).limit(limit).all()
     return interactions
 
@@ -266,15 +235,15 @@ def get_contact_interactions(
 def create_interaction(
     contact_id: int,
     interaction: InteractionCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
     """Log an interaction with a contact."""
-    contact = db.query(Contact).filter(Contact.id == contact_id).first()
-    if not contact:
-        raise HTTPException(status_code=404, detail="Contact not found")
+    contact = get_owned_or_404(db, Contact, contact_id, current_user, "Contact")
 
     db_interaction = Interaction(
         contact_id=contact_id,
+        user_id=current_user.id,
         interaction_type=interaction.interaction_type,
         interaction_date=interaction.interaction_date,
         notes=interaction.notes,
@@ -301,15 +270,15 @@ def create_interaction(
 def get_contact_messages(
     contact_id: int,
     limit: int = 50,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
     """Get message history for a contact."""
-    contact = db.query(Contact).filter(Contact.id == contact_id).first()
-    if not contact:
-        raise HTTPException(status_code=404, detail="Contact not found")
+    get_owned_or_404(db, Contact, contact_id, current_user, "Contact")
 
     messages = db.query(MessageHistory).filter(
-        MessageHistory.contact_id == contact_id
+        MessageHistory.contact_id == contact_id,
+        MessageHistory.user_id == current_user.id
     ).order_by(MessageHistory.sent_at.desc()).limit(limit).all()
     return messages
 
@@ -319,12 +288,13 @@ def get_contact_messages(
 @router.post("/bulk", response_model=List[ContactResponse])
 def bulk_create_contacts(
     contacts: List[ContactCreate],
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
     """Create multiple contacts at once."""
     created_contacts = []
     for contact_data in contacts:
-        db_contact = Contact(**contact_data.model_dump())
+        db_contact = Contact(**contact_data.model_dump(), user_id=current_user.id)
         db.add(db_contact)
         created_contacts.append(db_contact)
 

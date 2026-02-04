@@ -72,8 +72,21 @@ class Settings(BaseSettings):
     ai: AISettings = AISettings()
     auth: AuthSettings = AuthSettings()
 
+    # CORS allowed origins (comma-separated, e.g. "http://localhost:3000,https://myapp.com")
+    allowed_origins: str = "*"
+
     # Database
     database_url: str = "sqlite:///./data/jobkit.db"
+
+    # Database connection pool (PostgreSQL only)
+    db_pool_size: int = 5
+    db_max_overflow: int = 10
+    db_pool_timeout: int = 30
+    db_pool_recycle: int = 1800
+
+    # Database retry settings
+    db_retry_max_attempts: int = 3
+    db_retry_base_delay: float = 0.1
 
     class Config:
         env_prefix = "JOBKIT_"

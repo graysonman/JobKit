@@ -376,12 +376,10 @@ document.getElementById('generate-form').addEventListener('submit', async functi
     const btn = document.getElementById('generate-btn'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Generating...';
     currentContactId = document.getElementById('msg-contact').value;
     currentMessageType = document.getElementById('msg-type').value;
-    const templateId = document.getElementById('msg-template').value;
     const data = { contact_id: parseInt(currentContactId), message_type: currentMessageType };
-    if (templateId) data.template_id = parseInt(templateId);
 
     try {
-        const response = await fetch('/api/messages/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        const response = await fetch('/api/messages/generate-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
         if (!response.ok) { const error = await response.json(); throw new Error(error.detail || 'Error generating message'); }
         const result = await response.json();
         document.getElementById('msg-recipient').textContent = result.contact_name;

@@ -624,7 +624,7 @@ document.getElementById('analyze-form').addEventListener('submit', async functio
     currentJobDescription = document.getElementById('job-description').value;
 
     try {
-        const response = await fetch('/api/resume/analyze-job', {
+        const response = await fetch('/api/resume/analyze-job-ai', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ job_description: currentJobDescription })
@@ -635,21 +635,22 @@ document.getElementById('analyze-form').addEventListener('submit', async functio
             throw new Error(error.detail || 'Failed to analyze job description');
         }
 
-        const result = await response.json();
+        const raw = await response.json();
+        const result = raw.analysis || raw;
         currentAnalysis = result;
 
         document.getElementById('exp-level').textContent = result.experience_level;
 
-        document.getElementById('required-skills').innerHTML = result.required_skills
+        document.getElementById('required-skills').innerHTML = (result.required_skills || [])
             .map(s => `<span class="px-2 py-1 text-xs rounded bg-red-100 text-red-800">${s}</span>`).join('');
 
-        document.getElementById('preferred-skills').innerHTML = result.preferred_skills
+        document.getElementById('preferred-skills').innerHTML = (result.preferred_skills || [])
             .map(s => `<span class="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800">${s}</span>`).join('');
 
-        document.getElementById('keywords').innerHTML = result.keywords
+        document.getElementById('keywords').innerHTML = (result.keywords || [])
             .map(s => `<span class="px-2 py-1 text-xs rounded bg-gray-100 text-gray-700">${s}</span>`).join('');
 
-        document.getElementById('responsibilities').innerHTML = result.key_responsibilities
+        document.getElementById('responsibilities').innerHTML = (result.key_responsibilities || [])
             .map(r => `<li>${r}</li>`).join('');
 
         document.getElementById('analysis-results').classList.remove('hidden');
@@ -751,7 +752,7 @@ document.getElementById('cover-letter-form').addEventListener('submit', async fu
     const customPoints = pointsText ? pointsText.split('\n').filter(p => p.trim()) : null;
 
     try {
-        const response = await fetch('/api/resume/generate-cover-letter', {
+        const response = await fetch('/api/resume/generate-cover-letter-ai', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1091,7 +1092,7 @@ async function getTailoringSuggestions() {
             throw new Error('No resume available');
         }
 
-        const response = await fetch('/api/resume/tailor-resume', {
+        const response = await fetch('/api/resume/tailor-resume-ai', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1106,7 +1107,8 @@ async function getTailoringSuggestions() {
             throw new Error(error.detail || 'Failed to get tailoring suggestions');
         }
 
-        const result = await response.json();
+        const raw = await response.json();
+        const result = raw.analysis || raw;
 
         // Skills to add
         const skillsToAdd = document.getElementById('skills-to-add');

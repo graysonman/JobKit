@@ -2,10 +2,6 @@
 JobKit - Authentication Schemas
 
 Pydantic schemas for auth request/response validation.
-
-# =============================================================================
-# TODO: Multi-User Authentication (Feature 2) - Implement these schemas
-# =============================================================================
 """
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List

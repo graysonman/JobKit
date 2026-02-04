@@ -3,57 +3,6 @@ JobKit - User profile management API.
 
 Endpoints for managing the user's personal profile, which is used
 for personalizing message templates and cover letters.
-
-# =============================================================================
-# TODO: Multi-User Authentication (Feature 2)
-# =============================================================================
-# IMPORTANT: Remove hardcoded id=1 pattern and use current_user.id instead
-#
-# from ..auth.dependencies import get_current_active_user
-# from ..auth.models import User
-#
-# @router.get("/", response_model=UserProfileResponse)
-# def get_profile(
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(get_current_active_user)  # ADD THIS
-# ):
-#     # Get profile by user_id, not by first()
-#     profile = db.query(UserProfile).filter(
-#         UserProfile.user_id == current_user.id
-#     ).first()
-#     ...
-#
-# @router.post("/", response_model=UserProfileResponse)
-# def create_profile(
-#     profile: UserProfileBase,
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(get_current_active_user)  # ADD THIS
-# ):
-#     existing = db.query(UserProfile).filter(
-#         UserProfile.user_id == current_user.id
-#     ).first()
-#
-#     if existing:
-#         # Update existing profile for this user
-#         ...
-#     else:
-#         # Create new profile - REMOVE id=1, use user_id instead
-#         db_profile = UserProfile(user_id=current_user.id, **update_data)
-#         ...
-#
-# @router.patch("/", response_model=UserProfileResponse)
-# def update_profile(
-#     profile: UserProfileUpdate,
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(get_current_active_user)  # ADD THIS
-# ):
-#     existing = db.query(UserProfile).filter(
-#         UserProfile.user_id == current_user.id
-#     ).first()
-#     ...
-#
-# Apply same pattern to all other profile endpoints
-# =============================================================================
 """
 import json
 from fastapi import APIRouter, Depends, HTTPException
@@ -64,6 +13,8 @@ from datetime import date
 from ..database import get_db
 from ..models import UserProfile
 from ..schemas import UserProfileBase, UserProfileUpdate, UserProfileResponse, StructuredResume
+from ..auth.dependencies import get_current_active_user
+from ..auth.models import User
 
 router = APIRouter()
 
@@ -118,19 +69,18 @@ def calculate_profile_completion(profile: UserProfile) -> int:
     if not profile:
         return 0
 
-    # Define fields and their weights
     fields = {
-        'name': 10,           # Required, high weight
-        'email': 10,          # Important for messaging
-        'linkedin_url': 5,    # Helpful but optional
-        'school': 5,          # For alumni connections
-        'graduation_year': 5, # For alumni context
-        'current_title': 10,  # Important for positioning
-        'years_experience': 5,# Context for messages
-        'skills': 15,         # Key for tailoring messages
-        'target_roles': 10,   # Important for job search
-        'elevator_pitch': 15, # Used in messages
-        'resume_summary': 10  # Used in cover letters
+        'name': 10,
+        'email': 10,
+        'linkedin_url': 5,
+        'school': 5,
+        'graduation_year': 5,
+        'current_title': 10,
+        'years_experience': 5,
+        'skills': 15,
+        'target_roles': 10,
+        'elevator_pitch': 15,
+        'resume_summary': 10
     }
 
     total_weight = sum(fields.values())
@@ -144,10 +94,18 @@ def calculate_profile_completion(profile: UserProfile) -> int:
     return int((earned_weight / total_weight) * 100)
 
 
+def _get_user_profile(db: Session, user: User):
+    """Get the profile for the current user."""
+    return db.query(UserProfile).filter(UserProfile.user_id == user.id).first()
+
+
 @router.get("/", response_model=UserProfileResponse)
-def get_profile(db: Session = Depends(get_db)):
+def get_profile(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Get user profile with completion percentage."""
-    profile = db.query(UserProfile).first()
+    profile = _get_user_profile(db, current_user)
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found. Please create one first.")
 
@@ -155,9 +113,12 @@ def get_profile(db: Session = Depends(get_db)):
 
 
 @router.get("/completion")
-def get_profile_completion(db: Session = Depends(get_db)):
+def get_profile_completion(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Get detailed profile completion information."""
-    profile = db.query(UserProfile).first()
+    profile = _get_user_profile(db, current_user)
     if not profile:
         return {
             "completion_percentage": 0,
@@ -168,7 +129,6 @@ def get_profile_completion(db: Session = Depends(get_db)):
             "suggestions": ["Create your profile to get started"]
         }
 
-    # Check each field
     fields = ['name', 'email', 'linkedin_url', 'school', 'graduation_year',
               'current_title', 'years_experience', 'skills', 'target_roles',
               'elevator_pitch', 'resume_summary']
@@ -184,7 +144,6 @@ def get_profile_completion(db: Session = Depends(get_db)):
         else:
             missing.append(field)
 
-    # Generate helpful suggestions
     if 'name' in missing:
         suggestions.append("Add your name - it's required for personalized messages")
     if 'skills' in missing:
@@ -200,14 +159,18 @@ def get_profile_completion(db: Session = Depends(get_db)):
         "completion_percentage": calculate_profile_completion(profile),
         "filled_fields": filled,
         "missing_fields": missing,
-        "suggestions": suggestions[:3]  # Return top 3 suggestions
+        "suggestions": suggestions[:3]
     }
 
 
 @router.post("/", response_model=UserProfileResponse)
-def create_profile(profile: UserProfileBase, db: Session = Depends(get_db)):
-    """Create or update user profile (only one allowed)."""
-    existing = db.query(UserProfile).first()
+def create_profile(
+    profile: UserProfileBase,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Create or update user profile (only one allowed per user)."""
+    existing = _get_user_profile(db, current_user)
 
     # Prepare data, converting resume_data to JSON string
     update_data = profile.model_dump(exclude_unset=True)
@@ -215,15 +178,13 @@ def create_profile(profile: UserProfileBase, db: Session = Depends(get_db)):
         update_data['resume_data'] = serialize_resume_data(profile.resume_data)
 
     if existing:
-        # Update existing
         for key, value in update_data.items():
             setattr(existing, key, value)
         db.commit()
         db.refresh(existing)
         return profile_to_response(existing)
     else:
-        # Create new with id=1
-        db_profile = UserProfile(id=1, **update_data)
+        db_profile = UserProfile(user_id=current_user.id, **update_data)
         db.add(db_profile)
         db.commit()
         db.refresh(db_profile)
@@ -231,15 +192,18 @@ def create_profile(profile: UserProfileBase, db: Session = Depends(get_db)):
 
 
 @router.patch("/", response_model=UserProfileResponse)
-def update_profile(profile: UserProfileUpdate, db: Session = Depends(get_db)):
+def update_profile(
+    profile: UserProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Update user profile."""
-    existing = db.query(UserProfile).first()
+    existing = _get_user_profile(db, current_user)
     if not existing:
         raise HTTPException(status_code=404, detail="Profile not found. Please create one first.")
 
     update_data = profile.model_dump(exclude_unset=True)
 
-    # Convert resume_data to JSON string if present
     if 'resume_data' in update_data and update_data['resume_data'] is not None:
         update_data['resume_data'] = serialize_resume_data(profile.resume_data)
 
@@ -252,9 +216,12 @@ def update_profile(profile: UserProfileUpdate, db: Session = Depends(get_db)):
 
 
 @router.delete("/")
-def delete_profile(db: Session = Depends(get_db)):
+def delete_profile(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Delete user profile."""
-    existing = db.query(UserProfile).first()
+    existing = _get_user_profile(db, current_user)
     if not existing:
         raise HTTPException(status_code=404, detail="Profile not found")
 
@@ -266,30 +233,35 @@ def delete_profile(db: Session = Depends(get_db)):
 # --- Resume Data Endpoints ---
 
 @router.get("/resume", response_model=StructuredResume)
-def get_resume_data(db: Session = Depends(get_db)):
+def get_resume_data(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Get the user's structured resume data."""
-    profile = db.query(UserProfile).first()
+    profile = _get_user_profile(db, current_user)
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found. Please create one first.")
 
     resume_data = deserialize_resume_data(profile.resume_data)
     if not resume_data:
-        # Return empty structure if no resume data exists
         return StructuredResume()
 
     return resume_data
 
 
 @router.put("/resume", response_model=StructuredResume)
-def update_resume_data(resume: StructuredResume, db: Session = Depends(get_db)):
+def update_resume_data(
+    resume: StructuredResume,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Update the user's structured resume data."""
-    profile = db.query(UserProfile).first()
+    profile = _get_user_profile(db, current_user)
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found. Please create one first.")
 
     profile.resume_data = serialize_resume_data(resume)
 
-    # Also update resume_summary with a text version for backward compatibility
     text_parts = []
     if resume.summary:
         text_parts.append(resume.summary)
@@ -305,9 +277,12 @@ def update_resume_data(resume: StructuredResume, db: Session = Depends(get_db)):
 
 
 @router.get("/resume/text")
-def get_resume_as_text(db: Session = Depends(get_db)):
+def get_resume_as_text(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Get the resume as formatted plain text."""
-    profile = db.query(UserProfile).first()
+    profile = _get_user_profile(db, current_user)
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
 
@@ -315,7 +290,6 @@ def get_resume_as_text(db: Session = Depends(get_db)):
     if not resume_data:
         return {"text": profile.resume_summary or ""}
 
-    # Build text representation
     lines = []
 
     if profile.name:
@@ -370,13 +344,15 @@ def get_resume_as_text(db: Session = Depends(get_db)):
 
 
 @router.get("/export")
-def export_profile(db: Session = Depends(get_db)):
+def export_profile(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Export profile data as JSON."""
-    profile = db.query(UserProfile).first()
+    profile = _get_user_profile(db, current_user)
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
 
-    # Deserialize resume_data for export
     resume_data = deserialize_resume_data(profile.resume_data)
 
     export_data = {
@@ -409,13 +385,15 @@ def export_profile(db: Session = Depends(get_db)):
 
 
 @router.post("/import")
-def import_profile(data: dict, db: Session = Depends(get_db)):
+def import_profile(
+    data: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Import profile data from JSON."""
-    # Remove any export metadata
     data.pop("exported_at", None)
     data.pop("id", None)
 
-    # Convert resume_data dict to JSON string for storage
     if 'resume_data' in data and data['resume_data'] is not None:
         try:
             resume = StructuredResume(**data['resume_data'])
@@ -423,7 +401,7 @@ def import_profile(data: dict, db: Session = Depends(get_db)):
         except Exception:
             data['resume_data'] = None
 
-    existing = db.query(UserProfile).first()
+    existing = _get_user_profile(db, current_user)
     if existing:
         for key, value in data.items():
             if hasattr(existing, key):
@@ -432,7 +410,7 @@ def import_profile(data: dict, db: Session = Depends(get_db)):
         db.refresh(existing)
         return {"message": "Profile updated from import", "profile_id": existing.id}
     else:
-        db_profile = UserProfile(id=1, **data)
+        db_profile = UserProfile(user_id=current_user.id, **data)
         db.add(db_profile)
         db.commit()
         db.refresh(db_profile)

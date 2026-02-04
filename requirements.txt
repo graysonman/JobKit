@@ -6,23 +6,20 @@ pydantic-settings>=2.0.0
 python-multipart>=0.0.6
 jinja2>=3.1.0
 python-dotenv>=1.0.0
+email-validator>=2.0.0   # Required by Pydantic EmailStr in auth schemas
 
 # Resume file parsing (optional - for PDF/DOCX upload support)
 pdfplumber>=0.10.0  # PDF text extraction
 python-docx>=1.0.0  # DOCX text extraction
 
-# =============================================================================
-# Local AI Integration (Feature 1) - Optional
-# =============================================================================
-# To enable AI features: pip install httpx
-# Then install Ollama: https://ollama.ai/download
-httpx>=0.25.0            # Async HTTP client for Ollama API calls (optional)
+# Local AI Integration - Optional
+# To enable AI features, also install Ollama: https://ollama.ai/download
+httpx>=0.25.0            # Async HTTP client for Ollama API calls
 
-# =============================================================================
-# Multi-User Authentication (Feature 2) - Optional
-# =============================================================================
-# To enable auth features: pip install python-jose[cryptography] passlib[bcrypt]
+# Multi-User Authentication
 python-jose[cryptography]>=3.3.0  # JWT token creation/validation
 passlib[bcrypt]>=1.7.4            # Password hashing with bcrypt
-# authlib>=1.2.0                   # OAuth2 client for Google/GitHub login (TODO)
-# alembic>=1.12.0                  # Database migrations (TODO)
+authlib>=1.2.0                     # OAuth2 client for Google/GitHub login
+itsdangerous>=2.1.0                # Session signing for OAuth redirect flows
+alembic>=1.12.0                    # Database migrations
+slowapi>=0.1.9                     # Rate limiting for auth endpoints

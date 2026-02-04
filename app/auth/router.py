@@ -15,11 +15,15 @@ Endpoints:
     GET  /auth/status           - Check auth system status
     DELETE /auth/account        - Delete user account
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime
+
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from ..database import get_db
 from ..config import settings
@@ -37,6 +41,7 @@ from .dependencies import (
     is_single_user_mode
 )
 
+limiter = Limiter(key_func=get_remote_address)
 router = APIRouter()
 
 
@@ -54,9 +59,17 @@ async def get_auth_status():
     - Whether single-user mode is enabled
     - Token expiration settings
     """
+    # Include configured OAuth providers so the login page can show/hide buttons
+    oauth_providers = []
+    if settings.auth.google_client_id and settings.auth.google_client_secret:
+        oauth_providers.append("google")
+    if settings.auth.github_client_id and settings.auth.github_client_secret:
+        oauth_providers.append("github")
+
     return {
         "available": auth_service.is_available(),
         "single_user_mode": is_single_user_mode(),
+        "oauth_providers": oauth_providers,
         "dependencies_installed": {
             "jwt": auth_service.is_available(),
             "password_hashing": auth_service.is_available()
@@ -73,7 +86,9 @@ async def get_auth_status():
 # -----------------------------------------------------------------------------
 
 @router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("3/minute")
 async def register(
+    request: Request,
     user_data: UserCreate,
     db: Session = Depends(get_db),
     _: None = Depends(require_auth_available)
@@ -115,7 +130,9 @@ async def register(
 
 
 @router.post("/login", response_model=LoginResponse)
+@limiter.limit("5/minute")
 async def login(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
     _: None = Depends(require_auth_available)
@@ -458,17 +475,17 @@ async def unlink_oauth_account(
 
 
 # -----------------------------------------------------------------------------
-# OAuth2 (Placeholder - requires authlib)
+# OAuth2 (requires authlib)
 # -----------------------------------------------------------------------------
 
 @router.get("/oauth/{provider}")
-async def oauth_login(provider: str):
+async def oauth_login(provider: str, request: Request):
     """
     Redirect to OAuth provider for authentication.
 
     Supported providers: google, github (when configured)
     """
-    from .oauth import is_oauth_configured
+    from .oauth import is_oauth_configured, get_oauth_client
 
     if not is_oauth_configured(provider):
         raise HTTPException(
@@ -478,18 +495,15 @@ async def oauth_login(provider: str):
                    f"JOBKIT_{provider.upper()}_CLIENT_SECRET environment variables."
         )
 
-    # TODO: Implement OAuth redirect when authlib is added
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="OAuth redirect not yet implemented. Install authlib and configure OAuth."
-    )
+    client = get_oauth_client(provider)
+    redirect_uri = request.url_for("oauth_callback", provider=provider)
+    return await client.authorize_redirect(request, str(redirect_uri))
 
 
 @router.get("/oauth/{provider}/callback")
 async def oauth_callback(
     provider: str,
-    code: str,
-    state: Optional[str] = None,
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """
@@ -497,7 +511,11 @@ async def oauth_callback(
 
     Exchanges the authorization code for tokens and creates/updates the user.
     """
-    from .oauth import is_oauth_configured
+    from .oauth import (
+        is_oauth_configured, get_oauth_client,
+        extract_google_user_info, extract_github_user_info
+    )
+    import httpx
 
     if not is_oauth_configured(provider):
         raise HTTPException(
@@ -505,11 +523,76 @@ async def oauth_callback(
             detail=f"OAuth provider '{provider}' is not configured"
         )
 
-    # TODO: Implement OAuth callback when authlib is added
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="OAuth callback not yet implemented. Install authlib and configure OAuth."
+    client = get_oauth_client(provider)
+
+    try:
+        token = await client.authorize_access_token(request)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"OAuth authentication failed: {str(e)}"
+        )
+
+    # Extract user info based on provider
+    if provider == "google":
+        user_info = token.get("userinfo")
+        if not user_info:
+            user_info = await client.userinfo()
+        info = extract_google_user_info(dict(user_info))
+    elif provider == "github":
+        resp = await client.get("user")
+        user_data = resp.json()
+        # GitHub requires separate call for emails
+        emails_resp = await client.get("user/emails")
+        emails_data = emails_resp.json()
+        info = extract_github_user_info(user_data, emails_data)
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported OAuth provider: {provider}"
+        )
+
+    if not info.get("email"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Could not retrieve email from OAuth provider"
+        )
+
+    # Get or create user
+    user = auth_service.get_or_create_oauth_user(
+        email=info["email"],
+        name=info.get("name"),
+        provider=provider,
+        provider_user_id=info["provider_user_id"],
+        access_token=token.get("access_token"),
+        db=db
     )
+
+    # Create JWT tokens
+    access_token, _ = auth_service.create_access_token(user)
+    refresh_token, _ = auth_service.create_refresh_token(user, db)
+
+    # Return an HTML page that stores tokens in localStorage then redirects.
+    # This is necessary because OAuth callbacks happen via browser redirect,
+    # so we can't return JSON — we need to store tokens client-side.
+    expires_in = settings.auth.access_token_expire_minutes * 60
+    user_name = user.name or ""
+    user_email = user.email or ""
+    import html
+    html_content = f"""<!DOCTYPE html>
+<html><head><title>Signing in...</title></head>
+<body>
+<p>Signing in, please wait...</p>
+<script>
+localStorage.setItem('jobkit_access_token', {repr(access_token)});
+localStorage.setItem('jobkit_refresh_token', {repr(refresh_token)});
+localStorage.setItem('jobkit_token_expires', String(Date.now() + {expires_in} * 1000));
+localStorage.setItem('jobkit_user_name', {repr(html.escape(user_name))});
+localStorage.setItem('jobkit_user_email', {repr(html.escape(user_email))});
+window.location.href = '/';
+</script>
+</body></html>"""
+    return HTMLResponse(content=html_content)
 
 
 @router.get("/oauth/providers")

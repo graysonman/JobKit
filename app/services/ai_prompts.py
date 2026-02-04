@@ -3,10 +3,6 @@ JobKit - AI Prompt Templates
 
 Prompt templates for various AI-powered features.
 
-# =============================================================================
-# TODO: Local AI Integration (Feature 1) - Implement prompt templates
-# =============================================================================
-
 These prompts are designed for instruction-tuned models like:
 - Mistral 7B Instruct
 - Phi-3 Mini
@@ -25,6 +21,9 @@ COVER_LETTER_PROMPT = """You are a professional resume writer helping job seeker
 - Years of Experience: {years_experience}
 - About Me: {elevator_pitch}
 
+**Candidate Resume:**
+{resume_text}
+
 **Target Position:**
 - Company: {company_name}
 - Role: {role}
@@ -33,7 +32,7 @@ COVER_LETTER_PROMPT = """You are a professional resume writer helping job seeker
 {job_description}
 
 **Instructions:**
-Write a {length} cover letter in a {tone} tone that:
+Draw from the candidate's actual resume experience, projects, and achievements to write a {length} cover letter in a {tone} tone that:
 1. Opens with a compelling hook that shows genuine interest in {company_name}
 2. Highlights 2-3 relevant skills/experiences that match the job requirements
 3. Demonstrates understanding of the company and role
@@ -100,6 +99,9 @@ MESSAGE_GENERATION_PROMPT = """You are an expert networking coach helping job se
 - Current Title: {my_title}
 - Key Skills: {my_skills}
 - About: {elevator_pitch}
+
+**Your Background (use to personalize the message):**
+{resume_summary}
 
 **Recipient:**
 - Name: {contact_name}
@@ -212,3 +214,36 @@ Return a JSON response with:
 Focus on actionable, specific suggestions. Prioritize changes that will have the most impact on ATS matching and recruiter interest.
 
 JSON Response:"""
+
+
+# -----------------------------------------------------------------------------
+# Prompt Registry - for viewing and live editing via API
+# -----------------------------------------------------------------------------
+ALL_PROMPTS = {
+    "cover_letter": COVER_LETTER_PROMPT,
+    "message_generation": MESSAGE_GENERATION_PROMPT,
+    "skill_extraction": SKILL_EXTRACTION_PROMPT,
+    "job_analysis": JOB_ANALYSIS_PROMPT,
+    "resume_tailoring": RESUME_TAILORING_PROMPT,
+}
+
+
+def get_prompt(name: str) -> str:
+    """Get a prompt template by name."""
+    return ALL_PROMPTS.get(name, "")
+
+
+def set_prompt(name: str, template: str) -> bool:
+    """Update a prompt template at runtime (resets on restart)."""
+    if name not in ALL_PROMPTS:
+        return False
+    ALL_PROMPTS[name] = template
+    # Update the module-level variable so ai_service picks up the change
+    globals()[{
+        "cover_letter": "COVER_LETTER_PROMPT",
+        "message_generation": "MESSAGE_GENERATION_PROMPT",
+        "skill_extraction": "SKILL_EXTRACTION_PROMPT",
+        "job_analysis": "JOB_ANALYSIS_PROMPT",
+        "resume_tailoring": "RESUME_TAILORING_PROMPT",
+    }[name]] = template
+    return True

@@ -240,7 +240,8 @@ class AIService:
         company_name: str,
         role: str,
         tone: str = "professional",
-        length: str = "medium"
+        length: str = "medium",
+        resume_text: str = ""
     ) -> Tuple[str, bool]:
         """
         Generate a cover letter using AI.
@@ -252,11 +253,12 @@ class AIService:
             role: Job title/role
             tone: Writing tone (professional, conversational, enthusiastic, formal)
             length: Desired length (short ~150 words, medium ~250, detailed ~350)
+            resume_text: Full resume text for context
 
         Returns:
             Tuple[str, bool]: (cover_letter_text, was_ai_generated)
         """
-        from .ai_prompts import COVER_LETTER_PROMPT
+        from .ai_prompts import ALL_PROMPTS as _prompts; COVER_LETTER_PROMPT = _prompts["cover_letter"]
 
         prompt = COVER_LETTER_PROMPT.format(
             name=profile.get("name", ""),
@@ -264,7 +266,8 @@ class AIService:
             skills=profile.get("skills", ""),
             years_experience=profile.get("years_experience", ""),
             elevator_pitch=profile.get("elevator_pitch", ""),
-            job_description=job_description[:3000],  # Limit job description length
+            resume_text=resume_text[:3000] if resume_text else "Not provided",
+            job_description=job_description[:3000],
             company_name=company_name,
             role=role,
             tone=tone,
@@ -285,6 +288,30 @@ class AIService:
 
         return response, True
 
+    def _normalize_whitespace(self, text: str) -> str:
+        """Normalize whitespace and strip markdown artifacts from AI output."""
+        # Normalize line endings
+        text = text.replace('\r\n', '\n').replace('\r', '\n')
+
+        # Remove markdown bold/italic markers
+        text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)  # **bold** → bold
+        text = re.sub(r'\*(.+?)\*', r'\1', text)       # *italic* → italic
+        text = re.sub(r'__(.+?)__', r'\1', text)        # __bold__ → bold
+        text = re.sub(r'_(.+?)_', r'\1', text)          # _italic_ → italic
+
+        # Remove markdown horizontal rules
+        text = re.sub(r'\n-{3,}\n', '\n\n', text)
+        text = re.sub(r'\n\*{3,}\n', '\n\n', text)
+
+        # Strip trailing whitespace from each line
+        lines = [line.rstrip() for line in text.split('\n')]
+        text = '\n'.join(lines)
+
+        # Collapse 3+ consecutive newlines into 2 (preserve paragraph breaks)
+        text = re.sub(r'\n{3,}', '\n\n', text)
+
+        return text.strip()
+
     def _clean_cover_letter(self, text: str, name: str) -> str:
         """Clean up AI-generated cover letter."""
         # Remove common AI preambles
@@ -302,7 +329,7 @@ class AIService:
             if match:
                 text = text[match.start():]
 
-        return text.strip()
+        return self._normalize_whitespace(text)
 
     async def extract_skills_semantic(
         self,
@@ -319,7 +346,7 @@ class AIService:
         Returns:
             List of dicts: [{"skill": "Python", "category": "languages", "confidence": 0.95}]
         """
-        from .ai_prompts import SKILL_EXTRACTION_PROMPT
+        from .ai_prompts import ALL_PROMPTS as _prompts; SKILL_EXTRACTION_PROMPT = _prompts["skill_extraction"]
 
         prompt = SKILL_EXTRACTION_PROMPT.format(
             text=text[:4000],  # Limit text length
@@ -376,7 +403,7 @@ class AIService:
         Returns:
             Tuple[str, bool]: (message_text, was_ai_generated)
         """
-        from .ai_prompts import MESSAGE_GENERATION_PROMPT
+        from .ai_prompts import ALL_PROMPTS as _prompts; MESSAGE_GENERATION_PROMPT = _prompts["message_generation"]
 
         # Get platform character limits
         max_chars = {
@@ -386,6 +413,11 @@ class AIService:
             "thank_you": 800,
             "cold_email": 1500
         }.get(message_type, 1000)
+
+        # Build resume summary for context
+        resume_summary = profile.resume_summary or ""
+        if not resume_summary and profile.skills:
+            resume_summary = f"Skills: {profile.skills}"
 
         prompt = MESSAGE_GENERATION_PROMPT.format(
             contact_name=contact.name or "there",
@@ -398,6 +430,7 @@ class AIService:
             my_title=profile.current_title or "software developer",
             my_skills=profile.skills or "",
             elevator_pitch=profile.elevator_pitch or "",
+            resume_summary=resume_summary or "Not provided",
             message_type=message_type,
             context=context or "No additional context"
         )
@@ -418,12 +451,13 @@ class AIService:
         preambles = [
             r"^(Here'?s?|Below is|I'?ve written).*?:\s*",
             r"^Sure[,!]?\s*.*?:\s*",
-            r"^\*\*.*?\*\*\s*",  # Bold headers
+            r"^\*\*Subject:?.*?\*\*\s*",  # **Subject: ...** headers
         ]
         for pattern in preambles:
             text = re.sub(pattern, "", text, flags=re.IGNORECASE)
 
-        text = text.strip()
+        # Normalize whitespace and strip markdown
+        text = self._normalize_whitespace(text)
 
         # Enforce character limit for connection requests
         if message_type == "connection_request" and len(text) > max_chars:
@@ -452,7 +486,7 @@ class AIService:
         Returns:
             Dict with analysis including skills, culture signals, red flags
         """
-        from .ai_prompts import JOB_ANALYSIS_PROMPT
+        from .ai_prompts import ALL_PROMPTS as _prompts; JOB_ANALYSIS_PROMPT = _prompts["job_analysis"]
 
         prompt = JOB_ANALYSIS_PROMPT.format(
             job_description=job_description[:4000]
@@ -493,7 +527,7 @@ class AIService:
         Returns:
             Dict with match score and specific suggestions
         """
-        from .ai_prompts import RESUME_TAILORING_PROMPT
+        from .ai_prompts import ALL_PROMPTS as _prompts; RESUME_TAILORING_PROMPT = _prompts["resume_tailoring"]
 
         prompt = RESUME_TAILORING_PROMPT.format(
             resume_text=resume_text[:3000],

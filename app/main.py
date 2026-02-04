@@ -3,22 +3,13 @@ JobKit - FastAPI application entry point.
 
 A personal job search toolkit for tracking applications, networking contacts,
 and generating outreach messages.
-
-# =============================================================================
-# TODO: Multi-User Authentication (Feature 2)
-# =============================================================================
-# - Add auth router: from .auth import router as auth_router
-# - Include router: app.include_router(auth_router, prefix="/auth", tags=["auth"])
-# - Update CORS: specify actual origins in production
-# - Protect page routes with authentication middleware
-# - Add login/register pages to templates
-# - Add JOBKIT_SINGLE_USER_MODE env check for backwards compatibility
-# =============================================================================
 """
 from fastapi import FastAPI, Request, Depends, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
@@ -31,11 +22,19 @@ import io
 import csv
 import json
 
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
+from .config import settings
 from .database import init_db, SessionLocal, get_db
 from .models import MessageTemplate, UserProfile, Contact, Application, Company, MessageHistory
 from .routers import contacts, applications, companies, messages
 from .routers import profile, resume
+from .auth import router as auth_router
 from .services.message_generator import get_default_templates
+from .services.ai_service import ai_service
+from .auth.dependencies import get_current_active_user
+from .auth.models import User
 from .schemas import (
     SearchRequest, SearchResult, ContactResponse, CompanyResponse, ApplicationResponse,
     ExportRequest, ImportResult
@@ -84,13 +83,45 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# --- CORS Middleware ---
+# --- Rate Limiting ---
+from .auth.router import limiter
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# --- Security Headers Middleware ---
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data:; "
+            "connect-src 'self'; "
+            "font-src 'self'"
+        )
+        return response
+
+
+# --- Middleware ---
+# Parse allowed origins from config
+_allowed_origins = [o.strip() for o in settings.allowed_origins.split(",") if o.strip()]
+
+app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify actual origins
+    allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.auth.secret_key,  # Required for OAuth redirect flows
 )
 
 # Mount static files
@@ -106,6 +137,7 @@ app.include_router(companies.router, prefix="/api/companies", tags=["companies"]
 app.include_router(messages.router, prefix="/api/messages", tags=["messages"])
 app.include_router(profile.router, prefix="/api/profile", tags=["profile"])
 app.include_router(resume.router, prefix="/api/resume", tags=["resume"])
+app.include_router(auth_router, prefix="/auth", tags=["auth"])
 
 
 # --- API Endpoints ---
@@ -120,39 +152,136 @@ async def health_check():
     }
 
 
+@app.get("/api/ai/status", tags=["ai"])
+async def ai_status():
+    """Check AI service availability and list models."""
+    available = await ai_service.is_available()
+    models = await ai_service.list_models() if available else []
+    return {
+        "enabled": ai_service.enabled,
+        "available": available,
+        "model": ai_service.model,
+        "models": models
+    }
+
+
+@app.get("/api/ai/prompts", tags=["ai"])
+async def get_all_prompts(
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get all AI prompt templates for viewing and prompt engineering."""
+    from .services.ai_prompts import ALL_PROMPTS
+    return {
+        "prompts": {
+            name: {
+                "template": template,
+                "character_count": len(template),
+            }
+            for name, template in ALL_PROMPTS.items()
+        },
+        "available_names": list(ALL_PROMPTS.keys())
+    }
+
+
+@app.get("/api/ai/prompts/{prompt_name}", tags=["ai"])
+async def get_prompt(
+    prompt_name: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get a specific AI prompt template by name."""
+    from .services.ai_prompts import ALL_PROMPTS
+    if prompt_name not in ALL_PROMPTS:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Prompt '{prompt_name}' not found. Available: {list(ALL_PROMPTS.keys())}"
+        )
+    return {
+        "name": prompt_name,
+        "template": ALL_PROMPTS[prompt_name],
+        "character_count": len(ALL_PROMPTS[prompt_name])
+    }
+
+
+@app.put("/api/ai/prompts/{prompt_name}", tags=["ai"])
+async def update_prompt(
+    prompt_name: str,
+    data: dict,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Update an AI prompt template at runtime for prompt engineering.
+
+    Changes persist until the app restarts. Send {"template": "your new prompt..."}.
+    Use {variable_name} placeholders — check GET /api/ai/prompts/{name} to see existing variables.
+    """
+    from .services.ai_prompts import set_prompt, ALL_PROMPTS
+    if prompt_name not in ALL_PROMPTS:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Prompt '{prompt_name}' not found. Available: {list(ALL_PROMPTS.keys())}"
+        )
+    template = data.get("template")
+    if not template:
+        raise HTTPException(status_code=400, detail="'template' field is required")
+
+    set_prompt(prompt_name, template)
+    logger.info(f"Prompt '{prompt_name}' updated by user {current_user.id}")
+    return {
+        "message": f"Prompt '{prompt_name}' updated successfully",
+        "name": prompt_name,
+        "character_count": len(template),
+        "note": "Changes persist until app restart"
+    }
+
+
 @app.get("/api/stats", tags=["system"])
-async def get_dashboard_stats(db: Session = Depends(get_db)):
-    """Get summary statistics for dashboard."""
-    # Contact stats
-    total_contacts = db.query(func.count(Contact.id)).scalar() or 0
+async def get_dashboard_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get summary statistics for the current user's dashboard."""
+    # Contact stats (user-scoped)
+    total_contacts = db.query(func.count(Contact.id)).filter(
+        Contact.user_id == current_user.id
+    ).scalar() or 0
     contacts_needing_followup = db.query(func.count(Contact.id)).filter(
+        Contact.user_id == current_user.id,
         Contact.next_follow_up <= date.today()
     ).scalar() or 0
 
-    # Application stats
-    total_applications = db.query(func.count(Application.id)).scalar() or 0
+    # Application stats (user-scoped)
+    total_applications = db.query(func.count(Application.id)).filter(
+        Application.user_id == current_user.id
+    ).scalar() or 0
     active_applications = db.query(func.count(Application.id)).filter(
+        Application.user_id == current_user.id,
         Application.status.notin_(['rejected', 'withdrawn', 'ghosted', 'accepted'])
     ).scalar() or 0
 
     # Calculate response rate
     applied_count = db.query(func.count(Application.id)).filter(
+        Application.user_id == current_user.id,
         Application.status != 'saved'
     ).scalar() or 0
     got_response_count = db.query(func.count(Application.id)).filter(
+        Application.user_id == current_user.id,
         Application.status.in_(['phone_screen', 'technical', 'onsite', 'offer', 'accepted', 'rejected'])
     ).scalar() or 0
     response_rate = (got_response_count / applied_count * 100) if applied_count > 0 else 0
 
-    # Company stats
-    total_companies = db.query(func.count(Company.id)).scalar() or 0
+    # Company stats (user-scoped)
+    total_companies = db.query(func.count(Company.id)).filter(
+        Company.user_id == current_user.id
+    ).scalar() or 0
 
-    # Recent activity (last 7 days)
+    # Recent activity (last 7 days, user-scoped)
     week_ago = date.today() - timedelta(days=7)
     applications_this_week = db.query(func.count(Application.id)).filter(
+        Application.user_id == current_user.id,
         Application.created_at >= week_ago
     ).scalar() or 0
     contacts_this_week = db.query(func.count(Contact.id)).filter(
+        Contact.user_id == current_user.id,
         Contact.created_at >= week_ago
     ).scalar() or 0
 
@@ -179,9 +308,10 @@ async def global_search(
     query: str = Query(..., min_length=1, max_length=200),
     search_in: Optional[str] = Query("contacts,companies,applications"),
     limit: int = Query(20, ge=1, le=100),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
-    """Search across contacts, companies, and applications."""
+    """Search across the current user's contacts, companies, and applications."""
     search_term = f"%{query}%"
     search_types = search_in.split(",") if search_in else ["contacts", "companies", "applications"]
 
@@ -189,6 +319,7 @@ async def global_search(
 
     if "contacts" in search_types:
         contacts_query = db.query(Contact).filter(
+            Contact.user_id == current_user.id,
             or_(
                 Contact.name.ilike(search_term),
                 Contact.company.ilike(search_term),
@@ -200,6 +331,7 @@ async def global_search(
 
     if "companies" in search_types:
         companies_query = db.query(Company).filter(
+            Company.user_id == current_user.id,
             or_(
                 Company.name.ilike(search_term),
                 Company.industry.ilike(search_term),
@@ -211,6 +343,7 @@ async def global_search(
 
     if "applications" in search_types:
         applications_query = db.query(Application).filter(
+            Application.user_id == current_user.id,
             or_(
                 Application.company_name.ilike(search_term),
                 Application.role.ilike(search_term),
@@ -229,13 +362,14 @@ async def export_data(
     include_applications: bool = True,
     include_companies: bool = True,
     include_messages: bool = False,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
-    """Export all data as JSON or CSV."""
+    """Export the current user's data as JSON or CSV."""
     data = {}
 
     if include_contacts:
-        contacts = db.query(Contact).all()
+        contacts = db.query(Contact).filter(Contact.user_id == current_user.id).all()
         data["contacts"] = [
             {
                 "id": c.id,
@@ -258,7 +392,7 @@ async def export_data(
         ]
 
     if include_applications:
-        applications = db.query(Application).all()
+        applications = db.query(Application).filter(Application.user_id == current_user.id).all()
         data["applications"] = [
             {
                 "id": a.id,
@@ -278,7 +412,7 @@ async def export_data(
         ]
 
     if include_companies:
-        companies = db.query(Company).all()
+        companies = db.query(Company).filter(Company.user_id == current_user.id).all()
         data["companies"] = [
             {
                 "id": c.id,
@@ -300,7 +434,7 @@ async def export_data(
         ]
 
     if include_messages:
-        messages = db.query(MessageHistory).all()
+        messages = db.query(MessageHistory).filter(MessageHistory.user_id == current_user.id).all()
         data["messages"] = [
             {
                 "id": m.id,
@@ -344,55 +478,60 @@ async def export_data(
 @app.post("/api/import", response_model=ImportResult, tags=["system"])
 async def import_data(
     data: dict,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
-    """Import data from JSON."""
+    """Import data from JSON into the current user's account."""
     result = ImportResult()
 
     try:
-        # Import contacts
+        # Import contacts (scoped to current user)
         if "contacts" in data:
             for contact_data in data["contacts"]:
-                # Remove id and timestamps for new records
                 contact_data.pop("id", None)
                 contact_data.pop("created_at", None)
                 contact_data.pop("updated_at", None)
+                contact_data.pop("user_id", None)
 
-                # Check for duplicate by name and email
+                # Check for duplicate within this user's data
                 existing = db.query(Contact).filter(
+                    Contact.user_id == current_user.id,
                     Contact.name == contact_data.get("name"),
                     Contact.email == contact_data.get("email")
                 ).first()
 
                 if not existing:
-                    contact = Contact(**contact_data)
+                    contact = Contact(**contact_data, user_id=current_user.id)
                     db.add(contact)
                     result.contacts_imported += 1
 
-        # Import companies
+        # Import companies (scoped to current user)
         if "companies" in data:
             for company_data in data["companies"]:
                 company_data.pop("id", None)
                 company_data.pop("created_at", None)
                 company_data.pop("updated_at", None)
+                company_data.pop("user_id", None)
 
                 existing = db.query(Company).filter(
+                    Company.user_id == current_user.id,
                     Company.name == company_data.get("name")
                 ).first()
 
                 if not existing:
-                    company = Company(**company_data)
+                    company = Company(**company_data, user_id=current_user.id)
                     db.add(company)
                     result.companies_imported += 1
 
-        # Import applications
+        # Import applications (scoped to current user)
         if "applications" in data:
             for app_data in data["applications"]:
                 app_data.pop("id", None)
                 app_data.pop("created_at", None)
                 app_data.pop("updated_at", None)
+                app_data.pop("user_id", None)
 
-                application = Application(**app_data)
+                application = Application(**app_data, user_id=current_user.id)
                 db.add(application)
                 result.applications_imported += 1
 
@@ -442,3 +581,13 @@ async def settings_page(request: Request):
 @app.get("/resume")
 async def resume_page(request: Request):
     return templates.TemplateResponse("resume.html", {"request": request})
+
+
+@app.get("/login")
+async def login_page(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+
+@app.get("/account")
+async def account_page(request: Request):
+    return templates.TemplateResponse("account.html", {"request": request})

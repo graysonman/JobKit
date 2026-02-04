@@ -4,39 +4,8 @@ JobKit - Message generation service.
 Creates personalized outreach messages for networking contacts
 using templates with placeholder substitution.
 
-# =============================================================================
-# TODO: Local AI Integration (Feature 1)
-# =============================================================================
-# Add AI-enhanced message generation:
-#
-# async def generate_message_ai(
-#     contact: Contact,
-#     profile: UserProfile,
-#     message_type: str,
-#     context: Optional[str] = None
-# ) -> Tuple[str, bool]:
-#     '''
-#     Generate personalized message using AI when available.
-#
-#     Args:
-#         contact: The contact to message
-#         profile: User's profile for personalization
-#         message_type: Type of message (connection_request, inmail, follow_up, etc.)
-#         context: Optional additional context (e.g., job they're hiring for)
-#
-#     Returns:
-#         Tuple[str, bool]: (message_text, was_ai_generated)
-#     '''
-#     from .ai_service import AIService
-#     ai = AIService()
-#
-#     if await ai.is_available():
-#         return await ai.generate_message_ai(contact, profile, message_type, context)
-#
-#     # Fallback: Find best template and generate using existing logic
-#     # ... template lookup and generate_message() call
-#     return fallback_message, False
-# =============================================================================
+AI-powered message generation is available via the /api/messages/generate-ai
+endpoint, which uses AIService with graceful fallback to templates.
 """
 from ..models import MessageTemplate, Contact, UserProfile
 from typing import Optional, List, Dict

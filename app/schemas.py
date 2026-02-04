@@ -359,6 +359,61 @@ class MessageGenerateResponse(BaseModel):
     contact_name: str
     message_type: MessageType
     character_count: int
+    ai_generated: bool = False
+
+
+class AIMessageGenerateRequest(BaseModel):
+    contact_id: int
+    message_type: MessageType
+    context: Optional[str] = Field(None, max_length=1000)
+
+
+class AICoverLetterRequest(BaseModel):
+    job_description: str = Field(..., min_length=50)
+    company_name: str = Field(..., min_length=1)
+    role: str = Field(..., min_length=1)
+    tone: Optional[str] = Field("professional", pattern="^(professional|conversational|enthusiastic|formal)$")
+    length: Optional[str] = Field("medium", pattern="^(short|medium|detailed)$")
+
+
+class AICoverLetterResponse(BaseModel):
+    cover_letter: str
+    word_count: int
+    character_count: int
+    ai_generated: bool = False
+
+
+class AISkillExtractionRequest(BaseModel):
+    text: str = Field(..., min_length=20)
+    context: str = Field("resume", pattern="^(resume|job)$")
+
+
+class AISkillExtractionResponse(BaseModel):
+    skills: List[dict]
+    ai_generated: bool = False
+
+
+class AIJobAnalysisResponse(BaseModel):
+    analysis: dict
+    ai_generated: bool = False
+
+
+class AIResumeTailorRequest(BaseModel):
+    job_description: str = Field(..., min_length=50)
+    use_profile_resume: bool = True
+    resume_text: Optional[str] = None
+
+
+class AIResumeTailorResponse(BaseModel):
+    analysis: dict
+    ai_generated: bool = False
+
+
+class AIStatusResponse(BaseModel):
+    enabled: bool
+    available: bool
+    model: str
+    models: List[str] = []
 
 
 # --- Structured Resume Schemas ---

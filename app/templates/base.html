@@ -84,12 +84,40 @@
                     </div>
                 </div>
 
-                <!-- Keyboard shortcut hint -->
-                <div class="hidden lg:flex items-center text-xs text-gray-400">
+                <!-- User Menu (multi-user mode) / Keyboard hint (single-user mode) -->
+                <div id="single-user-hint" class="hidden lg:flex items-center text-xs text-gray-400">
                     <kbd class="px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-xs">Alt</kbd>
                     <span class="mx-1">+</span>
                     <kbd class="px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-xs">1-6</kbd>
                     <span class="ml-1">to navigate</span>
+                </div>
+                <div id="user-menu-container" class="hidden items-center relative">
+                    <button id="user-menu-btn" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span id="user-display-name" class="hidden md:inline max-w-[120px] truncate">User</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <!-- Dropdown -->
+                    <div id="user-dropdown" class="hidden absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50">
+                        <a href="/account" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            Account Settings
+                        </a>
+                        <div class="border-t border-gray-100 my-1"></div>
+                        <button onclick="Auth.logout()" class="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                            </svg>
+                            Sign Out
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -160,6 +188,15 @@
                 </svg>
                 Settings
             </a>
+            <!-- Mobile Sign Out (multi-user mode) -->
+            <div id="mobile-signout" class="hidden border-t border-gray-200 mt-2 pt-2">
+                <button onclick="Auth.logout()" class="flex items-center gap-3 px-3 py-3 text-red-600 hover:bg-red-50 rounded-lg w-full">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                    Sign Out
+                </button>
+            </div>
         </nav>
     </div>
 
@@ -188,8 +225,37 @@
         </div>
     </footer>
 
+    <script src="/static/js/auth.js"></script>
     <script src="/static/js/app.js"></script>
     <script>
+        // --- User menu toggle (multi-user mode) ---
+        (function() {
+            const menuBtn = document.getElementById('user-menu-btn');
+            const dropdown = document.getElementById('user-dropdown');
+            if (menuBtn && dropdown) {
+                menuBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    dropdown.classList.toggle('hidden');
+                });
+                document.addEventListener('click', () => dropdown.classList.add('hidden'));
+            }
+
+            // Show user menu or keyboard hint based on auth mode
+            document.addEventListener('DOMContentLoaded', async () => {
+                const status = await Auth.getStatus();
+                if (status.single_user_mode) {
+                    const hint = document.getElementById('single-user-hint');
+                    if (hint) hint.classList.remove('hidden');
+                } else {
+                    const userMenu = document.getElementById('user-menu-container');
+                    if (userMenu) userMenu.classList.remove('hidden');
+                    userMenu.classList.add('flex');
+                    const mobileSignout = document.getElementById('mobile-signout');
+                    if (mobileSignout) mobileSignout.classList.remove('hidden');
+                }
+            });
+        })();
+
         // Mobile menu toggle
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenuClose = document.getElementById('mobile-menu-close');

@@ -2,49 +2,8 @@
 JobKit - SQLAlchemy ORM models
 
 Database models for contacts, companies, applications, messages, and user profile.
-
-# =============================================================================
-# TODO: Multi-User Authentication (Feature 2) - Data Isolation
-# =============================================================================
-# 1. Add User and OAuthAccount models:
-#    class User(Base):
-#        __tablename__ = "users"
-#        id = Column(Integer, primary_key=True)
-#        email = Column(String, unique=True, index=True, nullable=False)
-#        hashed_password = Column(String, nullable=True)  # Null for OAuth-only
-#        name = Column(String)
-#        is_active = Column(Boolean, default=True)
-#        is_verified = Column(Boolean, default=False)
-#        created_at = Column(DateTime, default=datetime.utcnow)
-#        oauth_accounts = relationship("OAuthAccount", back_populates="user")
-#        profile = relationship("UserProfile", back_populates="user", uselist=False)
-#
-#    class OAuthAccount(Base):
-#        __tablename__ = "oauth_accounts"
-#        id = Column(Integer, primary_key=True)
-#        user_id = Column(Integer, ForeignKey("users.id"))
-#        provider = Column(String)  # "google", "github"
-#        provider_user_id = Column(String)
-#        access_token = Column(String)
-#        user = relationship("User", back_populates="oauth_accounts")
-#
-# 2. Add user_id foreign key to ALL models:
-#    - Contact: user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-#    - Company: user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-#    - Application: user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-#    - MessageTemplate: user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # NULL = system template
-#    - MessageHistory: user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-#    - UserProfile: user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
-#    - Interaction: user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-#
-# 3. Database migration sequence (Alembic):
-#    - 001_add_users_table.py: Create users and oauth_accounts tables
-#    - 002_add_user_id_columns.py: Add nullable user_id to all tables
-#    - 003_migrate_existing_data.py: Create default user, assign existing data
-#    - 004_make_user_id_required.py: Make user_id non-nullable, add foreign keys
-# =============================================================================
 """
-from sqlalchemy import Column, Integer, String, Boolean, Date, DateTime, Float, Text, ForeignKey, CheckConstraint
+from sqlalchemy import Column, Integer, String, Boolean, Date, DateTime, Float, Text, ForeignKey, CheckConstraint, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from .database import Base
@@ -54,6 +13,7 @@ class Contact(Base):
     __tablename__ = "contacts"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     name = Column(String, nullable=False)
     linkedin_url = Column(String)
     email = Column(String)
@@ -79,9 +39,13 @@ class Contact(Base):
 
 class Company(Base):
     __tablename__ = "companies"
+    __table_args__ = (
+        UniqueConstraint("name", "user_id", name="uix_company_name_user"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False, unique=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
     website = Column(String)
     linkedin_url = Column(String)
     careers_page_url = Column(String)
@@ -106,6 +70,7 @@ class Application(Base):
     __tablename__ = "applications"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"))
     company_name = Column(String, nullable=False)
     role = Column(String, nullable=False)
@@ -139,6 +104,7 @@ class MessageTemplate(Base):
     __tablename__ = "message_templates"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)  # NULL = system template
     name = Column(String, nullable=False)
     message_type = Column(String)  # connection_request, inmail, follow_up, thank_you, cold_email
     target_type = Column(String)   # recruiter, developer, alumni, hiring_manager, general
@@ -153,6 +119,7 @@ class MessageHistory(Base):
     __tablename__ = "message_history"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     contact_id = Column(Integer, ForeignKey("contacts.id"), nullable=False)
     template_id = Column(Integer, ForeignKey("message_templates.id"))
     message_type = Column(String)
@@ -189,6 +156,7 @@ class UserProfile(Base):
     __tablename__ = "user_profile"
 
     id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
     name = Column(String, nullable=False)
     email = Column(String)
     linkedin_url = Column(String)
@@ -213,6 +181,7 @@ class Interaction(Base):
     __tablename__ = "interactions"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     contact_id = Column(Integer, ForeignKey("contacts.id"), nullable=False)
     interaction_type = Column(String)  # message, call, coffee, interview, referral, other
     interaction_date = Column(Date, nullable=False)

@@ -1,125 +1,189 @@
-# Job Search & Networking Toolkit
+# JobKit
 
-A Python-based local web application to help with job searching in software development. Combines networking contact management with job application tracking and preparation tools.
+A personal toolkit for managing your job search. Track applications, build your network, and get AI-powered help with cover letters, outreach messages, and resume tailoring — all in one place.
+
+## What It Does
+
+**Track Applications** — Follow every application from "saved" through "offer." See which companies have responded, what stage you're at, and what's next.
+
+**Track Your Network** — Store contacts with their company, role, and LinkedIn. Know who to follow up with, who referred you, and when you last reached out.
+
+**Help With Applications** — AI-powered tools analyze job descriptions, generate tailored cover letters, craft networking messages, and suggest resume improvements based on your actual experience.
 
 ## Features
 
-### Networking Contact Tracker
-- Store contacts with name, LinkedIn URL, company, role
-- Track alumni status and connection status
-- Categorize contacts: recruiter, junior dev, senior dev, hiring manager
-- Generate personalized outreach messages from templates
-- Track follow-up dates and message history
-
 ### Application Tracker
-- Track job applications through the pipeline
-- Status tracking: saved, applied, phone screen, technical, onsite, offer, etc.
-- Link applications to contacts (referrals)
-- Store job descriptions for reference
+- Pipeline tracking: saved → applied → phone screen → technical → onsite → offer
+- Link applications to contacts for referral tracking
+- Store job descriptions, salary info, and notes
+- Dashboard with response rates and weekly activity
+
+### Networking Contacts
+- Store name, email, LinkedIn, company, role
+- Categorize: recruiter, hiring manager, junior/senior dev
+- Track alumni connections and relationship strength
+- Follow-up date reminders
+- Full message history per contact
 
 ### Company Research
-- Store notes about target companies
-- Track company size, tech stack, culture notes
-- Priority rating system
-- Link to related job postings and contacts
+- Track target companies with tech stack, culture notes, and interview process
+- Priority ratings and Glassdoor scores
+- Link companies to contacts and applications
 
-### Resume & Cover Letter Helper
-- Analyze job descriptions to extract key requirements
-- Check resume match against job descriptions
-- Generate cover letters based on your profile
-- Get suggestions for resume improvements
+### AI-Powered Tools
+- **Cover Letter Generation** — Uses your resume and the job description to write tailored cover letters
+- **Message Generation** — Personalized outreach for LinkedIn connection requests, InMails, follow-ups, thank-yous, and cold emails
+- **Job Description Analysis** — Extracts required skills, experience level, red flags, and interview prep topics
+- **Resume Tailoring** — Compares your resume against a job posting and suggests specific improvements
+- **Skill Extraction** — Pulls skills from resumes or job descriptions with categorization
 
-### Message Generator
-- Pre-built templates for connection requests, InMails, follow-ups
-- Personalization based on contact and your profile
-- Message history tracking
+All AI features use a local Ollama model (default: Mistral 7B Instruct). If the AI is unavailable, everything falls back to template-based generation automatically.
+
+### Resume Management
+- Upload PDF or DOCX resumes
+- Parsed and stored for AI context
+- Edit skills, experience, and summary directly in the app
+
+### Authentication
+- Single-user mode for local use (no login required)
+- Multi-user mode with email/password registration
+- JWT access tokens with refresh token rotation
+- Optional OAuth login (Google, GitHub)
+- bcrypt password hashing
+- Rate-limited login/register endpoints
 
 ## Quick Start
+
+### Prerequisites
+- Python 3.11+
+- [Ollama](https://ollama.ai/download) (optional, for AI features)
 
 ### Installation
 
 ```bash
-# Create virtual environment (optional but recommended)
+# Clone the repo
+git clone https://github.com/graysonman/JobKit.git
+cd JobKit
+
+# Create virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Copy environment config
+cp .env.example .env
 ```
 
-### Running the App
+### Set Up AI (Optional)
 
 ```bash
-python -m uvicorn app.main:app --reload
+# Install Ollama from https://ollama.ai/download, then:
+ollama pull mistral:7b-instruct
 ```
 
-Access the app at: http://localhost:8000
+The app works without Ollama — AI features will fall back to templates.
+
+### Run
+
+```bash
+uvicorn app.main:app --reload
+```
+
+Open http://localhost:8000
 
 ### First Steps
 
 1. Go to **Settings** and set up your profile (name, skills, elevator pitch)
-2. Add some **Contacts** you want to reach out to
-3. Add **Companies** you're interested in
-4. Track your **Applications**
-5. Use **Messages** to generate personalized outreach
-6. Use **Resume** helper to tailor your applications
+2. Upload your **Resume** (PDF or DOCX) so the AI can reference your experience
+3. Add **Companies** you're targeting
+4. Add **Contacts** at those companies
+5. Start tracking **Applications**
+6. Use **Messages** to generate personalized outreach
+7. Use the **Resume** tools to tailor your application for each role
+
+## Configuration
+
+All settings are in `.env` (see `.env.example` for documentation). Key options:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `JOBKIT_SINGLE_USER_MODE` | `true` | Set `false` to require login |
+| `JOBKIT_SECRET_KEY` | dev key | JWT signing key (change in production) |
+| `JOBKIT_AI_ENABLED` | `true` | Toggle AI features |
+| `JOBKIT_OLLAMA_MODEL` | `mistral:7b-instruct` | Ollama model to use |
+| `JOBKIT_DATABASE_URL` | `sqlite:///./data/jobkit.db` | Database connection |
 
 ## Tech Stack
 
-- **Backend**: Python 3.11+, FastAPI, SQLAlchemy, SQLite
-- **Frontend**: HTML, Tailwind CSS (CDN), HTMX, JavaScript
-- **Database**: SQLite (local file in `data/job_search.db`)
+- **Backend**: Python, FastAPI, SQLAlchemy, Alembic
+- **Frontend**: Jinja2 templates, Tailwind CSS, vanilla JavaScript
+- **Database**: SQLite (default) or PostgreSQL
+- **AI**: Ollama (local LLM inference)
+- **Auth**: python-jose (JWT), passlib (bcrypt), authlib (OAuth2)
 
 ## Project Structure
 
 ```
-networking-bot/
+JobKit/
 ├── app/
-│   ├── main.py              # FastAPI app entry point
-│   ├── database.py          # SQLite setup
-│   ├── models.py            # SQLAlchemy models
-│   ├── schemas.py           # Pydantic schemas
-│   ├── routers/             # API endpoints
+│   ├── main.py                 # FastAPI app, routes, middleware
+│   ├── config.py               # Environment-based configuration
+│   ├── database.py             # Database setup and session management
+│   ├── models.py               # SQLAlchemy models
+│   ├── schemas.py              # Pydantic request/response schemas
+│   ├── auth/                   # Authentication system
+│   │   ├── router.py           # Auth API endpoints
+│   │   ├── service.py          # JWT, password hashing, token management
+│   │   ├── models.py           # User, OAuth, RefreshToken models
+│   │   ├── schemas.py          # Auth request/response schemas
+│   │   ├── dependencies.py     # FastAPI auth dependencies
+│   │   └── oauth.py            # Google/GitHub OAuth integration
+│   ├── routers/                # API endpoint modules
 │   │   ├── contacts.py
 │   │   ├── applications.py
 │   │   ├── companies.py
 │   │   ├── messages.py
 │   │   ├── profile.py
 │   │   └── resume.py
-│   ├── services/            # Business logic
+│   ├── services/               # Business logic
+│   │   ├── ai_service.py       # Ollama integration and AI generation
+│   │   ├── ai_prompts.py       # Prompt templates (editable at runtime)
 │   │   ├── message_generator.py
 │   │   └── resume_helper.py
-│   └── templates/           # HTML templates
+│   └── templates/              # Jinja2 HTML templates
 ├── static/
 │   ├── css/styles.css
-│   └── js/app.js
-├── data/                    # SQLite database (gitignored)
-├── docs/
-│   └── schema.sql          # Database schema reference
-├── requirements.txt
-└── README.md
+│   └── js/
+│       ├── app.js              # Global utilities
+│       └── auth.js             # Token management and fetch interceptor
+├── scripts/
+│   └── reset_password.py       # CLI password reset tool
+├── alembic/                    # Database migrations
+├── data/                       # SQLite database (gitignored)
+├── .env.example                # Environment variable documentation
+└── requirements.txt
 ```
 
 ## API Documentation
 
-Once running, visit:
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+With the app running, visit:
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
 
 ## Keyboard Shortcuts
 
-- `Alt + 1-7`: Quick navigation between pages
-- `Alt + N`: Open "Add New" modal (context-dependent)
-- `Escape`: Close any open modal
+| Shortcut | Action |
+|----------|--------|
+| `Alt + 1-7` | Navigate between pages |
+| `Alt + N` | Open "Add New" modal |
+| `Escape` | Close any open modal |
 
-## Data Export
+## Password Reset
 
-Go to Settings to export your data as JSON files.
+If you're running in multi-user mode and need to reset a password:
 
-## Tips for Job Searching
-
-1. **Prioritize warm connections**: Alumni and 2nd-degree connections convert better
-2. **Quality over quantity**: 5 personalized messages beat 50 generic ones
-3. **Follow up**: Many opportunities come from polite follow-ups after 1-2 weeks
-4. **Target companies, not just jobs**: Research 10-20 companies you'd love to work for
-5. **Junior devs are great contacts**: They recently went through the process and can refer you
+```bash
+python scripts/reset_password.py user@email.com NewPassword123
+```

@@ -3,55 +3,6 @@ JobKit - CRUD API for company research.
 
 Endpoints for managing target companies, including research notes,
 tech stack, culture, and interview process information.
-
-# =============================================================================
-# TODO: Multi-User Authentication (Feature 2)
-# =============================================================================
-# Add authentication dependency to all endpoints for data isolation:
-#
-# from ..auth.dependencies import get_current_active_user
-# from ..auth.models import User
-#
-# @router.get("/", response_model=List[CompanyResponse])
-# def list_companies(
-#     ...,
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(get_current_active_user)  # ADD THIS
-# ):
-#     # Filter by user_id for data isolation
-#     query = db.query(Company).filter(Company.user_id == current_user.id)
-#     ...
-#
-# @router.post("/", response_model=CompanyResponse)
-# def create_company(
-#     company: CompanyCreate,
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(get_current_active_user)  # ADD THIS
-# ):
-#     # Check duplicate within user's companies only
-#     existing = db.query(Company).filter(
-#         Company.name == company.name,
-#         Company.user_id == current_user.id
-#     ).first()
-#     # Set user_id on creation
-#     db_company = Company(**company.model_dump(), user_id=current_user.id)
-#     ...
-#
-# @router.get("/{company_id}", response_model=CompanyResponse)
-# def get_company(
-#     company_id: int,
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(get_current_active_user)  # ADD THIS
-# ):
-#     # Filter by both company_id AND user_id to prevent unauthorized access
-#     company = db.query(Company).filter(
-#         Company.id == company_id,
-#         Company.user_id == current_user.id
-#     ).first()
-#     ...
-#
-# Apply same pattern to all other endpoints
-# =============================================================================
 """
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -64,6 +15,9 @@ from ..schemas import (
     CompanyCreate, CompanyUpdate, CompanyResponse,
     CompanyStats, ContactResponse, ApplicationResponse
 )
+from ..auth.dependencies import get_current_active_user
+from ..auth.models import User
+from ..query_helpers import user_query, get_owned_or_404
 
 router = APIRouter()
 
@@ -79,10 +33,11 @@ def list_companies(
     tech: Optional[str] = None,
     sort_by: Optional[str] = Query(None, pattern="^(name|priority|glassdoor_rating|created_at|size)$"),
     sort_order: Optional[str] = Query("desc", pattern="^(asc|desc)$"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
     """List companies with optional filters, search, and sorting."""
-    query = db.query(Company)
+    query = user_query(db, Company, current_user)
 
     # Filters
     if size:
@@ -123,26 +78,35 @@ def list_companies(
 
 
 @router.get("/stats", response_model=CompanyStats)
-def get_company_stats(db: Session = Depends(get_db)):
+def get_company_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Get company statistics."""
-    total = db.query(func.count(Company.id)).scalar() or 0
+    base = user_query(db, Company, current_user)
+    total = base.count()
 
     # Count by size
     by_size = {}
-    size_counts = db.query(Company.size, func.count(Company.id)).group_by(Company.size).all()
+    size_counts = base.with_entities(
+        Company.size, func.count(Company.id)
+    ).group_by(Company.size).all()
     for size, count in size_counts:
         by_size[size or "unspecified"] = count
 
     # Count by priority
     by_priority = {}
-    priority_counts = db.query(Company.priority, func.count(Company.id)).group_by(Company.priority).all()
+    priority_counts = base.with_entities(
+        Company.priority, func.count(Company.id)
+    ).group_by(Company.priority).all()
     for priority, count in priority_counts:
         by_priority[str(priority)] = count
 
     # Companies with applications
-    with_applications = db.query(func.count(func.distinct(Application.company_id))).filter(
+    app_base = user_query(db, Application, current_user)
+    with_applications = app_base.filter(
         Application.company_id.isnot(None)
-    ).scalar() or 0
+    ).with_entities(func.count(func.distinct(Application.company_id))).scalar() or 0
 
     return CompanyStats(
         total=total,
@@ -155,10 +119,11 @@ def get_company_stats(db: Session = Depends(get_db)):
 @router.get("/by-tech", response_model=List[CompanyResponse])
 def get_companies_by_tech(
     tech: str = Query(..., min_length=1, description="Technology to search for"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
     """Find companies using a specific technology."""
-    companies = db.query(Company).filter(
+    companies = user_query(db, Company, current_user).filter(
         Company.tech_stack.ilike(f"%{tech}%")
     ).order_by(Company.priority.desc()).all()
     return companies
@@ -167,36 +132,37 @@ def get_companies_by_tech(
 @router.get("/top-priority", response_model=List[CompanyResponse])
 def get_top_priority_companies(
     limit: int = Query(10, ge=1, le=50),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
     """Get highest priority companies."""
-    companies = db.query(Company).filter(
+    companies = user_query(db, Company, current_user).filter(
         Company.priority >= 3
     ).order_by(Company.priority.desc(), Company.name.asc()).limit(limit).all()
     return companies
 
 
 @router.get("/{company_id}", response_model=CompanyResponse)
-def get_company(company_id: int, db: Session = Depends(get_db)):
+def get_company(
+    company_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Get a specific company."""
-    company = db.query(Company).filter(Company.id == company_id).first()
-    if not company:
-        raise HTTPException(status_code=404, detail="Company not found")
-    return company
+    return get_owned_or_404(db, Company, company_id, current_user, "Company")
 
 
 @router.get("/{company_id}/applications", response_model=List[ApplicationResponse])
 def get_company_applications(
     company_id: int,
     limit: int = 50,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
     """Get all applications at a specific company."""
-    company = db.query(Company).filter(Company.id == company_id).first()
-    if not company:
-        raise HTTPException(status_code=404, detail="Company not found")
+    get_owned_or_404(db, Company, company_id, current_user, "Company")
 
-    applications = db.query(Application).filter(
+    applications = user_query(db, Application, current_user).filter(
         Application.company_id == company_id
     ).order_by(Application.created_at.desc()).limit(limit).all()
     return applications
@@ -206,40 +172,44 @@ def get_company_applications(
 def get_company_contacts(
     company_id: int,
     limit: int = 50,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
     """Get all contacts at a specific company."""
-    company = db.query(Company).filter(Company.id == company_id).first()
-    if not company:
-        raise HTTPException(status_code=404, detail="Company not found")
+    company = get_owned_or_404(db, Company, company_id, current_user, "Company")
 
-    # Find contacts whose company name matches
-    contacts = db.query(Contact).filter(
+    contacts = user_query(db, Contact, current_user).filter(
         Contact.company.ilike(f"%{company.name}%")
     ).order_by(Contact.created_at.desc()).limit(limit).all()
     return contacts
 
 
 @router.get("/{company_id}/summary")
-def get_company_summary(company_id: int, db: Session = Depends(get_db)):
+def get_company_summary(
+    company_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Get a summary of all data related to a company."""
-    company = db.query(Company).filter(Company.id == company_id).first()
-    if not company:
-        raise HTTPException(status_code=404, detail="Company not found")
+    company = get_owned_or_404(db, Company, company_id, current_user, "Company")
+
+    app_base = user_query(db, Application, current_user)
 
     # Count applications
-    application_count = db.query(func.count(Application.id)).filter(
+    application_count = app_base.filter(
         Application.company_id == company_id
-    ).scalar() or 0
+    ).count()
 
     # Count contacts
-    contact_count = db.query(func.count(Contact.id)).filter(
+    contact_count = user_query(db, Contact, current_user).filter(
         Contact.company.ilike(f"%{company.name}%")
-    ).scalar() or 0
+    ).count()
 
     # Get application status breakdown
-    status_counts = db.query(Application.status, func.count(Application.id)).filter(
+    status_counts = app_base.filter(
         Application.company_id == company_id
+    ).with_entities(
+        Application.status, func.count(Application.id)
     ).group_by(Application.status).all()
 
     return {
@@ -255,14 +225,20 @@ def get_company_summary(company_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=CompanyResponse)
-def create_company(company: CompanyCreate, db: Session = Depends(get_db)):
+def create_company(
+    company: CompanyCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Create a new company."""
-    # Check for duplicate name
-    existing = db.query(Company).filter(Company.name == company.name).first()
+    # Check for duplicate name within user's companies
+    existing = user_query(db, Company, current_user).filter(
+        Company.name == company.name
+    ).first()
     if existing:
         raise HTTPException(status_code=400, detail="Company with this name already exists")
 
-    db_company = Company(**company.model_dump())
+    db_company = Company(**company.model_dump(), user_id=current_user.id)
     db.add(db_company)
     db.commit()
     db.refresh(db_company)
@@ -270,17 +246,22 @@ def create_company(company: CompanyCreate, db: Session = Depends(get_db)):
 
 
 @router.patch("/{company_id}", response_model=CompanyResponse)
-def update_company(company_id: int, company: CompanyUpdate, db: Session = Depends(get_db)):
+def update_company(
+    company_id: int,
+    company: CompanyUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Update a company."""
-    db_company = db.query(Company).filter(Company.id == company_id).first()
-    if not db_company:
-        raise HTTPException(status_code=404, detail="Company not found")
+    db_company = get_owned_or_404(db, Company, company_id, current_user, "Company")
 
     update_data = company.model_dump(exclude_unset=True)
 
     # Check for duplicate name if updating name
     if 'name' in update_data and update_data['name'] != db_company.name:
-        existing = db.query(Company).filter(Company.name == update_data['name']).first()
+        existing = user_query(db, Company, current_user).filter(
+            Company.name == update_data['name']
+        ).first()
         if existing:
             raise HTTPException(status_code=400, detail="Company with this name already exists")
 
@@ -296,13 +277,11 @@ def update_company(company_id: int, company: CompanyUpdate, db: Session = Depend
 def update_company_priority(
     company_id: int,
     priority: int = Query(..., ge=0, le=5),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
     """Update a company's priority."""
-    db_company = db.query(Company).filter(Company.id == company_id).first()
-    if not db_company:
-        raise HTTPException(status_code=404, detail="Company not found")
-
+    db_company = get_owned_or_404(db, Company, company_id, current_user, "Company")
     db_company.priority = priority
     db.commit()
     db.refresh(db_company)
@@ -310,12 +289,13 @@ def update_company_priority(
 
 
 @router.delete("/{company_id}")
-def delete_company(company_id: int, db: Session = Depends(get_db)):
+def delete_company(
+    company_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Delete a company."""
-    db_company = db.query(Company).filter(Company.id == company_id).first()
-    if not db_company:
-        raise HTTPException(status_code=404, detail="Company not found")
-
+    db_company = get_owned_or_404(db, Company, company_id, current_user, "Company")
     db.delete(db_company)
     db.commit()
     return {"message": "Company deleted"}
@@ -326,15 +306,18 @@ def delete_company(company_id: int, db: Session = Depends(get_db)):
 @router.post("/bulk", response_model=List[CompanyResponse])
 def bulk_create_companies(
     companies: List[CompanyCreate],
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
     """Create multiple companies at once."""
     created_companies = []
     for company_data in companies:
-        # Skip duplicates
-        existing = db.query(Company).filter(Company.name == company_data.name).first()
+        # Skip duplicates within user's companies
+        existing = user_query(db, Company, current_user).filter(
+            Company.name == company_data.name
+        ).first()
         if not existing:
-            db_company = Company(**company_data.model_dump())
+            db_company = Company(**company_data.model_dump(), user_id=current_user.id)
             db.add(db_company)
             created_companies.append(db_company)
 

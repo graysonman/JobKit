@@ -1,9 +1,36 @@
+# Python
 __pycache__/
 *.py[cod]
-.env
-data/*.db
+*.egg-info/
+dist/
+build/
+.mypy_cache/
+.pytest_cache/
+
+# Virtual environments
 .venv/
 venv/
-*.egg-info/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Database
+data/
+*.db
+*.sqlite3
+
+# Uploaded files (resumes, etc.)
+uploads/
+
+# Logs
+*.log
+
+# IDE
 .idea/
 .vscode/
+
+# OS files
+.DS_Store
+Thumbs.db

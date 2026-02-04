@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}Account Settings - JobKit{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-8">
+    <h1 class="text-2xl font-bold text-gray-900">Account Settings</h1>
+
+    <!-- Profile Section -->
+    <div class="bg-white rounded-xl shadow-sm p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Profile</h2>
+        <form id="profile-form" class="space-y-4" onsubmit="handleProfileUpdate(event)">
+            <div>
+                <label for="profile-name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input type="text" id="profile-name"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+            </div>
+            <div>
+                <label for="profile-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" id="profile-email"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+            </div>
+            <div id="profile-msg" class="hidden text-sm rounded-lg p-3"></div>
+            <button type="submit" id="profile-btn"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
+                Save Changes
+            </button>
+        </form>
+    </div>
+
+    <!-- Change Password Section -->
+    <div class="bg-white rounded-xl shadow-sm p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Change Password</h2>
+        <form id="password-form" class="space-y-4" onsubmit="handlePasswordChange(event)">
+            <div>
+                <label for="current-password" class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                <input type="password" id="current-password" required autocomplete="current-password"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+            </div>
+            <div>
+                <label for="new-password" class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                <input type="password" id="new-password" required autocomplete="new-password"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                    oninput="checkNewPasswordStrength()">
+                <div class="mt-2 space-y-1">
+                    <div class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                        <div id="new-strength-bar" class="h-full rounded-full bg-gray-300 transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-1 text-xs">
+                        <span id="new-check-length" class="text-gray-300">✓ 8+ characters</span>
+                        <span id="new-check-upper" class="text-gray-300">✓ Uppercase letter</span>
+                        <span id="new-check-lower" class="text-gray-300">✓ Lowercase letter</span>
+                        <span id="new-check-digit" class="text-gray-300">✓ Number</span>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <label for="confirm-new-password" class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                <input type="password" id="confirm-new-password" required autocomplete="new-password"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+            </div>
+            <div id="password-msg" class="hidden text-sm rounded-lg p-3"></div>
+            <button type="submit" id="password-btn"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
+                Change Password
+            </button>
+        </form>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-red-200">
+        <h2 class="text-lg font-semibold text-red-600 mb-2">Danger Zone</h2>
+        <p class="text-sm text-gray-500 mb-4">Permanently delete your account and all associated data. This action cannot be undone.</p>
+        <button onclick="showDeleteModal()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+            Delete Account
+        </button>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="delete-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-black bg-opacity-50" onclick="hideDeleteModal()"></div>
+    <div class="relative bg-white rounded-xl shadow-xl p-6 max-w-sm mx-4 w-full">
+        <h3 class="text-lg font-bold text-gray-900 mb-2">Delete Account?</h3>
+        <p class="text-sm text-gray-600 mb-4">
+            This will permanently delete your account, all applications, contacts, companies, and messages.
+            Type <strong>DELETE</strong> to confirm.
+        </p>
+        <input type="text" id="delete-confirm-input"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+            placeholder="Type DELETE">
+        <div class="flex gap-3 justify-end">
+            <button onclick="hideDeleteModal()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition text-sm">
+                Cancel
+            </button>
+            <button onclick="handleDeleteAccount()" id="delete-btn"
+                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm disabled:opacity-50">
+                Delete Forever
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Load current user data
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const res = await fetch('/auth/me');
+            if (res.ok) {
+                const user = await res.json();
+                document.getElementById('profile-name').value = user.name || '';
+                document.getElementById('profile-email').value = user.email || '';
+            }
+        } catch {}
+    });
+
+    // Profile update
+    async function handleProfileUpdate(e) {
+        e.preventDefault();
+        const btn = document.getElementById('profile-btn');
+        const msgEl = document.getElementById('profile-msg');
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('/auth/me', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: document.getElementById('profile-name').value,
+                    email: document.getElementById('profile-email').value,
+                }),
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({ detail: 'Update failed' }));
+                throw new Error(err.detail);
+            }
+
+            const user = await res.json();
+            // Update stored name/email
+            localStorage.setItem('jobkit_user_name', user.name || '');
+            localStorage.setItem('jobkit_user_email', user.email || '');
+            const nameEl = document.getElementById('user-display-name');
+            if (nameEl) nameEl.textContent = user.name || '';
+
+            msgEl.textContent = 'Profile updated successfully.';
+            msgEl.className = 'text-sm rounded-lg p-3 bg-green-50 border border-green-200 text-green-700';
+            msgEl.classList.remove('hidden');
+        } catch (err) {
+            msgEl.textContent = err.message;
+            msgEl.className = 'text-sm rounded-lg p-3 bg-red-50 border border-red-200 text-red-700';
+            msgEl.classList.remove('hidden');
+        }
+        btn.disabled = false;
+    }
+
+    // Password strength for account page
+    function checkNewPasswordStrength() {
+        const pw = document.getElementById('new-password').value;
+        const checks = {
+            length: pw.length >= 8,
+            upper: /[A-Z]/.test(pw),
+            lower: /[a-z]/.test(pw),
+            digit: /[0-9]/.test(pw),
+        };
+        document.getElementById('new-check-length').style.color = checks.length ? '#16a34a' : '#d1d5db';
+        document.getElementById('new-check-upper').style.color = checks.upper ? '#16a34a' : '#d1d5db';
+        document.getElementById('new-check-lower').style.color = checks.lower ? '#16a34a' : '#d1d5db';
+        document.getElementById('new-check-digit').style.color = checks.digit ? '#16a34a' : '#d1d5db';
+
+        const passed = Object.values(checks).filter(Boolean).length;
+        const bar = document.getElementById('new-strength-bar');
+        bar.style.width = (passed / 4 * 100) + '%';
+        const colors = ['bg-red-400', 'bg-red-400', 'bg-yellow-400', 'bg-blue-400', 'bg-green-500'];
+        bar.className = `h-full rounded-full transition-all duration-300 ${colors[passed]}`;
+    }
+
+    // Password change
+    async function handlePasswordChange(e) {
+        e.preventDefault();
+        const btn = document.getElementById('password-btn');
+        const msgEl = document.getElementById('password-msg');
+        const newPw = document.getElementById('new-password').value;
+        const confirmPw = document.getElementById('confirm-new-password').value;
+
+        if (newPw !== confirmPw) {
+            msgEl.textContent = 'Passwords do not match.';
+            msgEl.className = 'text-sm rounded-lg p-3 bg-red-50 border border-red-200 text-red-700';
+            msgEl.classList.remove('hidden');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Changing...';
+
+        try {
+            const res = await fetch('/auth/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    current_password: document.getElementById('current-password').value,
+                    new_password: newPw,
+                }),
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({ detail: 'Password change failed' }));
+                throw new Error(err.detail);
+            }
+
+            // Password changed — backend revokes all tokens, must re-login
+            TokenStore.clear();
+            window.location.href = '/login';
+        } catch (err) {
+            msgEl.textContent = err.message;
+            msgEl.className = 'text-sm rounded-lg p-3 bg-red-50 border border-red-200 text-red-700';
+            msgEl.classList.remove('hidden');
+            btn.disabled = false;
+            btn.textContent = 'Change Password';
+        }
+    }
+
+    // Delete account modal
+    function showDeleteModal() {
+        document.getElementById('delete-modal').classList.remove('hidden');
+        document.getElementById('delete-confirm-input').value = '';
+    }
+    function hideDeleteModal() {
+        document.getElementById('delete-modal').classList.add('hidden');
+    }
+
+    async function handleDeleteAccount() {
+        const input = document.getElementById('delete-confirm-input').value;
+        if (input !== 'DELETE') {
+            alert('Please type DELETE to confirm.');
+            return;
+        }
+
+        const btn = document.getElementById('delete-btn');
+        btn.disabled = true;
+        btn.textContent = 'Deleting...';
+
+        try {
+            const res = await fetch('/auth/account', { method: 'DELETE' });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({ detail: 'Delete failed' }));
+                throw new Error(err.detail);
+            }
+            TokenStore.clear();
+            window.location.href = '/login';
+        } catch (err) {
+            alert(err.message);
+            btn.disabled = false;
+            btn.textContent = 'Delete Forever';
+        }
+    }
+</script>
+{% endblock %}

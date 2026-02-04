@@ -3,59 +3,6 @@ JobKit - Resume and cover letter API endpoints.
 
 Endpoints for analyzing job descriptions, matching resumes to jobs,
 generating cover letters, parsing resumes, and suggesting improvements.
-
-# =============================================================================
-# TODO: Local AI Integration (Feature 1)
-# =============================================================================
-# Add new AI-powered endpoints:
-#
-# @router.get("/ai/status")
-# async def get_ai_status():
-#     '''Check if AI (Ollama) is available and configured.'''
-#     from ..services.ai_service import AIService
-#     ai = AIService()
-#     return {
-#         "available": await ai.is_available(),
-#         "model": settings.ollama_model,
-#         "base_url": settings.ollama_base_url
-#     }
-#
-# @router.get("/ai/models")
-# async def list_ai_models():
-#     '''List available Ollama models for UI model selector.'''
-#     from ..services.ai_service import AIService
-#     ai = AIService()
-#     return {"models": await ai.list_models()}
-#
-# @router.post("/generate-cover-letter-ai")
-# async def generate_cover_letter_ai_endpoint(request: CoverLetterRequest, db: Session = Depends(get_db)):
-#     '''Generate AI-powered cover letter with fallback to template.'''
-#     # Uses generate_cover_letter_enhanced() from resume_helper
-#
-# @router.post("/analyze-job-ai")
-# async def analyze_job_ai_endpoint(request: JobAnalysisRequest):
-#     '''AI-enhanced job description analysis with semantic skill extraction.'''
-#     # Uses extract_skills_semantic() from resume_helper
-# =============================================================================
-
-# =============================================================================
-# TODO: Multi-User Authentication (Feature 2)
-# =============================================================================
-# Add authentication dependency to all endpoints:
-#
-# from ..auth.dependencies import get_current_active_user
-# from ..auth.models import User
-#
-# @router.post("/upload-resume", response_model=ResumeUploadResponse)
-# async def upload_resume(
-#     file: UploadFile = File(...),
-#     save_to_profile: bool = Query(False),
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(get_current_active_user)  # ADD THIS
-# ):
-#     # Filter by current_user.id when accessing UserProfile
-#     profile = db.query(UserProfile).filter(UserProfile.user_id == current_user.id).first()
-# =============================================================================
 """
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from fastapi.responses import JSONResponse
@@ -68,6 +15,7 @@ import re
 import os
 import tempfile
 import json
+import logging
 
 from ..database import get_db
 from ..models import UserProfile, Application
@@ -81,8 +29,18 @@ from ..services.resume_helper import (
     parse_resume_file,
     tailor_resume_for_job
 )
+from ..auth.dependencies import get_current_active_user
+from ..auth.models import User
+from ..query_helpers import get_owned_or_404
+from ..services.ai_service import ai_service, AIServiceError
+from ..schemas import (
+    AICoverLetterRequest, AICoverLetterResponse,
+    AISkillExtractionRequest, AISkillExtractionResponse,
+    AIJobAnalysisResponse, AIResumeTailorRequest, AIResumeTailorResponse
+)
 
 router = APIRouter()
+logger = logging.getLogger("jobkit.resume")
 
 
 # --- Request/Response Models ---
@@ -116,8 +74,8 @@ class CoverLetterRequest(BaseModel):
     company_name: str = Field(..., min_length=1)
     role: str = Field(..., min_length=1)
     custom_points: Optional[List[str]] = None
-    tone: Optional[str] = "professional"  # professional, conversational, enthusiastic, formal
-    length: Optional[str] = "medium"  # short, medium, detailed
+    tone: Optional[str] = "professional"
+    length: Optional[str] = "medium"
 
 
 class CoverLetterResponse(BaseModel):
@@ -173,7 +131,7 @@ class ResumeUploadResponse(BaseModel):
 
 class TailorResumeRequest(BaseModel):
     job_description: str = Field(..., min_length=50)
-    use_profile_resume: bool = True  # If false, resume_text is required
+    use_profile_resume: bool = True
     resume_text: Optional[str] = None
 
 
@@ -210,14 +168,12 @@ MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
 
 def _serialize_resume_data(resume_data: StructuredResume) -> str:
-    """Convert StructuredResume to JSON string for database storage."""
     if resume_data is None:
         return None
     return json.dumps(resume_data.model_dump())
 
 
 def _deserialize_resume_data(json_str: str) -> Optional[StructuredResume]:
-    """Convert JSON string from database to StructuredResume object."""
     if json_str is None:
         return None
     try:
@@ -227,21 +183,22 @@ def _deserialize_resume_data(json_str: str) -> Optional[StructuredResume]:
         return None
 
 
+def _get_user_profile(db: Session, user: User):
+    return db.query(UserProfile).filter(UserProfile.user_id == user.id).first()
+
+
 @router.post("/upload-resume", response_model=ResumeUploadResponse)
 async def upload_resume(
     file: UploadFile = File(...),
     save_to_profile: bool = Query(False, description="Save parsed resume to user profile"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Upload and parse a resume file.
 
     Supports PDF, DOCX, and TXT files. Optionally saves to user profile.
-
-    Note: PDF parsing requires pdfplumber, DOCX requires python-docx.
-    Install with: pip install pdfplumber python-docx
     """
-    # Validate file extension
     ext = os.path.splitext(file.filename)[1].lower() if file.filename else ''
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(
@@ -249,24 +206,19 @@ async def upload_resume(
             detail=f"Unsupported file type: {ext}. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
         )
 
-    # Read file content
     content = await file.read()
 
-    # Check file size
     if len(content) > MAX_FILE_SIZE:
         raise HTTPException(
             status_code=400,
             detail=f"File too large. Maximum size: {MAX_FILE_SIZE // (1024*1024)}MB"
         )
 
-    # Parse based on file type
     try:
         if ext == '.txt':
-            # Direct text parsing
             text = content.decode('utf-8')
             resume = parse_resume_text(text)
         else:
-            # Save to temp file for PDF/DOCX parsing
             with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
                 tmp.write(content)
                 tmp_path = tmp.name
@@ -274,27 +226,18 @@ async def upload_resume(
             try:
                 resume = parse_resume_file(tmp_path)
             finally:
-                # Clean up temp file
                 os.unlink(tmp_path)
 
     except ImportError as e:
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Failed to parse resume: {str(e)}"
-        )
+        raise HTTPException(status_code=400, detail=f"Failed to parse resume: {str(e)}")
 
-    # Optionally save to profile
     saved = False
     if save_to_profile:
-        profile = db.query(UserProfile).first()
+        profile = _get_user_profile(db, current_user)
         if profile:
             profile.resume_data = _serialize_resume_data(resume)
-            # Also update resume_summary for backward compatibility
             if resume.summary:
                 profile.resume_summary = resume.summary
             if resume.skills:
@@ -302,10 +245,9 @@ async def upload_resume(
             db.commit()
             saved = True
         else:
-            # Create new profile with resume data
             new_profile = UserProfile(
-                id=1,
-                name="",  # Will need to be filled in
+                user_id=current_user.id,
+                name="",
                 resume_data=_serialize_resume_data(resume),
                 resume_summary=resume.summary,
                 skills=', '.join(resume.skills) if resume.skills else None
@@ -323,44 +265,26 @@ async def upload_resume(
 
 @router.post("/parse-resume-text", response_model=StructuredResume)
 def parse_resume_text_endpoint(request: ParseResumeTextRequest):
-    """
-    Parse raw resume text into structured sections.
-
-    Identifies and extracts:
-    - Summary/Objective
-    - Work Experience (with company, title, dates, bullets)
-    - Education (school, degree, field, year)
-    - Skills
-    - Projects
-    - Certifications
-    """
+    """Parse raw resume text into structured sections."""
     try:
         resume = parse_resume_text(request.resume_text)
         return resume
     except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Failed to parse resume text: {str(e)}"
-        )
+        raise HTTPException(status_code=400, detail=f"Failed to parse resume text: {str(e)}")
 
 
 @router.get("/profile-resume", response_model=StructuredResume)
-def get_profile_resume(db: Session = Depends(get_db)):
-    """
-    Get the user's stored structured resume from their profile.
-
-    Returns an empty StructuredResume if no resume data exists.
-    """
-    profile = db.query(UserProfile).first()
+def get_profile_resume(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get the user's stored structured resume from their profile."""
+    profile = _get_user_profile(db, current_user)
     if not profile:
-        raise HTTPException(
-            status_code=404,
-            detail="Profile not found. Please create a profile first."
-        )
+        raise HTTPException(status_code=404, detail="Profile not found. Please create a profile first.")
 
     resume = _deserialize_resume_data(profile.resume_data)
     if not resume:
-        # Return empty structure with any available data
         return StructuredResume(
             summary=profile.resume_summary,
             skills=profile.skills.split(', ') if profile.skills else []
@@ -372,26 +296,18 @@ def get_profile_resume(db: Session = Depends(get_db)):
 @router.put("/profile-resume", response_model=StructuredResume)
 def update_profile_resume(
     request: ProfileResumeUpdateRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
-    """
-    Update specific sections of the user's stored resume.
-
-    Only provided fields are updated; others remain unchanged.
-    """
-    profile = db.query(UserProfile).first()
+    """Update specific sections of the user's stored resume."""
+    profile = _get_user_profile(db, current_user)
     if not profile:
-        raise HTTPException(
-            status_code=404,
-            detail="Profile not found. Please create a profile first."
-        )
+        raise HTTPException(status_code=404, detail="Profile not found. Please create a profile first.")
 
-    # Get existing resume or create empty one
     resume = _deserialize_resume_data(profile.resume_data)
     if not resume:
         resume = StructuredResume()
 
-    # Update only provided fields
     update_data = request.model_dump(exclude_unset=True)
 
     if 'summary' in update_data:
@@ -407,10 +323,8 @@ def update_profile_resume(
     if 'certifications' in update_data:
         resume.certifications = update_data['certifications']
 
-    # Save back to profile
     profile.resume_data = _serialize_resume_data(resume)
 
-    # Also update backward-compatible fields
     if resume.summary:
         profile.resume_summary = resume.summary
     if resume.skills:
@@ -425,26 +339,17 @@ def update_profile_resume(
 @router.post("/tailor-resume", response_model=TailorResumeResponse)
 def tailor_resume_endpoint(
     request: TailorResumeRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
-    """
-    Get tailored suggestions for a resume based on a job description.
-
-    Can use resume from profile or provide resume text directly.
-    Returns suggestions for improving the resume to match the job.
-    """
-    # Get resume
+    """Get tailored suggestions for a resume based on a job description."""
     if request.use_profile_resume:
-        profile = db.query(UserProfile).first()
+        profile = _get_user_profile(db, current_user)
         if not profile:
-            raise HTTPException(
-                status_code=404,
-                detail="Profile not found. Please create a profile first."
-            )
+            raise HTTPException(status_code=404, detail="Profile not found. Please create a profile first.")
 
         resume = _deserialize_resume_data(profile.resume_data)
         if not resume:
-            # Try to build from profile fields
             if profile.resume_summary or profile.skills:
                 resume = StructuredResume(
                     summary=profile.resume_summary,
@@ -463,10 +368,8 @@ def tailor_resume_endpoint(
             )
         resume = parse_resume_text(request.resume_text)
 
-    # Get tailoring suggestions
     result = tailor_resume_for_job(resume, request.job_description)
 
-    # Convert to response model
     suggestions = [
         TailorSuggestion(
             section=s.section,
@@ -508,11 +411,11 @@ def match_resume_to_job(request: ResumeMatchRequest):
 @router.post("/generate-cover-letter", response_model=CoverLetterResponse)
 def generate_cover_letter_endpoint(
     request: CoverLetterRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
     """Generate a cover letter based on user profile and job description."""
-    # Get user profile
-    profile = db.query(UserProfile).first()
+    profile = _get_user_profile(db, current_user)
     if not profile:
         raise HTTPException(status_code=400, detail="Please set up your profile first in Settings")
 
@@ -546,19 +449,16 @@ def generate_cover_letter_endpoint(
 def generate_cover_letter_for_application(
     application_id: int,
     custom_points: Optional[List[str]] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
     """Generate a cover letter for a specific application."""
-    # Get application
-    application = db.query(Application).filter(Application.id == application_id).first()
-    if not application:
-        raise HTTPException(status_code=404, detail="Application not found")
+    application = get_owned_or_404(db, Application, application_id, current_user, "Application")
 
     if not application.job_description:
         raise HTTPException(status_code=400, detail="Application has no job description")
 
-    # Get user profile
-    profile = db.query(UserProfile).first()
+    profile = _get_user_profile(db, current_user)
     if not profile:
         raise HTTPException(status_code=400, detail="Please set up your profile first in Settings")
 
@@ -586,6 +486,209 @@ def generate_cover_letter_for_application(
     )
 
 
+# --- AI-Powered Endpoints ---
+
+@router.post("/generate-cover-letter-ai", response_model=AICoverLetterResponse)
+async def generate_cover_letter_ai_endpoint(
+    request: AICoverLetterRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Generate a cover letter using AI (Ollama).
+
+    Falls back to template-based generation if AI is unavailable.
+    """
+    profile = _get_user_profile(db, current_user)
+    if not profile:
+        raise HTTPException(status_code=400, detail="Please set up your profile first in Settings")
+
+    user_profile = {
+        "name": profile.name,
+        "current_title": profile.current_title,
+        "skills": profile.skills,
+        "years_experience": profile.years_experience,
+        "resume_summary": profile.resume_summary,
+        "elevator_pitch": profile.elevator_pitch
+    }
+
+    # Load resume text for AI context
+    resume_text = ""
+    resume_data = _deserialize_resume_data(profile.resume_data)
+    if resume_data and resume_data.raw_text:
+        resume_text = resume_data.raw_text
+    elif profile.resume_summary:
+        resume_text = profile.resume_summary
+
+    # Try AI generation
+    try:
+        if await ai_service.is_available():
+            cover_letter, ai_generated = await ai_service.generate_cover_letter_ai(
+                profile=user_profile,
+                job_description=request.job_description,
+                company_name=request.company_name,
+                role=request.role,
+                tone=request.tone or "professional",
+                length=request.length or "medium",
+                resume_text=resume_text
+            )
+            return AICoverLetterResponse(
+                cover_letter=cover_letter,
+                word_count=len(cover_letter.split()),
+                character_count=len(cover_letter),
+                ai_generated=True
+            )
+    except Exception as e:
+        logger.warning(f"AI cover letter generation failed, falling back to template: {e}")
+        pass  # Fall through to template-based generation
+
+    # Fallback: template-based generation
+    cover_letter = generate_cover_letter(
+        user_profile=user_profile,
+        job_description=request.job_description,
+        company_name=request.company_name,
+        role=request.role,
+        tone=request.tone or "professional",
+        length=request.length or "medium"
+    )
+
+    return AICoverLetterResponse(
+        cover_letter=cover_letter,
+        word_count=len(cover_letter.split()),
+        character_count=len(cover_letter),
+        ai_generated=False
+    )
+
+
+@router.post("/extract-skills-ai", response_model=AISkillExtractionResponse)
+async def extract_skills_ai_endpoint(request: AISkillExtractionRequest):
+    """
+    Semantically extract and categorize skills from text using AI.
+
+    Falls back to keyword-based extraction if AI is unavailable.
+    """
+    # Try AI extraction
+    try:
+        if await ai_service.is_available():
+            skills = await ai_service.extract_skills_semantic(
+                text=request.text,
+                context=request.context
+            )
+            if skills:
+                return AISkillExtractionResponse(skills=skills, ai_generated=True)
+    except Exception as e:
+        logger.warning(f"AI skill extraction failed, falling back to keyword-based: {e}")
+        pass
+
+    # Fallback: keyword-based extraction
+    if request.context == "job":
+        analysis = extract_keywords_from_job(request.text)
+        skills = [
+            {"skill": s, "category": "required", "confidence": 0.9}
+            for s in analysis.get("required_skills", [])
+        ] + [
+            {"skill": s, "category": "preferred", "confidence": 0.7}
+            for s in analysis.get("preferred_skills", [])
+        ]
+    else:
+        # Parse resume text and extract skills
+        resume = parse_resume_text(request.text)
+        skills = [
+            {"skill": s, "category": "detected", "confidence": 0.8}
+            for s in resume.skills
+        ]
+
+    return AISkillExtractionResponse(skills=skills, ai_generated=False)
+
+
+@router.post("/analyze-job-ai", response_model=AIJobAnalysisResponse)
+async def analyze_job_ai_endpoint(request: JobAnalysisRequest):
+    """
+    Analyze a job description using AI for deeper insights.
+
+    Falls back to keyword-based analysis if AI is unavailable.
+    """
+    # Try AI analysis
+    try:
+        if await ai_service.is_available():
+            analysis = await ai_service.analyze_job_description(request.job_description)
+            if analysis:
+                return AIJobAnalysisResponse(analysis=analysis, ai_generated=True)
+    except Exception as e:
+        logger.warning(f"AI job analysis failed, falling back to keyword-based: {e}")
+        pass
+
+    # Fallback: keyword-based analysis
+    analysis = extract_keywords_from_job(request.job_description)
+    return AIJobAnalysisResponse(analysis=analysis, ai_generated=False)
+
+
+@router.post("/tailor-resume-ai", response_model=AIResumeTailorResponse)
+async def tailor_resume_ai_endpoint(
+    request: AIResumeTailorRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get AI-powered suggestions for tailoring a resume to a job.
+
+    Falls back to keyword-based tailoring if AI is unavailable.
+    """
+    # Get resume text
+    resume_text = request.resume_text
+    if request.use_profile_resume:
+        profile = _get_user_profile(db, current_user)
+        if not profile:
+            raise HTTPException(status_code=404, detail="Profile not found")
+        resume_data = _deserialize_resume_data(profile.resume_data)
+        if resume_data and resume_data.raw_text:
+            resume_text = resume_data.raw_text
+        elif profile.resume_summary:
+            resume_text = profile.resume_summary
+        elif not resume_text:
+            raise HTTPException(
+                status_code=400,
+                detail="No resume data in profile. Upload a resume or provide resume_text."
+            )
+
+    if not resume_text:
+        raise HTTPException(status_code=400, detail="resume_text is required when use_profile_resume is false")
+
+    # Try AI tailoring
+    try:
+        if await ai_service.is_available():
+            analysis = await ai_service.tailor_resume_suggestions(
+                resume_text=resume_text,
+                job_description=request.job_description
+            )
+            if analysis:
+                return AIResumeTailorResponse(analysis=analysis, ai_generated=True)
+    except Exception as e:
+        logger.warning(f"AI resume tailoring failed, falling back to keyword-based: {e}")
+        pass
+
+    # Fallback: keyword-based tailoring
+    resume = parse_resume_text(resume_text)
+    result = tailor_resume_for_job(resume, request.job_description)
+    analysis = {
+        "match_score": result.match_score,
+        "keywords_to_add": result.keywords_to_add,
+        "skills_to_emphasize": result.skills_to_emphasize,
+        "skills_to_add": result.skills_to_add,
+        "suggestions": [
+            {
+                "section": s.section,
+                "original": s.original,
+                "suggestion": s.suggestion,
+                "priority": s.priority,
+                "reason": s.reason
+            }
+            for s in result.suggestions
+        ]
+    }
+    return AIResumeTailorResponse(analysis=analysis, ai_generated=False)
+
+
 # --- Resume Optimization Endpoints ---
 
 @router.post("/suggest-tweaks", response_model=List[ResumeTweakSuggestion])
@@ -604,9 +707,6 @@ def check_ats_compatibility(request: ATSCheckRequest):
     format_warnings = []
     score = 100
 
-    # Check for common ATS issues
-
-    # 1. Contact information
     if not re.search(r'[\w\.-]+@[\w\.-]+\.\w+', resume_text):
         issues.append("No email address detected")
         score -= 10
@@ -615,7 +715,6 @@ def check_ats_compatibility(request: ATSCheckRequest):
         issues.append("No phone number detected")
         score -= 5
 
-    # 2. Section headings
     common_sections = ['experience', 'education', 'skills', 'summary', 'objective', 'work history']
     found_sections = sum(1 for s in common_sections if s.lower() in resume_text.lower())
     if found_sections < 2:
@@ -623,7 +722,6 @@ def check_ats_compatibility(request: ATSCheckRequest):
         recommendations.append("Add clear section headings like 'Experience', 'Education', 'Skills'")
         score -= 15
 
-    # 3. Length check
     word_count = len(resume_text.split())
     if word_count < 200:
         issues.append(f"Resume seems too short ({word_count} words)")
@@ -633,18 +731,15 @@ def check_ats_compatibility(request: ATSCheckRequest):
         format_warnings.append(f"Resume may be too long ({word_count} words) - consider condensing")
         score -= 5
 
-    # 4. Check for problematic characters
     if re.search(r'[^\x00-\x7F]+', resume_text):
         format_warnings.append("Contains special characters that may not parse correctly")
         score -= 5
 
-    # 5. Check for tables/columns indicators
     if '|' in resume_text or '\t\t' in resume_text:
         format_warnings.append("May contain tables or columns - ATS often struggles with these")
         recommendations.append("Use a single-column format for better ATS parsing")
         score -= 10
 
-    # 6. Check for action verbs
     action_verbs = ['managed', 'developed', 'created', 'led', 'implemented', 'designed',
                    'achieved', 'improved', 'built', 'launched', 'increased', 'reduced']
     found_verbs = sum(1 for v in action_verbs if v.lower() in resume_text.lower())
@@ -652,12 +747,10 @@ def check_ats_compatibility(request: ATSCheckRequest):
         recommendations.append("Use more action verbs (managed, developed, achieved, etc.)")
         score -= 5
 
-    # 7. Check for quantifiable achievements
     if not re.search(r'\d+%|\$\d+|\d+ years?|\d+ projects?|\d+ team', resume_text.lower()):
         recommendations.append("Add quantifiable achievements (percentages, dollar amounts, numbers)")
         score -= 5
 
-    # Ensure score doesn't go below 0
     score = max(0, score)
 
     return ATSCheckResponse(
@@ -674,8 +767,6 @@ def analyze_keyword_density(request: KeywordDensityRequest):
     resume_lower = request.resume_text.lower()
     job_lower = request.job_description.lower()
 
-    # Extract important keywords from job description
-    # Common filler words to ignore
     stop_words = {'a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
                  'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been',
                  'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would',
@@ -686,20 +777,16 @@ def analyze_keyword_density(request: KeywordDensityRequest):
                  'most', 'other', 'some', 'such', 'no', 'not', 'only', 'own', 'same',
                  'than', 'too', 'very', 'just', 'also', 'work', 'ability', 'experience'}
 
-    # Extract words from job description
     job_words = re.findall(r'\b[a-z]+\b', job_lower)
     job_keywords = [w for w in job_words if w not in stop_words and len(w) > 2]
 
-    # Count frequency and get top keywords
     keyword_freq = {}
     for word in job_keywords:
         keyword_freq[word] = keyword_freq.get(word, 0) + 1
 
-    # Get top 20 most frequent keywords
     top_keywords = sorted(keyword_freq.items(), key=lambda x: x[1], reverse=True)[:20]
     job_keywords_list = [k for k, v in top_keywords]
 
-    # Check which keywords are in resume
     found = []
     missing = []
     for keyword in job_keywords_list:
@@ -708,10 +795,8 @@ def analyze_keyword_density(request: KeywordDensityRequest):
         else:
             missing.append(keyword)
 
-    # Calculate density score
     density_score = len(found) / len(job_keywords_list) * 100 if job_keywords_list else 0
 
-    # Generate suggestions
     suggestions = []
     if density_score < 50:
         suggestions.append("Your resume may not pass ATS keyword filters - add more job-specific terms")
@@ -735,25 +820,21 @@ def analyze_keyword_density(request: KeywordDensityRequest):
 def analyze_resume_for_application(
     application_id: int,
     resume_text: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
     """Comprehensive resume analysis for a specific job application."""
-    # Get application
-    application = db.query(Application).filter(Application.id == application_id).first()
-    if not application:
-        raise HTTPException(status_code=404, detail="Application not found")
+    application = get_owned_or_404(db, Application, application_id, current_user, "Application")
 
     if not application.job_description:
         raise HTTPException(status_code=400, detail="Application has no job description")
 
-    # Get resume text from profile if not provided
     if not resume_text:
-        profile = db.query(UserProfile).first()
+        profile = _get_user_profile(db, current_user)
         if not profile or not profile.resume_summary:
             raise HTTPException(status_code=400, detail="No resume text provided and no resume summary in profile")
         resume_text = profile.resume_summary
 
-    # Run all analyses
     job_analysis = extract_keywords_from_job(application.job_description)
     match_result = analyze_resume_match(resume_text, application.job_description)
     tweak_suggestions = suggest_resume_tweaks(resume_text, application.job_description)
