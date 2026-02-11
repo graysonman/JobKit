@@ -306,7 +306,7 @@ async def generate_message_ai_endpoint(
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Generate a personalized message using AI (Ollama).
+    Generate a personalized message using AI (Groq).
 
     Falls back to template-based generation if AI is unavailable.
     """

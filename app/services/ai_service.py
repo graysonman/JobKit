@@ -1,20 +1,20 @@
 """
-JobKit - AI Service (Ollama Integration)
+JobKit - AI Service (Groq API Integration)
 
-Abstraction layer for local AI model inference using Ollama.
+Abstraction layer for AI inference using Groq's ultra-fast LPU cloud.
 
 Setup:
-1. Install Ollama: https://ollama.ai/download
-2. Start Ollama: ollama serve
-3. Pull a model: ollama pull mistral:7b-instruct (or phi3:mini for lower RAM)
-4. The service will auto-detect availability
+1. Get an API key from https://console.groq.com/
+2. Set JOBKIT_GROQ_API_KEY in your .env file
+3. The service will auto-detect availability
 
 This service provides:
 - AI availability checking
-- Model listing for UI selection
 - Cover letter generation with AI
 - Semantic skill extraction
 - Message generation with AI
+- Job description analysis
+- Resume tailoring suggestions
 - Graceful fallback when AI unavailable
 """
 from typing import List, Dict, Tuple, Optional, Any
@@ -40,21 +40,21 @@ class AIServiceError(Exception):
 
 class AIService:
     """
-    AI Service for local LLM inference via Ollama.
+    AI Service for LLM inference via Groq API.
 
     Provides AI-powered text generation with graceful fallback
-    when Ollama is not available.
+    when the API is not available.
     """
 
     def __init__(self):
         """Initialize AI service with settings."""
-        self.base_url = settings.ai.ollama_base_url
-        self.model = settings.ai.ollama_model
+        self.base_url = settings.ai.groq_base_url
+        self.api_key = settings.ai.groq_api_key
+        self.model = settings.ai.groq_model
         self.enabled = settings.ai.ai_enabled
         self.temperature = settings.ai.ai_temperature
         self.max_tokens = settings.ai.ai_max_tokens
         self._availability_cache: Optional[bool] = None
-        self._models_cache: Optional[List[str]] = None
 
     def _check_httpx(self) -> None:
         """Check if httpx is available."""
@@ -63,19 +63,31 @@ class AIService:
                 "httpx is required for AI features. Install with: pip install httpx"
             )
 
+    def _get_headers(self) -> Dict[str, str]:
+        """Get HTTP headers for Groq API requests."""
+        return {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+
     async def is_available(self) -> bool:
         """
-        Check if Ollama is running and accessible.
+        Check if Groq API is accessible.
 
         Returns True if:
         - AI is enabled in settings
+        - API key is configured
         - httpx is installed
-        - Ollama server responds to health check
+        - Groq API responds successfully
 
         Results are cached for performance.
         """
         if not self.enabled:
             logger.debug("AI is disabled in settings")
+            return False
+
+        if not self.api_key:
+            logger.warning("Groq API key not configured - AI features unavailable")
             return False
 
         if not HTTPX_AVAILABLE:
@@ -84,33 +96,35 @@ class AIService:
 
         try:
             async with httpx.AsyncClient() as client:
+                # Use the models endpoint as a health check
                 response = await client.get(
-                    f"{self.base_url}/api/tags",
-                    timeout=5.0
+                    f"{self.base_url}/models",
+                    headers=self._get_headers(),
+                    timeout=10.0
                 )
                 available = response.status_code == 200
                 if available:
-                    logger.debug(f"Ollama is available at {self.base_url}")
+                    logger.debug("Groq API is available")
                 else:
-                    logger.warning(f"Ollama returned status {response.status_code}")
+                    logger.warning(f"Groq API returned status {response.status_code}")
                 return available
         except httpx.ConnectError:
-            logger.info("Ollama is not running or not accessible")
+            logger.info("Groq API is not accessible")
             return False
         except httpx.TimeoutException:
-            logger.warning("Ollama connection timed out")
+            logger.warning("Groq API connection timed out")
             return False
         except Exception as e:
-            logger.warning(f"Ollama availability check failed: {e}")
+            logger.warning(f"Groq API availability check failed: {e}")
             return False
 
     async def list_models(self) -> List[str]:
         """
-        List available Ollama models for UI model selector.
+        List available Groq models for UI model selector.
 
         Returns:
-            List of model names (e.g., ["mistral:7b-instruct", "phi3:mini"])
-            Empty list if Ollama is unavailable
+            List of model names (e.g., ["llama-3.3-70b-versatile", "mixtral-8x7b-32768"])
+            Empty list if API is unavailable
         """
         if not await self.is_available():
             return []
@@ -118,15 +132,16 @@ class AIService:
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(
-                    f"{self.base_url}/api/tags",
+                    f"{self.base_url}/models",
+                    headers=self._get_headers(),
                     timeout=10.0
                 )
                 if response.status_code != 200:
                     return []
 
                 data = response.json()
-                models = [model["name"] for model in data.get("models", [])]
-                logger.debug(f"Found {len(models)} Ollama models")
+                models = [model["id"] for model in data.get("data", [])]
+                logger.debug(f"Found {len(models)} Groq models")
                 return models
         except Exception as e:
             logger.error(f"Failed to list models: {e}")
@@ -143,23 +158,11 @@ class AIService:
             Model info dict or None if not found
         """
         model = model_name or self.model
+        models = await self.list_models()
 
-        if not await self.is_available():
-            return None
-
-        try:
-            async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    f"{self.base_url}/api/show",
-                    json={"name": model},
-                    timeout=10.0
-                )
-                if response.status_code == 200:
-                    return response.json()
-                return None
-        except Exception as e:
-            logger.error(f"Failed to get model info: {e}")
-            return None
+        if model in models:
+            return {"id": model, "available": True}
+        return None
 
     async def _generate(
         self,
@@ -169,7 +172,7 @@ class AIService:
         max_tokens: Optional[int] = None
     ) -> str:
         """
-        Internal method to call Ollama generate API.
+        Internal method to call Groq chat completions API.
 
         Args:
             prompt: The user prompt
@@ -185,48 +188,59 @@ class AIService:
         """
         self._check_httpx()
 
+        if not self.api_key:
+            raise AIServiceError("Groq API key not configured")
+
         if not await self.is_available():
-            raise AIServiceError("Ollama is not available")
+            raise AIServiceError("Groq API is not available")
+
+        # Build messages array (OpenAI-compatible format)
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
 
         request_body: Dict[str, Any] = {
             "model": self.model,
-            "prompt": prompt,
-            "stream": False,
-            "options": {
-                "temperature": temperature or self.temperature,
-                "num_predict": max_tokens or self.max_tokens
-            }
+            "messages": messages,
+            "temperature": temperature or self.temperature,
+            "max_tokens": max_tokens or self.max_tokens,
+            "stream": False
         }
-
-        if system_prompt:
-            request_body["system"] = system_prompt
 
         try:
             async with httpx.AsyncClient() as client:
                 logger.debug(f"Generating with model {self.model}")
                 response = await client.post(
-                    f"{self.base_url}/api/generate",
+                    f"{self.base_url}/chat/completions",
+                    headers=self._get_headers(),
                     json=request_body,
                     timeout=120.0  # LLM generation can take time
                 )
 
                 if response.status_code != 200:
                     error_text = response.text
-                    logger.error(f"Ollama error: {error_text}")
-                    raise AIServiceError(f"Ollama returned status {response.status_code}")
+                    logger.error(f"Groq API error: {error_text}")
+                    raise AIServiceError(f"Groq API returned status {response.status_code}")
 
                 data = response.json()
-                result = data.get("response", "")
+
+                # Extract content from OpenAI-compatible response format
+                choices = data.get("choices", [])
+                if not choices:
+                    raise AIServiceError("No response generated")
+
+                result = choices[0].get("message", {}).get("content", "")
 
                 logger.debug(f"Generated {len(result)} characters")
                 return result.strip()
 
         except httpx.TimeoutException:
             logger.error("AI generation timed out")
-            raise AIServiceError("AI generation timed out - try a smaller model")
+            raise AIServiceError("AI generation timed out")
         except httpx.ConnectError:
-            logger.error("Lost connection to Ollama")
-            raise AIServiceError("Lost connection to Ollama")
+            logger.error("Lost connection to Groq API")
+            raise AIServiceError("Lost connection to Groq API")
         except AIServiceError:
             raise
         except Exception as e:
@@ -411,7 +425,12 @@ class AIService:
             "inmail": 1900,
             "follow_up": 1000,
             "thank_you": 800,
-            "cold_email": 1500
+            "cold_email": 1500,
+            "referral_request": 500,
+            "informational_interview": 400,
+            "recruiter_reply": 600,
+            "application_status": 300,
+            "rejection_response": 300
         }.get(message_type, 1000)
 
         # Build resume summary for context

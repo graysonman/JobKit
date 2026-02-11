@@ -12,9 +12,8 @@ email-validator>=2.0.0   # Required by Pydantic EmailStr in auth schemas
 pdfplumber>=0.10.0  # PDF text extraction
 python-docx>=1.0.0  # DOCX text extraction
 
-# Local AI Integration - Optional
-# To enable AI features, also install Ollama: https://ollama.ai/download
-httpx>=0.25.0            # Async HTTP client for Ollama API calls
+# AI Integration (Groq API)
+httpx>=0.25.0            # Async HTTP client for Groq API calls
 
 # Multi-User Authentication
 python-jose[cryptography]>=3.3.0  # JWT token creation/validation

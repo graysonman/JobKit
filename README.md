@@ -37,7 +37,7 @@ A personal toolkit for managing your job search. Track applications, build your 
 - **Resume Tailoring** — Compares your resume against a job posting and suggests specific improvements
 - **Skill Extraction** — Pulls skills from resumes or job descriptions with categorization
 
-All AI features use a local Ollama model (default: Mistral 7B Instruct). If the AI is unavailable, everything falls back to template-based generation automatically.
+All AI features use Groq's cloud API (default: Llama 3.3 70B). If the AI is unavailable, everything falls back to template-based generation automatically.
 
 ### Resume Management
 - Upload PDF or DOCX resumes
@@ -56,7 +56,7 @@ All AI features use a local Ollama model (default: Mistral 7B Instruct). If the 
 
 ### Prerequisites
 - Python 3.11+
-- [Ollama](https://ollama.ai/download) (optional, for AI features)
+- [Groq API key](https://console.groq.com/) (optional, for AI features)
 
 ### Installation
 
@@ -78,12 +78,12 @@ cp .env.example .env
 
 ### Set Up AI (Optional)
 
+Add your Groq API key to `.env`:
 ```bash
-# Install Ollama from https://ollama.ai/download, then:
-ollama pull mistral:7b-instruct
+JOBKIT_GROQ_API_KEY=your-api-key-here
 ```
 
-The app works without Ollama — AI features will fall back to templates.
+Get a free API key at https://console.groq.com/. The app works without it — AI features will fall back to templates.
 
 ### Run
 
@@ -112,7 +112,8 @@ All settings are in `.env` (see `.env.example` for documentation). Key options:
 | `JOBKIT_SINGLE_USER_MODE` | `true` | Set `false` to require login |
 | `JOBKIT_SECRET_KEY` | dev key | JWT signing key (change in production) |
 | `JOBKIT_AI_ENABLED` | `true` | Toggle AI features |
-| `JOBKIT_OLLAMA_MODEL` | `mistral:7b-instruct` | Ollama model to use |
+| `JOBKIT_GROQ_API_KEY` | — | Groq API key (required for AI) |
+| `JOBKIT_GROQ_MODEL` | `llama-3.3-70b-versatile` | Model to use |
 | `JOBKIT_DATABASE_URL` | `sqlite:///./data/jobkit.db` | Database connection |
 
 ## Tech Stack
@@ -120,7 +121,7 @@ All settings are in `.env` (see `.env.example` for documentation). Key options:
 - **Backend**: Python, FastAPI, SQLAlchemy, Alembic
 - **Frontend**: Jinja2 templates, Tailwind CSS, vanilla JavaScript
 - **Database**: SQLite (default) or PostgreSQL
-- **AI**: Ollama (local LLM inference)
+- **AI**: Groq API (cloud LLM inference)
 - **Auth**: python-jose (JWT), passlib (bcrypt), authlib (OAuth2)
 
 ## Project Structure
@@ -148,7 +149,7 @@ JobKit/
 │   │   ├── profile.py
 │   │   └── resume.py
 │   ├── services/               # Business logic
-│   │   ├── ai_service.py       # Ollama integration and AI generation
+│   │   ├── ai_service.py       # Groq API integration and AI generation
 │   │   ├── ai_prompts.py       # Prompt templates (editable at runtime)
 │   │   ├── message_generator.py
 │   │   └── resume_helper.py

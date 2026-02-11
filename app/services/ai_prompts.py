@@ -4,9 +4,9 @@ JobKit - AI Prompt Templates
 Prompt templates for various AI-powered features.
 
 These prompts are designed for instruction-tuned models like:
-- Mistral 7B Instruct
-- Phi-3 Mini
-- Llama 2 Chat
+- Llama 3.3 70B (Groq)
+- Mixtral 8x7B (Groq)
+- Gemma 2 9B (Groq)
 """
 
 # -----------------------------------------------------------------------------
@@ -143,6 +143,41 @@ cold_email:
 - Brief relevant background
 - Clear, low-commitment ask
 
+referral_request (asking contact to refer you for a role at their company - max 500 chars):
+- Mention the specific role you're interested in
+- Briefly explain why you're a good fit
+- Make it easy for them (offer to send resume, job link, etc.)
+- Be appreciative but not desperate
+- Acknowledge it's okay if they can't help
+
+informational_interview (requesting a brief chat to learn about their role/company - max 400 chars):
+- Express genuine curiosity about their career path or company
+- Be specific about what you want to learn (not just "pick your brain")
+- Suggest a short time commitment (15-20 minutes)
+- Offer flexibility on timing
+- No job ask - this is purely informational
+
+recruiter_reply (responding to a recruiter who reached out to you - max 600 chars):
+- Thank them for reaching out
+- Express interest (or politely decline if not interested)
+- Ask clarifying questions about the role if interested
+- Mention relevant experience briefly
+- Be professional but enthusiastic
+
+application_status (following up on your application status - max 300 chars):
+- Reference the specific role and when you applied
+- Express continued interest
+- Keep it brief and professional
+- Don't sound desperate or demanding
+- One gentle ask for an update
+
+rejection_response (graciously responding to a rejection - max 300 chars):
+- Thank them for considering you and letting you know
+- Express continued interest in future opportunities
+- Keep it brief and gracious
+- Leave the door open professionally
+- No begging or asking for reconsideration
+
 **Instructions:**
 Write a personalized {message_type} message. Be genuine, avoid cliches like "I hope this finds you well" or "pick your brain". Show you've done your research. Match the appropriate length for the message type.
 
@@ -190,28 +225,51 @@ RESUME_TAILORING_PROMPT = """You are an expert resume coach helping candidates t
 {job_description}
 
 **Instructions:**
-Analyze how well this resume matches the job and provide specific improvement suggestions.
+Analyze how well this resume matches the job and provide 4-6 specific improvement suggestions. For each suggestion, identify the EXACT text from their resume that should be changed, and provide a rewritten version.
 
-Return a JSON response with:
+You MUST return valid JSON with this exact structure:
 
 {{
-  "match_score": 0-100,
-  "matching_strengths": ["strength1", ...],
-  "gaps": ["gap1", ...],
+  "match_score": 75,
+  "matching_strengths": ["Python experience", "API development"],
+  "gaps": ["No cloud experience mentioned", "Missing CI/CD keywords"],
+  "skills_to_add": ["AWS", "Docker", "Kubernetes"],
+  "skills_to_emphasize": ["Python", "REST APIs", "PostgreSQL"],
   "suggestions": [
     {{
-      "section": "Summary|Experience|Skills|Education",
-      "current": "current text if applicable",
-      "suggested": "improved text",
-      "reason": "why this change helps"
+      "section": "Experience",
+      "suggestion": "Reword this bullet point to add metrics and match job keywords",
+      "current": "Worked on API development for the backend team",
+      "example": "Designed and implemented RESTful APIs serving 50,000+ daily requests with 99.9% uptime, reducing response latency by 40% through Redis caching",
+      "priority": "high",
+      "reason": "The job emphasizes scalable systems - quantified achievements prove you can deliver at scale"
     }},
-    ...
-  ],
-  "keywords_to_add": ["keyword1", ...],
-  "keywords_to_emphasize": ["keyword1", ...]
+    {{
+      "section": "Experience",
+      "suggestion": "Strengthen this bullet with leadership language",
+      "current": "Helped junior developers with code reviews",
+      "example": "Mentored 3 junior developers through weekly code reviews and pair programming sessions, improving team velocity by 25%",
+      "priority": "medium",
+      "reason": "Senior roles require demonstrated mentorship experience"
+    }},
+    {{
+      "section": "Skills",
+      "suggestion": "Add cloud technologies to match job requirements",
+      "current": null,
+      "example": "Cloud & DevOps: AWS (EC2, S3, Lambda, RDS), Docker, Kubernetes, CI/CD",
+      "priority": "high",
+      "reason": "AWS is listed as a required skill in the job posting"
+    }}
+  ]
 }}
 
-Focus on actionable, specific suggestions. Prioritize changes that will have the most impact on ATS matching and recruiter interest.
+IMPORTANT:
+- For rewording suggestions: set "current" to the EXACT text from their resume that should be replaced
+- For new additions: set "current" to null
+- Every suggestion MUST include an "example" field with copy-paste ready replacement text
+- Examples should transform their actual experience using the job description's language and keywords
+- Include 4-6 suggestions covering different sections (Experience, Skills, Summary)
+- Prioritize Experience bullet point rewrites - these have the highest impact
 
 JSON Response:"""
 

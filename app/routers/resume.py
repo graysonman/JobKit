@@ -495,7 +495,7 @@ async def generate_cover_letter_ai_endpoint(
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Generate a cover letter using AI (Ollama).
+    Generate a cover letter using AI (Groq).
 
     Falls back to template-based generation if AI is unavailable.
     """

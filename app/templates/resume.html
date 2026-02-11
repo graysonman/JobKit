@@ -726,6 +726,9 @@ document.getElementById('match-form').addEventListener('submit', async function(
         updateSteps(3);
 
         showToast('Resume match analyzed', 'success');
+
+        // Automatically get AI-powered tailoring suggestions for richer feedback
+        getTailoringSuggestions();
     } catch (e) {
         showToast(e.message || 'Error checking resume match', 'error');
     } finally {
@@ -1135,23 +1138,43 @@ async function getTailoringSuggestions() {
         if (result.suggestions && result.suggestions.length) {
             suggestionsEl.querySelector('div').innerHTML = result.suggestions
                 .map(s => {
+                    const section = s.section || 'General';
+                    const priority = s.priority || 'medium';
+                    const suggestion = s.suggestion || s.suggested || 'No suggestion provided';
+                    const current = s.current || null;
+                    const example = s.example || null;
+                    const reason = s.reason || null;
+
                     const priorityColors = {
                         high: 'border-red-200 bg-red-50',
                         medium: 'border-yellow-200 bg-yellow-50',
                         low: 'border-gray-200 bg-gray-50'
                     };
+                    const priorityBadge = {
+                        high: 'bg-red-100 text-red-700',
+                        medium: 'bg-yellow-100 text-yellow-700',
+                        low: 'bg-gray-100 text-gray-700'
+                    };
                     return `
-                        <div class="p-3 rounded border ${priorityColors[s.priority] || priorityColors.medium}">
+                        <div class="p-3 rounded border ${priorityColors[priority] || priorityColors.medium}">
                             <div class="flex items-start justify-between">
-                                <span class="text-sm font-medium">${s.section}</span>
-                                <span class="text-xs px-1.5 py-0.5 rounded ${
-                                    s.priority === 'high' ? 'bg-red-100 text-red-700' :
-                                    s.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                                    'bg-gray-100 text-gray-700'
-                                }">${s.priority}</span>
+                                <span class="text-sm font-medium">${section}</span>
+                                <span class="text-xs px-1.5 py-0.5 rounded ${priorityBadge[priority] || priorityBadge.medium}">${priority}</span>
                             </div>
-                            <p class="text-sm text-gray-600 mt-1">${s.suggestion}</p>
-                            ${s.reason ? `<p class="text-xs text-gray-500 mt-1">${s.reason}</p>` : ''}
+                            <p class="text-sm text-gray-600 mt-1">${suggestion}</p>
+                            ${current ? `
+                                <div class="mt-2 p-2 bg-red-50 rounded border border-red-200">
+                                    <span class="text-xs font-medium text-red-600">Current (replace this):</span>
+                                    <p class="text-sm text-red-800 mt-0.5 line-through">"${current}"</p>
+                                </div>
+                            ` : ''}
+                            ${example ? `
+                                <div class="mt-2 p-2 bg-green-50 rounded border border-green-200">
+                                    <span class="text-xs font-medium text-green-600">${current ? 'Replace with:' : 'Add this:'}</span>
+                                    <p class="text-sm text-green-800 mt-0.5 font-medium">"${example}"</p>
+                                </div>
+                            ` : ''}
+                            ${reason ? `<p class="text-xs text-gray-500 mt-2 italic">${reason}</p>` : ''}
                         </div>
                     `;
                 }).join('');

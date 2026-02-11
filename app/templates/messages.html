@@ -37,6 +37,11 @@
                         <option value="inmail">InMail / Email (max 1900 chars)</option>
                         <option value="follow_up">Follow-up</option>
                         <option value="thank_you">Thank You</option>
+                        <option value="referral_request">Referral Request</option>
+                        <option value="informational_interview">Informational Interview</option>
+                        <option value="recruiter_reply">Recruiter Reply</option>
+                        <option value="application_status">Application Status Check</option>
+                        <option value="rejection_response">Rejection Response</option>
                     </select>
                 </div>
                 <div>
@@ -132,6 +137,11 @@
                     <option value="inmail">InMail</option>
                     <option value="follow_up">Follow-up</option>
                     <option value="thank_you">Thank You</option>
+                    <option value="referral_request">Referral Request</option>
+                    <option value="informational_interview">Informational Interview</option>
+                    <option value="recruiter_reply">Recruiter Reply</option>
+                    <option value="application_status">Application Status</option>
+                    <option value="rejection_response">Rejection Response</option>
                 </select>
             </div>
         </div>
@@ -174,6 +184,11 @@
                             <option value="follow_up">Follow-up</option>
                             <option value="thank_you">Thank You</option>
                             <option value="cold_email">Cold Email</option>
+                            <option value="referral_request">Referral Request</option>
+                            <option value="informational_interview">Informational Interview</option>
+                            <option value="recruiter_reply">Recruiter Reply</option>
+                            <option value="application_status">Application Status</option>
+                            <option value="rejection_response">Rejection Response</option>
                         </select>
                     </div>
                     <div>
@@ -262,7 +277,13 @@ const charLimits = {
     'connection_request': 300,
     'inmail': 1900,
     'follow_up': 8000,
-    'thank_you': 8000
+    'thank_you': 8000,
+    'cold_email': 1500,
+    'referral_request': 500,
+    'informational_interview': 400,
+    'recruiter_reply': 600,
+    'application_status': 300,
+    'rejection_response': 300
 };
 
 async function loadContacts() {
@@ -322,7 +343,7 @@ function renderTemplates(templates) {
     `).join('');
 }
 
-function formatMessageType(type) { return {'connection_request':'Connection','inmail':'InMail','follow_up':'Follow-up','thank_you':'Thank You','cold_email':'Cold Email'}[type] || type; }
+function formatMessageType(type) { return {'connection_request':'Connection','inmail':'InMail','follow_up':'Follow-up','thank_you':'Thank You','cold_email':'Cold Email','referral_request':'Referral','informational_interview':'Info Interview','recruiter_reply':'Recruiter Reply','application_status':'Status Check','rejection_response':'Rejection Response'}[type] || type; }
 function formatTargetType(type) { return {'general':'General','recruiter':'Recruiter','developer':'Developer','alumni':'Alumni','hiring_manager':'Hiring Manager'}[type] || type; }
 function updateTemplateDropdown() { const msgType = document.getElementById('msg-type').value; const filtered = templates.filter(t => t.message_type === msgType); document.getElementById('msg-template').innerHTML = '<option value="">Use default for contact type</option>' + filtered.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join(''); }
 

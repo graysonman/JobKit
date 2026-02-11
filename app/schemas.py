@@ -55,6 +55,11 @@ class MessageType(str, Enum):
     FOLLOW_UP = "follow_up"
     THANK_YOU = "thank_you"
     COLD_EMAIL = "cold_email"
+    REFERRAL_REQUEST = "referral_request"
+    INFORMATIONAL_INTERVIEW = "informational_interview"
+    RECRUITER_REPLY = "recruiter_reply"
+    APPLICATION_STATUS = "application_status"
+    REJECTION_RESPONSE = "rejection_response"
 
 
 class TargetType(str, Enum):

@@ -8,8 +8,8 @@ Environment Variables:
 
     AI Settings:
         JOBKIT_AI_ENABLED=true           - Toggle AI features
-        JOBKIT_OLLAMA_BASE_URL=...       - Ollama server URL
-        JOBKIT_OLLAMA_MODEL=...          - Model to use
+        JOBKIT_GROQ_API_KEY=...          - Groq API key from console.groq.com
+        JOBKIT_GROQ_MODEL=...            - Model to use (e.g., llama-3.3-70b-versatile)
 
     Auth Settings:
         JOBKIT_SINGLE_USER_MODE=true     - Skip auth for local use
@@ -21,16 +21,18 @@ from typing import Optional
 
 class AISettings(BaseSettings):
     """
-    AI/Ollama configuration settings.
+    AI/Groq API configuration settings.
 
-    Recommended models by hardware:
-        - 8GB+ RAM + GPU: mistral:7b-instruct (4.1GB)
-        - 8GB+ RAM, CPU-only: phi3:mini (2.3GB)
-        - 4-8GB RAM: phi3:mini or qwen2:1.5b (1-2GB)
+    Available models (as of 2024):
+        - llama-3.3-70b-versatile: Best quality, 128k context
+        - llama-3.1-8b-instant: Fastest, good for simple tasks
+        - mixtral-8x7b-32768: Good balance of speed/quality
+        - gemma2-9b-it: Google's Gemma 2, instruction-tuned
     """
     ai_enabled: bool = True
-    ollama_base_url: str = "http://localhost:11434"
-    ollama_model: str = "mistral:7b-instruct"
+    groq_api_key: Optional[str] = None
+    groq_base_url: str = "https://api.groq.com/openai/v1"
+    groq_model: str = "llama-3.3-70b-versatile"
     ai_temperature: float = 0.7
     ai_max_tokens: int = 1024
     ai_fallback_to_template: bool = True
@@ -38,6 +40,7 @@ class AISettings(BaseSettings):
     class Config:
         env_prefix = "JOBKIT_"
         env_file = ".env"
+        extra = "ignore"
 
 
 class AuthSettings(BaseSettings):
@@ -65,6 +68,7 @@ class AuthSettings(BaseSettings):
     class Config:
         env_prefix = "JOBKIT_"
         env_file = ".env"
+        extra = "ignore"
 
 
 class Settings(BaseSettings):
@@ -91,6 +95,7 @@ class Settings(BaseSettings):
     class Config:
         env_prefix = "JOBKIT_"
         env_file = ".env"
+        extra = "ignore"
 
 
 # Global settings instance
