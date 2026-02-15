@@ -1,18 +1,17 @@
 """
 JobKit - Email Service
 
-Async email delivery via SMTP. Works with any SMTP provider
-(Gmail, SendGrid, AWS SES, Resend, Mailgun, etc.).
+Supports two delivery methods:
+    1. Resend HTTP API (recommended for cloud platforms like Render/Railway)
+    2. SMTP fallback (for local dev or self-hosted with Gmail, SES, etc.)
 
-Gracefully degrades: if SMTP is not configured, logs a warning
-and returns False instead of crashing.
+Resend is checked first. If RESEND_API_KEY is not set, falls back to SMTP.
+Gracefully degrades: if neither is configured, logs a warning and returns False.
 """
 import logging
 from typing import Optional
 
-import aiosmtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import httpx
 
 from ..config import settings
 
@@ -20,34 +19,72 @@ logger = logging.getLogger("jobkit.email")
 
 
 class EmailService:
-    """Async email service using SMTP."""
+    """Async email service with Resend HTTP API and SMTP fallback."""
+
+    RESEND_API_URL = "https://api.resend.com/emails"
 
     def is_configured(self) -> bool:
-        """Check if SMTP settings are provided."""
-        return bool(settings.email.smtp_host and settings.email.smtp_username)
+        """Check if any email backend is configured."""
+        return bool(
+            settings.email.resend_api_key
+            or (settings.email.smtp_host and settings.email.smtp_username)
+        )
 
-    async def send_email(
-        self,
-        to_email: str,
-        subject: str,
-        html_body: str,
-        text_body: Optional[str] = None,
+    def _use_resend(self) -> bool:
+        """Check if Resend API key is set."""
+        return bool(settings.email.resend_api_key)
+
+    async def _send_via_resend(
+        self, to_email: str, subject: str, html_body: str
     ) -> bool:
-        """Send an email via SMTP. Returns True on success."""
-        if not self.is_configured():
-            logger.warning("Email not configured — skipping send to %s", to_email)
+        """Send email via Resend HTTP API."""
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    self.RESEND_API_URL,
+                    headers={
+                        "Authorization": f"Bearer {settings.email.resend_api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "from": f"{settings.email.from_name} <{settings.email.from_email}>",
+                        "to": [to_email],
+                        "subject": subject,
+                        "html": html_body,
+                    },
+                    timeout=10.0,
+                )
+
+            if response.status_code == 200:
+                logger.info("Email sent via Resend to %s: %s", to_email, subject)
+                return True
+            else:
+                logger.error(
+                    "Resend API error (%s): %s", response.status_code, response.text
+                )
+                return False
+        except Exception as e:
+            logger.error("Failed to send email via Resend to %s: %s", to_email, e)
             return False
 
-        message = MIMEMultipart("alternative")
-        message["From"] = f"{settings.email.from_name} <{settings.email.from_email}>"
-        message["To"] = to_email
-        message["Subject"] = subject
-
-        if text_body:
-            message.attach(MIMEText(text_body, "plain"))
-        message.attach(MIMEText(html_body, "html"))
-
+    async def _send_via_smtp(
+        self, to_email: str, subject: str, html_body: str, text_body: Optional[str] = None
+    ) -> bool:
+        """Send email via SMTP."""
         try:
+            import aiosmtplib
+            from email.mime.text import MIMEText
+            from email.mime.multipart import MIMEMultipart
+
+            message = MIMEMultipart("alternative")
+            message["From"] = f"{settings.email.from_name} <{settings.email.from_email}>"
+            message["To"] = to_email
+            message["Subject"] = subject
+
+            if text_body:
+                message.attach(MIMEText(text_body, "plain"))
+            message.attach(MIMEText(html_body, "html"))
+
             await aiosmtplib.send(
                 message,
                 hostname=settings.email.smtp_host,
@@ -56,11 +93,28 @@ class EmailService:
                 password=settings.email.smtp_password,
                 start_tls=settings.email.smtp_use_tls,
             )
-            logger.info("Email sent to %s: %s", to_email, subject)
+            logger.info("Email sent via SMTP to %s: %s", to_email, subject)
             return True
         except Exception as e:
-            logger.error("Failed to send email to %s: %s", to_email, e)
+            logger.error("Failed to send email via SMTP to %s: %s", to_email, e)
             return False
+
+    async def send_email(
+        self,
+        to_email: str,
+        subject: str,
+        html_body: str,
+        text_body: Optional[str] = None,
+    ) -> bool:
+        """Send an email. Uses Resend if configured, otherwise SMTP."""
+        if not self.is_configured():
+            logger.warning("Email not configured — skipping send to %s", to_email)
+            return False
+
+        if self._use_resend():
+            return await self._send_via_resend(to_email, subject, html_body)
+        else:
+            return await self._send_via_smtp(to_email, subject, html_body, text_body)
 
     async def send_verification_email(
         self, to_email: str, token: str, user_name: str = ""

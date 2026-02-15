@@ -75,17 +75,25 @@ class EmailSettings(BaseSettings):
     """
     Email configuration for verification and password reset.
 
-    Works with any SMTP provider:
-        - Resend: smtp.resend.com, username=resend, password=re_xxx
-        - SendGrid: smtp.sendgrid.net, username=apikey, password=SG.xxx
-        - AWS SES: email-smtp.us-east-1.amazonaws.com
-        - Gmail: smtp.gmail.com (use app password)
+    Supports two modes:
+        1. Resend HTTP API (recommended for cloud hosting):
+           JOBKIT_RESEND_API_KEY=re_xxx
+        2. SMTP (for local dev or self-hosted):
+           JOBKIT_SMTP_HOST=smtp.gmail.com, etc.
+
+    Resend is checked first. If not set, falls back to SMTP.
     """
+    # Resend HTTP API (preferred — works on Render, Railway, etc.)
+    resend_api_key: Optional[str] = None
+
+    # SMTP fallback
     smtp_host: Optional[str] = None
     smtp_port: int = 587
     smtp_username: Optional[str] = None
     smtp_password: Optional[str] = None
     smtp_use_tls: bool = True
+
+    # Sender info (used by both modes)
     from_email: str = "noreply@jobkit.app"
     from_name: str = "JobKit"
 
