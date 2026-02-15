@@ -30,15 +30,9 @@ RUN mkdir -p data
 
 EXPOSE 8000
 
-# Run with Gunicorn + Uvicorn workers for production
-# - Workers: 4 (adjust based on CPU cores: 2 * cores + 1)
-# - Graceful timeout: 120s (matches AI call timeout)
-# - Access log to stdout for container logging
-CMD ["gunicorn", "app.main:app", \
-     "--worker-class", "uvicorn.workers.UvicornWorker", \
-     "--workers", "4", \
-     "--bind", "0.0.0.0:8000", \
-     "--graceful-timeout", "120", \
-     "--timeout", "120", \
-     "--access-logfile", "-", \
-     "--error-logfile", "-"]
+# Copy startup script and make executable
+COPY start.sh .
+RUN chmod +x start.sh
+
+# Run migrations then start Gunicorn with Uvicorn workers
+CMD ["./start.sh"]

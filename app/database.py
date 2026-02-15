@@ -149,4 +149,4 @@ def init_db():
         "init_db() called — this creates tables directly from models. "
         "Use Alembic migrations in production."
     )
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=engine, checkfirst=True)
