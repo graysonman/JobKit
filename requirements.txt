@@ -18,7 +18,10 @@ httpx>=0.25.0            # Async HTTP client for Groq API calls
 # Multi-User Authentication
 python-jose[cryptography]>=3.3.0  # JWT token creation/validation
 passlib[bcrypt]>=1.7.4            # Password hashing with bcrypt
+bcrypt>=4.0.0,<4.2.0              # Pin bcrypt — 4.2+ breaks passlib 1.7.x
 authlib>=1.2.0                     # OAuth2 client for Google/GitHub login
 itsdangerous>=2.1.0                # Session signing for OAuth redirect flows
 alembic>=1.12.0                    # Database migrations
-slowapi>=0.1.9                     # Rate limiting for auth endpoints
+slowapi>=0.1.9                     # Rate limiting for API endpoints
+aiosmtplib>=2.0.0                  # Async SMTP for email verification/password reset
+gunicorn>=21.2.0                   # Production ASGI server (Uvicorn workers)

@@ -4,7 +4,7 @@ JobKit - CRUD API for company research.
 Endpoints for managing target companies, including research notes,
 tech stack, culture, and interview process information.
 """
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_
 from typing import List, Optional
@@ -18,6 +18,7 @@ from ..schemas import (
 from ..auth.dependencies import get_current_active_user
 from ..auth.models import User
 from ..query_helpers import user_query, get_owned_or_404
+from ..rate_limit import limiter, RATE_LIMIT_GENERAL
 
 router = APIRouter()
 
@@ -225,7 +226,9 @@ def get_company_summary(
 
 
 @router.post("/", response_model=CompanyResponse)
+@limiter.limit(RATE_LIMIT_GENERAL)
 def create_company(
+    request: Request,
     company: CompanyCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
@@ -246,7 +249,9 @@ def create_company(
 
 
 @router.patch("/{company_id}", response_model=CompanyResponse)
+@limiter.limit(RATE_LIMIT_GENERAL)
 def update_company(
+    request: Request,
     company_id: int,
     company: CompanyUpdate,
     db: Session = Depends(get_db),
@@ -289,7 +294,9 @@ def update_company_priority(
 
 
 @router.delete("/{company_id}")
+@limiter.limit(RATE_LIMIT_GENERAL)
 def delete_company(
+    request: Request,
     company_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
@@ -304,7 +311,9 @@ def delete_company(
 # --- Bulk operations ---
 
 @router.post("/bulk", response_model=List[CompanyResponse])
+@limiter.limit(RATE_LIMIT_GENERAL)
 def bulk_create_companies(
+    request: Request,
     companies: List[CompanyCreate],
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)

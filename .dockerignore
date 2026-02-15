@@ -1,0 +1,39 @@
+# Version control
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*.egg-info
+.mypy_cache
+.pytest_cache
+
+# Virtual environments
+.venv
+venv
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Database files
+data/
+*.db
+*.sqlite3
+
+# Uploads
+uploads/
+
+# IDE
+.idea/
+.vscode/
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docs
+README.md

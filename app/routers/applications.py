@@ -4,7 +4,7 @@ JobKit - CRUD API for job applications.
 Endpoints for tracking job applications through the hiring pipeline,
 from initial save through offer/rejection.
 """
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_
 from typing import List, Optional
@@ -19,6 +19,7 @@ from ..schemas import (
 from ..auth.dependencies import get_current_active_user
 from ..auth.models import User
 from ..query_helpers import user_query, get_owned_or_404
+from ..rate_limit import limiter, RATE_LIMIT_GENERAL
 
 router = APIRouter()
 
@@ -237,7 +238,9 @@ def get_application(
 
 
 @router.post("/", response_model=ApplicationResponse)
+@limiter.limit(RATE_LIMIT_GENERAL)
 def create_application(
+    request: Request,
     application: ApplicationCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
@@ -251,7 +254,9 @@ def create_application(
 
 
 @router.patch("/{application_id}", response_model=ApplicationResponse)
+@limiter.limit(RATE_LIMIT_GENERAL)
 def update_application(
+    request: Request,
     application_id: int,
     application: ApplicationUpdate,
     db: Session = Depends(get_db),
@@ -279,7 +284,9 @@ def update_application(
 
 
 @router.delete("/{application_id}")
+@limiter.limit(RATE_LIMIT_GENERAL)
 def delete_application(
+    request: Request,
     application_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
@@ -355,7 +362,9 @@ def advance_application(
 # --- Bulk operations ---
 
 @router.post("/bulk", response_model=List[ApplicationResponse])
+@limiter.limit(RATE_LIMIT_GENERAL)
 def bulk_create_applications(
+    request: Request,
     applications: List[ApplicationCreate],
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)

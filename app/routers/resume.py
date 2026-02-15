@@ -4,7 +4,7 @@ JobKit - Resume and cover letter API endpoints.
 Endpoints for analyzing job descriptions, matching resumes to jobs,
 generating cover letters, parsing resumes, and suggesting improvements.
 """
-from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -38,6 +38,7 @@ from ..schemas import (
     AISkillExtractionRequest, AISkillExtractionResponse,
     AIJobAnalysisResponse, AIResumeTailorRequest, AIResumeTailorResponse
 )
+from ..rate_limit import limiter, RATE_LIMIT_GENERAL, RATE_LIMIT_AI
 
 router = APIRouter()
 logger = logging.getLogger("jobkit.resume")
@@ -188,7 +189,9 @@ def _get_user_profile(db: Session, user: User):
 
 
 @router.post("/upload-resume", response_model=ResumeUploadResponse)
+@limiter.limit(RATE_LIMIT_GENERAL)
 async def upload_resume(
+    request: Request,
     file: UploadFile = File(...),
     save_to_profile: bool = Query(False, description="Save parsed resume to user profile"),
     db: Session = Depends(get_db),
@@ -489,8 +492,10 @@ def generate_cover_letter_for_application(
 # --- AI-Powered Endpoints ---
 
 @router.post("/generate-cover-letter-ai", response_model=AICoverLetterResponse)
+@limiter.limit(RATE_LIMIT_AI)
 async def generate_cover_letter_ai_endpoint(
-    request: AICoverLetterRequest,
+    request: Request,
+    ai_request: AICoverLetterRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -525,11 +530,11 @@ async def generate_cover_letter_ai_endpoint(
         if await ai_service.is_available():
             cover_letter, ai_generated = await ai_service.generate_cover_letter_ai(
                 profile=user_profile,
-                job_description=request.job_description,
-                company_name=request.company_name,
-                role=request.role,
-                tone=request.tone or "professional",
-                length=request.length or "medium",
+                job_description=ai_request.job_description,
+                company_name=ai_request.company_name,
+                role=ai_request.role,
+                tone=ai_request.tone or "professional",
+                length=ai_request.length or "medium",
                 resume_text=resume_text
             )
             return AICoverLetterResponse(
@@ -545,11 +550,11 @@ async def generate_cover_letter_ai_endpoint(
     # Fallback: template-based generation
     cover_letter = generate_cover_letter(
         user_profile=user_profile,
-        job_description=request.job_description,
-        company_name=request.company_name,
-        role=request.role,
-        tone=request.tone or "professional",
-        length=request.length or "medium"
+        job_description=ai_request.job_description,
+        company_name=ai_request.company_name,
+        role=ai_request.role,
+        tone=ai_request.tone or "professional",
+        length=ai_request.length or "medium"
     )
 
     return AICoverLetterResponse(
@@ -561,7 +566,8 @@ async def generate_cover_letter_ai_endpoint(
 
 
 @router.post("/extract-skills-ai", response_model=AISkillExtractionResponse)
-async def extract_skills_ai_endpoint(request: AISkillExtractionRequest):
+@limiter.limit(RATE_LIMIT_AI)
+async def extract_skills_ai_endpoint(request: Request, ai_request: AISkillExtractionRequest):
     """
     Semantically extract and categorize skills from text using AI.
 
@@ -571,8 +577,8 @@ async def extract_skills_ai_endpoint(request: AISkillExtractionRequest):
     try:
         if await ai_service.is_available():
             skills = await ai_service.extract_skills_semantic(
-                text=request.text,
-                context=request.context
+                text=ai_request.text,
+                context=ai_request.context
             )
             if skills:
                 return AISkillExtractionResponse(skills=skills, ai_generated=True)
@@ -581,8 +587,8 @@ async def extract_skills_ai_endpoint(request: AISkillExtractionRequest):
         pass
 
     # Fallback: keyword-based extraction
-    if request.context == "job":
-        analysis = extract_keywords_from_job(request.text)
+    if ai_request.context == "job":
+        analysis = extract_keywords_from_job(ai_request.text)
         skills = [
             {"skill": s, "category": "required", "confidence": 0.9}
             for s in analysis.get("required_skills", [])
@@ -592,7 +598,7 @@ async def extract_skills_ai_endpoint(request: AISkillExtractionRequest):
         ]
     else:
         # Parse resume text and extract skills
-        resume = parse_resume_text(request.text)
+        resume = parse_resume_text(ai_request.text)
         skills = [
             {"skill": s, "category": "detected", "confidence": 0.8}
             for s in resume.skills
@@ -602,7 +608,8 @@ async def extract_skills_ai_endpoint(request: AISkillExtractionRequest):
 
 
 @router.post("/analyze-job-ai", response_model=AIJobAnalysisResponse)
-async def analyze_job_ai_endpoint(request: JobAnalysisRequest):
+@limiter.limit(RATE_LIMIT_AI)
+async def analyze_job_ai_endpoint(request: Request, ai_request: JobAnalysisRequest):
     """
     Analyze a job description using AI for deeper insights.
 
@@ -611,7 +618,7 @@ async def analyze_job_ai_endpoint(request: JobAnalysisRequest):
     # Try AI analysis
     try:
         if await ai_service.is_available():
-            analysis = await ai_service.analyze_job_description(request.job_description)
+            analysis = await ai_service.analyze_job_description(ai_request.job_description)
             if analysis:
                 return AIJobAnalysisResponse(analysis=analysis, ai_generated=True)
     except Exception as e:
@@ -619,13 +626,15 @@ async def analyze_job_ai_endpoint(request: JobAnalysisRequest):
         pass
 
     # Fallback: keyword-based analysis
-    analysis = extract_keywords_from_job(request.job_description)
+    analysis = extract_keywords_from_job(ai_request.job_description)
     return AIJobAnalysisResponse(analysis=analysis, ai_generated=False)
 
 
 @router.post("/tailor-resume-ai", response_model=AIResumeTailorResponse)
+@limiter.limit(RATE_LIMIT_AI)
 async def tailor_resume_ai_endpoint(
-    request: AIResumeTailorRequest,
+    request: Request,
+    ai_request: AIResumeTailorRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -635,8 +644,8 @@ async def tailor_resume_ai_endpoint(
     Falls back to keyword-based tailoring if AI is unavailable.
     """
     # Get resume text
-    resume_text = request.resume_text
-    if request.use_profile_resume:
+    resume_text = ai_request.resume_text
+    if ai_request.use_profile_resume:
         profile = _get_user_profile(db, current_user)
         if not profile:
             raise HTTPException(status_code=404, detail="Profile not found")
@@ -659,7 +668,7 @@ async def tailor_resume_ai_endpoint(
         if await ai_service.is_available():
             analysis = await ai_service.tailor_resume_suggestions(
                 resume_text=resume_text,
-                job_description=request.job_description
+                job_description=ai_request.job_description
             )
             if analysis:
                 return AIResumeTailorResponse(analysis=analysis, ai_generated=True)
@@ -669,7 +678,7 @@ async def tailor_resume_ai_endpoint(
 
     # Fallback: keyword-based tailoring
     resume = parse_resume_text(resume_text)
-    result = tailor_resume_for_job(resume, request.job_description)
+    result = tailor_resume_for_job(resume, ai_request.job_description)
     analysis = {
         "match_score": result.match_score,
         "keywords_to_add": result.keywords_to_add,

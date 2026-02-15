@@ -4,16 +4,20 @@ JobKit - Authentication Router
 API endpoints for user authentication.
 
 Endpoints:
-    POST /auth/register         - Email/password registration
-    POST /auth/login            - Email/password login -> JWT tokens
-    POST /auth/refresh          - Refresh access token
-    POST /auth/logout           - Revoke refresh token
-    GET  /auth/me               - Get current user
-    PATCH /auth/me              - Update current user
-    POST /auth/change-password  - Change password
-    POST /auth/set-password     - Set password for OAuth-only users
-    GET  /auth/status           - Check auth system status
-    DELETE /auth/account        - Delete user account
+    POST /auth/register           - Email/password registration
+    POST /auth/login              - Email/password login -> JWT tokens
+    POST /auth/refresh            - Refresh access token
+    POST /auth/logout             - Revoke refresh token
+    GET  /auth/me                 - Get current user
+    PATCH /auth/me                - Update current user
+    POST /auth/change-password    - Change password
+    POST /auth/set-password       - Set password for OAuth-only users
+    POST /auth/send-verification  - Resend verification email
+    GET  /auth/verify-email       - Verify email from link
+    POST /auth/forgot-password    - Request password reset email
+    POST /auth/reset-password     - Reset password with token
+    GET  /auth/status             - Check auth system status
+    DELETE /auth/account          - Delete user account
 """
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse
@@ -21,17 +25,17 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime
-
-from slowapi import Limiter
-from slowapi.util import get_remote_address
+import logging
 
 from ..database import get_db
 from ..config import settings
+from ..rate_limit import limiter, RATE_LIMIT_AUTH
 from .models import User
 from .schemas import (
     UserCreate, UserResponse, UserUpdate,
     Token, TokenRefresh, PasswordChange,
-    RegisterResponse, LoginResponse, OAuthAccountResponse
+    RegisterResponse, LoginResponse, OAuthAccountResponse,
+    PasswordReset, PasswordResetConfirm
 )
 from .service import auth_service, AuthServiceError
 from .dependencies import (
@@ -40,8 +44,13 @@ from .dependencies import (
     require_auth_available,
     is_single_user_mode
 )
+from .tokens import (
+    generate_verification_token, verify_verification_token,
+    generate_reset_token, verify_reset_token,
+)
+from ..services.email_service import email_service
 
-limiter = Limiter(key_func=get_remote_address)
+logger = logging.getLogger("jobkit.auth")
 router = APIRouter()
 
 
@@ -86,7 +95,7 @@ async def get_auth_status():
 # -----------------------------------------------------------------------------
 
 @router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
-@limiter.limit("3/minute")
+@limiter.limit(RATE_LIMIT_AUTH)
 async def register(
     request: Request,
     user_data: UserCreate,
@@ -117,6 +126,18 @@ async def register(
             db=db
         )
 
+        # Send verification email (fire-and-forget — don't block registration)
+        if email_service.is_configured():
+            try:
+                token = generate_verification_token(user.id, user.email)
+                await email_service.send_verification_email(
+                    to_email=user.email,
+                    token=token,
+                    user_name=user.name or "",
+                )
+            except Exception as e:
+                logger.warning("Failed to send verification email: %s", e)
+
         return RegisterResponse(
             user=_user_to_response(user),
             message="Registration successful. Please check your email to verify your account."
@@ -130,7 +151,7 @@ async def register(
 
 
 @router.post("/login", response_model=LoginResponse)
-@limiter.limit("5/minute")
+@limiter.limit(RATE_LIMIT_AUTH)
 async def login(
     request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -396,6 +417,166 @@ async def check_password_strength(password: str):
     """
     result = auth_service.check_password_strength(password)
     return result
+
+
+# -----------------------------------------------------------------------------
+# Email Verification
+# -----------------------------------------------------------------------------
+
+@router.post("/send-verification")
+@limiter.limit(RATE_LIMIT_AUTH)
+async def send_verification(
+    request: Request,
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Resend the verification email for the current user.
+
+    Rate limited to prevent abuse.
+    """
+    if current_user.is_verified:
+        return {"message": "Email already verified."}
+
+    if not email_service.is_configured():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Email service not configured. Contact the administrator.",
+        )
+
+    token = generate_verification_token(current_user.id, current_user.email)
+    sent = await email_service.send_verification_email(
+        to_email=current_user.email,
+        token=token,
+        user_name=current_user.name or "",
+    )
+
+    if not sent:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to send verification email. Please try again later.",
+        )
+
+    return {"message": "Verification email sent. Check your inbox."}
+
+
+@router.get("/verify-email")
+async def verify_email(
+    token: str,
+    db: Session = Depends(get_db),
+):
+    """
+    Verify a user's email from the link in the verification email.
+
+    Returns an HTML page that redirects to login on success.
+    """
+    data = verify_verification_token(token)
+    if not data:
+        return HTMLResponse(
+            content="""<!DOCTYPE html>
+<html><head><title>Verification Failed</title></head>
+<body style="font-family: sans-serif; text-align: center; padding: 60px;">
+<h2 style="color: #dc2626;">Invalid or Expired Link</h2>
+<p>This verification link is invalid or has expired.</p>
+<p><a href="/login" style="color: #2563eb;">Go to login</a> and request a new one from your account settings.</p>
+</body></html>""",
+            status_code=400,
+        )
+
+    user = db.query(User).filter(User.id == data["uid"]).first()
+    if not user:
+        return HTMLResponse(
+            content="<html><body><p>User not found.</p></body></html>",
+            status_code=404,
+        )
+
+    if not user.is_verified:
+        user.is_verified = True
+        user.updated_at = datetime.utcnow()
+        db.commit()
+
+    return HTMLResponse(
+        content="""<!DOCTYPE html>
+<html><head><title>Email Verified</title>
+<meta http-equiv="refresh" content="3;url=/login"></head>
+<body style="font-family: sans-serif; text-align: center; padding: 60px;">
+<h2 style="color: #16a34a;">Email Verified!</h2>
+<p>Your email has been verified successfully. Redirecting to login...</p>
+<p><a href="/login" style="color: #2563eb;">Click here if not redirected</a></p>
+</body></html>"""
+    )
+
+
+# -----------------------------------------------------------------------------
+# Password Reset
+# -----------------------------------------------------------------------------
+
+@router.post("/forgot-password")
+@limiter.limit(RATE_LIMIT_AUTH)
+async def forgot_password(
+    request: Request,
+    data: PasswordReset,
+    db: Session = Depends(get_db),
+):
+    """
+    Request a password reset email.
+
+    Always returns success to prevent email enumeration — an attacker
+    cannot determine which emails have accounts.
+    """
+    user = auth_service.get_user_by_email(data.email, db)
+
+    if user and user.hashed_password and email_service.is_configured():
+        token = generate_reset_token(user.id, user.email)
+        try:
+            await email_service.send_password_reset_email(
+                to_email=user.email,
+                token=token,
+                user_name=user.name or "",
+            )
+        except Exception as e:
+            logger.warning("Failed to send password reset email: %s", e)
+
+    # Always return success to prevent email enumeration
+    return {"message": "If an account exists with that email, a reset link has been sent."}
+
+
+@router.post("/reset-password")
+@limiter.limit(RATE_LIMIT_AUTH)
+async def reset_password(
+    request: Request,
+    data: PasswordResetConfirm,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_auth_available),
+):
+    """
+    Reset password using a token from the reset email.
+
+    The token is valid for 1 hour. After reset, all refresh tokens
+    are revoked to force re-login on all devices.
+    """
+    token_data = verify_reset_token(data.token)
+    if not token_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset link. Please request a new one.",
+        )
+
+    user = db.query(User).filter(User.id == token_data["uid"]).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found.",
+        )
+
+    try:
+        auth_service.update_password(user, data.new_password, db)
+    except AuthServiceError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+    return {"message": "Password reset successfully. You can now log in with your new password."}
 
 
 # -----------------------------------------------------------------------------

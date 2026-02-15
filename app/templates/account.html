@@ -6,6 +6,18 @@
 <div class="max-w-2xl mx-auto space-y-8">
     <h1 class="text-2xl font-bold text-gray-900">Account Settings</h1>
 
+    <!-- Email Verification Banner -->
+    <div id="verify-banner" class="hidden bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-center justify-between">
+        <div>
+            <span class="text-yellow-800 font-medium">Email not verified.</span>
+            <span class="text-yellow-700 text-sm ml-1">Check your inbox or resend the verification email.</span>
+        </div>
+        <button onclick="resendVerification()" id="resend-btn"
+            class="flex-shrink-0 ml-4 px-3 py-1.5 bg-yellow-600 text-white text-sm rounded-lg hover:bg-yellow-700 transition">
+            Resend
+        </button>
+    </div>
+
     <!-- Profile Section -->
     <div class="bg-white rounded-xl shadow-sm p-6">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Profile</h2>
@@ -112,9 +124,37 @@
                 const user = await res.json();
                 document.getElementById('profile-name').value = user.name || '';
                 document.getElementById('profile-email').value = user.email || '';
+
+                // Show verification banner if email not verified
+                if (user.is_verified === false) {
+                    document.getElementById('verify-banner').classList.remove('hidden');
+                }
             }
         } catch {}
     });
+
+    // Resend verification email
+    async function resendVerification() {
+        const btn = document.getElementById('resend-btn');
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+        try {
+            const res = await fetch('/auth/send-verification', { method: 'POST' });
+            if (res.ok) {
+                btn.textContent = 'Sent!';
+                btn.classList.replace('bg-yellow-600', 'bg-green-600');
+                btn.classList.replace('hover:bg-yellow-700', 'hover:bg-green-700');
+            } else {
+                const err = await res.json();
+                alert(err.detail || 'Failed to send verification email.');
+                btn.textContent = 'Resend';
+                btn.disabled = false;
+            }
+        } catch {
+            btn.textContent = 'Resend';
+            btn.disabled = false;
+        }
+    }
 
     // Profile update
     async function handleProfileUpdate(e) {

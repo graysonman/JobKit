@@ -5,7 +5,7 @@ Endpoints for managing the user's personal profile, which is used
 for personalizing message templates and cover letters.
 """
 import json
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from datetime import date
@@ -15,6 +15,7 @@ from ..models import UserProfile
 from ..schemas import UserProfileBase, UserProfileUpdate, UserProfileResponse, StructuredResume
 from ..auth.dependencies import get_current_active_user
 from ..auth.models import User
+from ..rate_limit import limiter, RATE_LIMIT_GENERAL
 
 router = APIRouter()
 
@@ -164,7 +165,9 @@ def get_profile_completion(
 
 
 @router.post("/", response_model=UserProfileResponse)
+@limiter.limit(RATE_LIMIT_GENERAL)
 def create_profile(
+    request: Request,
     profile: UserProfileBase,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
@@ -192,7 +195,9 @@ def create_profile(
 
 
 @router.patch("/", response_model=UserProfileResponse)
+@limiter.limit(RATE_LIMIT_GENERAL)
 def update_profile(
+    request: Request,
     profile: UserProfileUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
@@ -216,7 +221,9 @@ def update_profile(
 
 
 @router.delete("/")
+@limiter.limit(RATE_LIMIT_GENERAL)
 def delete_profile(
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -385,7 +392,9 @@ def export_profile(
 
 
 @router.post("/import")
+@limiter.limit(RATE_LIMIT_GENERAL)
 def import_profile(
+    request: Request,
     data: dict,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)

@@ -4,7 +4,7 @@ JobKit - Message template management and generation API.
 Endpoints for creating message templates, generating personalized outreach
 messages, and tracking sent message history.
 """
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, Integer, or_
@@ -25,6 +25,7 @@ from ..services.ai_service import ai_service, AIServiceError
 from ..auth.dependencies import get_current_active_user
 from ..auth.models import User
 from ..query_helpers import user_query, get_owned_or_404, user_templates_query
+from ..rate_limit import limiter, RATE_LIMIT_GENERAL, RATE_LIMIT_AI
 
 router = APIRouter()
 logger = logging.getLogger("jobkit.messages")
@@ -103,7 +104,9 @@ def get_template(
 
 
 @router.post("/templates", response_model=MessageTemplateResponse)
+@limiter.limit(RATE_LIMIT_GENERAL)
 def create_template(
+    request: Request,
     template: MessageTemplateCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
@@ -117,7 +120,9 @@ def create_template(
 
 
 @router.patch("/templates/{template_id}", response_model=MessageTemplateResponse)
+@limiter.limit(RATE_LIMIT_GENERAL)
 def update_template(
+    request: Request,
     template_id: int,
     template: MessageTemplateUpdate,
     db: Session = Depends(get_db),
@@ -173,7 +178,9 @@ def duplicate_template(
 
 
 @router.delete("/templates/{template_id}")
+@limiter.limit(RATE_LIMIT_GENERAL)
 def delete_template(
+    request: Request,
     template_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
@@ -243,22 +250,24 @@ def import_templates(
 # --- Message Generation ---
 
 @router.post("/generate", response_model=MessageGenerateResponse)
+@limiter.limit(RATE_LIMIT_GENERAL)
 def generate_message_endpoint(
-    request: MessageGenerateRequest,
+    request: Request,
+    message_request: MessageGenerateRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
     """Generate a personalized message for a contact."""
-    contact = get_owned_or_404(db, Contact, request.contact_id, current_user, "Contact")
+    contact = get_owned_or_404(db, Contact, message_request.contact_id, current_user, "Contact")
 
     user_profile = _get_user_profile(db, current_user)
     if not user_profile:
         raise HTTPException(status_code=400, detail="Please set up your profile first")
 
     template = None
-    if request.template_id:
+    if message_request.template_id:
         template = user_templates_query(db, current_user).filter(
-            MessageTemplate.id == request.template_id
+            MessageTemplate.id == message_request.template_id
         ).first()
     else:
         target_type_map = {
@@ -274,14 +283,14 @@ def generate_message_endpoint(
             target_type = 'alumni'
 
         template = user_templates_query(db, current_user).filter(
-            MessageTemplate.message_type == request.message_type,
+            MessageTemplate.message_type == message_request.message_type,
             MessageTemplate.target_type == target_type,
             MessageTemplate.is_default == True
         ).first()
 
         if not template:
             template = user_templates_query(db, current_user).filter(
-                MessageTemplate.message_type == request.message_type,
+                MessageTemplate.message_type == message_request.message_type,
                 MessageTemplate.is_default == True
             ).first()
 
@@ -294,14 +303,16 @@ def generate_message_endpoint(
         message=message,
         subject=template.subject,
         contact_name=contact.name,
-        message_type=request.message_type,
+        message_type=message_request.message_type,
         character_count=len(message)
     )
 
 
 @router.post("/generate-ai", response_model=MessageGenerateResponse)
+@limiter.limit(RATE_LIMIT_AI)
 async def generate_message_ai_endpoint(
-    request: AIMessageGenerateRequest,
+    request: Request,
+    ai_request: AIMessageGenerateRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -310,7 +321,7 @@ async def generate_message_ai_endpoint(
 
     Falls back to template-based generation if AI is unavailable.
     """
-    contact = get_owned_or_404(db, Contact, request.contact_id, current_user, "Contact")
+    contact = get_owned_or_404(db, Contact, ai_request.contact_id, current_user, "Contact")
 
     user_profile = _get_user_profile(db, current_user)
     if not user_profile:
@@ -322,14 +333,14 @@ async def generate_message_ai_endpoint(
             message, ai_generated = await ai_service.generate_message_ai(
                 contact=contact,
                 profile=user_profile,
-                message_type=request.message_type,
-                context=request.context
+                message_type=ai_request.message_type,
+                context=ai_request.context
             )
             return MessageGenerateResponse(
                 message=message,
                 subject=None,
                 contact_name=contact.name,
-                message_type=request.message_type,
+                message_type=ai_request.message_type,
                 character_count=len(message),
                 ai_generated=True
             )
@@ -350,14 +361,14 @@ async def generate_message_ai_endpoint(
         target_type = 'alumni'
 
     template = user_templates_query(db, current_user).filter(
-        MessageTemplate.message_type == request.message_type,
+        MessageTemplate.message_type == ai_request.message_type,
         MessageTemplate.target_type == target_type,
         MessageTemplate.is_default == True
     ).first()
 
     if not template:
         template = user_templates_query(db, current_user).filter(
-            MessageTemplate.message_type == request.message_type,
+            MessageTemplate.message_type == ai_request.message_type,
             MessageTemplate.is_default == True
         ).first()
 
@@ -372,7 +383,7 @@ async def generate_message_ai_endpoint(
         message=message,
         subject=template.subject,
         contact_name=contact.name,
-        message_type=request.message_type,
+        message_type=ai_request.message_type,
         character_count=len(message),
         ai_generated=False
     )

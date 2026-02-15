@@ -71,10 +71,38 @@ class AuthSettings(BaseSettings):
         extra = "ignore"
 
 
+class EmailSettings(BaseSettings):
+    """
+    Email configuration for verification and password reset.
+
+    Works with any SMTP provider:
+        - Resend: smtp.resend.com, username=resend, password=re_xxx
+        - SendGrid: smtp.sendgrid.net, username=apikey, password=SG.xxx
+        - AWS SES: email-smtp.us-east-1.amazonaws.com
+        - Gmail: smtp.gmail.com (use app password)
+    """
+    smtp_host: Optional[str] = None
+    smtp_port: int = 587
+    smtp_username: Optional[str] = None
+    smtp_password: Optional[str] = None
+    smtp_use_tls: bool = True
+    from_email: str = "noreply@jobkit.app"
+    from_name: str = "JobKit"
+
+    class Config:
+        env_prefix = "JOBKIT_"
+        env_file = ".env"
+        extra = "ignore"
+
+
 class Settings(BaseSettings):
     """Combined application settings."""
     ai: AISettings = AISettings()
     auth: AuthSettings = AuthSettings()
+    email: EmailSettings = EmailSettings()
+
+    # Base URL for email links (e.g., https://yourjobkit.com)
+    base_url: str = "http://localhost:8000"
 
     # CORS allowed origins (comma-separated, e.g. "http://localhost:3000,https://myapp.com")
     allowed_origins: str = "*"

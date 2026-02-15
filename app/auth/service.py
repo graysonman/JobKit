@@ -105,7 +105,8 @@ class AuthService:
             raise AuthServiceError(
                 "passlib not installed. Run: pip install passlib[bcrypt]"
             )
-        return self._pwd_context.hash(password)
+        # bcrypt only supports up to 72 bytes — truncate to avoid ValueError
+        return self._pwd_context.hash(password[:72])
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         """
@@ -121,6 +122,7 @@ class AuthService:
         if not PASSLIB_AVAILABLE or not self._pwd_context:
             logger.error("passlib not installed - cannot verify password")
             return False
+        plain_password = plain_password[:72]
 
         try:
             return self._pwd_context.verify(plain_password, hashed_password)

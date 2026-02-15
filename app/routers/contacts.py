@@ -4,7 +4,7 @@ JobKit - CRUD API for networking contacts.
 Endpoints for managing professional networking contacts including
 recruiters, developers, hiring managers, and alumni connections.
 """
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_
 from typing import List, Optional
@@ -20,6 +20,7 @@ from ..schemas import (
 from ..auth.dependencies import get_current_active_user
 from ..auth.models import User
 from ..query_helpers import user_query, get_owned_or_404
+from ..rate_limit import limiter, RATE_LIMIT_GENERAL
 
 router = APIRouter()
 
@@ -152,7 +153,9 @@ def get_contact(
 
 
 @router.post("/", response_model=ContactResponse)
+@limiter.limit(RATE_LIMIT_GENERAL)
 def create_contact(
+    request: Request,
     contact: ContactCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
@@ -166,7 +169,9 @@ def create_contact(
 
 
 @router.patch("/{contact_id}", response_model=ContactResponse)
+@limiter.limit(RATE_LIMIT_GENERAL)
 def update_contact(
+    request: Request,
     contact_id: int,
     contact: ContactUpdate,
     db: Session = Depends(get_db),
@@ -185,7 +190,9 @@ def update_contact(
 
 
 @router.delete("/{contact_id}")
+@limiter.limit(RATE_LIMIT_GENERAL)
 def delete_contact(
+    request: Request,
     contact_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
@@ -232,7 +239,9 @@ def get_contact_interactions(
 
 
 @router.post("/{contact_id}/interactions", response_model=InteractionResponse)
+@limiter.limit(RATE_LIMIT_GENERAL)
 def create_interaction(
+    request: Request,
     contact_id: int,
     interaction: InteractionCreate,
     db: Session = Depends(get_db),
@@ -286,7 +295,9 @@ def get_contact_messages(
 # --- Bulk operations ---
 
 @router.post("/bulk", response_model=List[ContactResponse])
+@limiter.limit(RATE_LIMIT_GENERAL)
 def bulk_create_contacts(
+    request: Request,
     contacts: List[ContactCreate],
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)

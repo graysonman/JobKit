@@ -1,0 +1,44 @@
+# =============================================================================
+# JobKit - Docker Compose (Production)
+# =============================================================================
+# Usage:
+#   1. Copy .env.example to .env and configure all settings
+#   2. Set a strong POSTGRES_PASSWORD below (or in .env)
+#   3. Run: docker compose up -d
+#   4. Migrations: docker compose exec app alembic upgrade head
+#
+# For HTTPS, place an nginx reverse proxy or cloud load balancer in front.
+# =============================================================================
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: jobkit
+      POSTGRES_USER: jobkit
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jobkit"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    env_file: .env
+    environment:
+      # Override database URL to point at the db service
+      JOBKIT_DATABASE_URL: postgresql://jobkit:${POSTGRES_PASSWORD:-changeme}@db:5432/jobkit
+      JOBKIT_SINGLE_USER_MODE: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

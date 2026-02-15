@@ -26,6 +26,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 from .config import settings
+from .rate_limit import limiter, RATE_LIMIT_AI, RATE_LIMIT_GENERAL, RATE_LIMIT_READ
 from .database import init_db, SessionLocal, get_db
 from .models import MessageTemplate, UserProfile, Contact, Application, Company, MessageHistory
 from .routers import contacts, applications, companies, messages
@@ -84,7 +85,6 @@ app = FastAPI(
 )
 
 # --- Rate Limiting ---
-from .auth.router import limiter
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -153,7 +153,8 @@ async def health_check():
 
 
 @app.get("/api/ai/status", tags=["ai"])
-async def ai_status():
+@limiter.limit(RATE_LIMIT_READ)
+async def ai_status(request: Request):
     """Check AI service availability and list models."""
     available = await ai_service.is_available()
     models = await ai_service.list_models() if available else []
@@ -166,7 +167,9 @@ async def ai_status():
 
 
 @app.get("/api/ai/prompts", tags=["ai"])
+@limiter.limit(RATE_LIMIT_READ)
 async def get_all_prompts(
+    request: Request,
     current_user: User = Depends(get_current_active_user)
 ):
     """Get all AI prompt templates for viewing and prompt engineering."""
@@ -184,7 +187,9 @@ async def get_all_prompts(
 
 
 @app.get("/api/ai/prompts/{prompt_name}", tags=["ai"])
+@limiter.limit(RATE_LIMIT_READ)
 async def get_prompt(
+    request: Request,
     prompt_name: str,
     current_user: User = Depends(get_current_active_user)
 ):
@@ -203,7 +208,9 @@ async def get_prompt(
 
 
 @app.put("/api/ai/prompts/{prompt_name}", tags=["ai"])
+@limiter.limit(RATE_LIMIT_AI)
 async def update_prompt(
+    request: Request,
     prompt_name: str,
     data: dict,
     current_user: User = Depends(get_current_active_user)
@@ -235,7 +242,9 @@ async def update_prompt(
 
 
 @app.get("/api/stats", tags=["system"])
+@limiter.limit(RATE_LIMIT_READ)
 async def get_dashboard_stats(
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -304,7 +313,9 @@ async def get_dashboard_stats(
 
 
 @app.post("/api/search", response_model=SearchResult, tags=["system"])
+@limiter.limit(RATE_LIMIT_READ)
 async def global_search(
+    request: Request,
     query: str = Query(..., min_length=1, max_length=200),
     search_in: Optional[str] = Query("contacts,companies,applications"),
     limit: int = Query(20, ge=1, le=100),
@@ -356,7 +367,9 @@ async def global_search(
 
 
 @app.get("/api/export", tags=["system"])
+@limiter.limit(RATE_LIMIT_GENERAL)
 async def export_data(
+    request: Request,
     format: str = Query("json", pattern="^(json|csv)$"),
     include_contacts: bool = True,
     include_applications: bool = True,
@@ -476,7 +489,9 @@ async def export_data(
 
 
 @app.post("/api/import", response_model=ImportResult, tags=["system"])
+@limiter.limit(RATE_LIMIT_GENERAL)
 async def import_data(
+    request: Request,
     data: dict,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
@@ -586,6 +601,11 @@ async def resume_page(request: Request):
 @app.get("/login")
 async def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
+
+
+@app.get("/reset-password")
+async def reset_password_page(request: Request):
+    return templates.TemplateResponse("reset_password.html", {"request": request})
 
 
 @app.get("/account")
