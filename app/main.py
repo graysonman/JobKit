@@ -65,12 +65,35 @@ def seed_default_templates():
         db.close()
 
 
+def setup_database():
+    """Create tables if fresh DB, run migrations if existing."""
+    import subprocess
+    from sqlalchemy import inspect as sa_inspect
+    from .database import engine, Base
+
+    inspector = sa_inspect(engine)
+    existing = inspector.get_table_names()
+
+    if "users" not in existing:
+        logger.info("Fresh database — creating all tables...")
+        # Import all models so Base.metadata knows about them
+        from . import models  # noqa: F401
+        from .auth import models as auth_models  # noqa: F401
+        Base.metadata.create_all(bind=engine, checkfirst=True)
+        subprocess.run(["alembic", "stamp", "head"], check=True)
+        logger.info("Tables created and alembic stamped to head.")
+    else:
+        logger.info("Existing database — running migrations...")
+        subprocess.run(["alembic", "upgrade", "head"], check=True)
+        logger.info("Migrations complete.")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize database on startup."""
     logger.info("Starting JobKit application...")
     os.makedirs("data", exist_ok=True)
-    init_db()
+    setup_database()
     seed_default_templates()
     logger.info("JobKit ready!")
     yield
