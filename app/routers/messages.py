@@ -257,8 +257,10 @@ def generate_message_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    """Generate a personalized message for a contact."""
-    contact = get_owned_or_404(db, Contact, message_request.contact_id, current_user, "Contact")
+    """Generate a personalized message, optionally for a specific contact."""
+    contact = None
+    if message_request.contact_id:
+        contact = get_owned_or_404(db, Contact, message_request.contact_id, current_user, "Contact")
 
     user_profile = _get_user_profile(db, current_user)
     if not user_profile:
@@ -270,17 +272,19 @@ def generate_message_endpoint(
             MessageTemplate.id == message_request.template_id
         ).first()
     else:
-        target_type_map = {
-            'junior_dev': 'developer',
-            'senior_dev': 'developer',
-            'recruiter': 'recruiter',
-            'hiring_manager': 'hiring_manager',
-            'other': 'general'
-        }
-        target_type = target_type_map.get(contact.contact_type, 'general')
+        target_type = 'general'
+        if contact:
+            target_type_map = {
+                'junior_dev': 'developer',
+                'senior_dev': 'developer',
+                'recruiter': 'recruiter',
+                'hiring_manager': 'hiring_manager',
+                'other': 'general'
+            }
+            target_type = target_type_map.get(contact.contact_type, 'general')
 
-        if contact.is_alumni:
-            target_type = 'alumni'
+            if contact.is_alumni:
+                target_type = 'alumni'
 
         template = user_templates_query(db, current_user).filter(
             MessageTemplate.message_type == message_request.message_type,
@@ -302,7 +306,7 @@ def generate_message_endpoint(
     return MessageGenerateResponse(
         message=message,
         subject=template.subject,
-        contact_name=contact.name,
+        contact_name=contact.name if contact else None,
         message_type=message_request.message_type,
         character_count=len(message)
     )
@@ -320,8 +324,11 @@ async def generate_message_ai_endpoint(
     Generate a personalized message using AI (Groq).
 
     Falls back to template-based generation if AI is unavailable.
+    Contact is optional — if provided, personalizes the message for them.
     """
-    contact = get_owned_or_404(db, Contact, ai_request.contact_id, current_user, "Contact")
+    contact = None
+    if ai_request.contact_id:
+        contact = get_owned_or_404(db, Contact, ai_request.contact_id, current_user, "Contact")
 
     user_profile = _get_user_profile(db, current_user)
     if not user_profile:
@@ -339,7 +346,7 @@ async def generate_message_ai_endpoint(
             return MessageGenerateResponse(
                 message=message,
                 subject=None,
-                contact_name=contact.name,
+                contact_name=contact.name if contact else None,
                 message_type=ai_request.message_type,
                 character_count=len(message),
                 ai_generated=True
@@ -349,16 +356,18 @@ async def generate_message_ai_endpoint(
         pass  # Fall through to template-based generation
 
     # Fallback: template-based generation
-    target_type_map = {
-        'junior_dev': 'developer',
-        'senior_dev': 'developer',
-        'recruiter': 'recruiter',
-        'hiring_manager': 'hiring_manager',
-        'other': 'general'
-    }
-    target_type = target_type_map.get(contact.contact_type, 'general')
-    if contact.is_alumni:
-        target_type = 'alumni'
+    target_type = 'general'
+    if contact:
+        target_type_map = {
+            'junior_dev': 'developer',
+            'senior_dev': 'developer',
+            'recruiter': 'recruiter',
+            'hiring_manager': 'hiring_manager',
+            'other': 'general'
+        }
+        target_type = target_type_map.get(contact.contact_type, 'general')
+        if contact.is_alumni:
+            target_type = 'alumni'
 
     template = user_templates_query(db, current_user).filter(
         MessageTemplate.message_type == ai_request.message_type,
@@ -382,7 +391,7 @@ async def generate_message_ai_endpoint(
     return MessageGenerateResponse(
         message=message,
         subject=template.subject,
-        contact_name=contact.name,
+        contact_name=contact.name if contact else None,
         message_type=ai_request.message_type,
         character_count=len(message),
         ai_generated=False

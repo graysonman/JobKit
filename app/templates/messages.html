@@ -11,9 +11,9 @@
             <h2 class="text-xl font-bold mb-4">Generate Message</h2>
             <form id="generate-form" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Select Contact *</label>
-                    <select id="msg-contact" required class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
-                        <option value="">Choose a contact...</option>
+                    <label class="block text-sm font-medium text-gray-700">Select Contact (optional)</label>
+                    <select id="msg-contact" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        <option value="">No contact — use generic</option>
                     </select>
                     <!-- Contact Preview -->
                     <div id="contact-preview" class="hidden mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
@@ -47,7 +47,7 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Template (optional)</label>
                     <select id="msg-template" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
-                        <option value="">Use default for contact type</option>
+                        <option value="">Auto-select template</option>
                     </select>
                 </div>
                 <button type="submit" id="generate-btn" class="w-full btn btn-secondary">
@@ -290,7 +290,7 @@ async function loadContacts() {
     const response = await fetch('/api/contacts/');
     contacts = await response.json();
     const select = document.getElementById('msg-contact');
-    select.innerHTML = '<option value="">Choose a contact...</option>' +
+    select.innerHTML = '<option value="">No contact — use generic</option>' +
         contacts.map(c => `<option value="${c.id}">${escapeHtml(c.name)} ${c.company ? '(' + escapeHtml(c.company) + ')' : ''}</option>`).join('');
     const historySelect = document.getElementById('history-contact-filter');
     historySelect.innerHTML = '<option value="">All Contacts</option>' +
@@ -345,7 +345,7 @@ function renderTemplates(templates) {
 
 function formatMessageType(type) { return {'connection_request':'Connection','inmail':'InMail','follow_up':'Follow-up','thank_you':'Thank You','cold_email':'Cold Email','referral_request':'Referral','informational_interview':'Info Interview','recruiter_reply':'Recruiter Reply','application_status':'Status Check','rejection_response':'Rejection Response'}[type] || type; }
 function formatTargetType(type) { return {'general':'General','recruiter':'Recruiter','developer':'Developer','alumni':'Alumni','hiring_manager':'Hiring Manager'}[type] || type; }
-function updateTemplateDropdown() { const msgType = document.getElementById('msg-type').value; const filtered = templates.filter(t => t.message_type === msgType); document.getElementById('msg-template').innerHTML = '<option value="">Use default for contact type</option>' + filtered.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join(''); }
+function updateTemplateDropdown() { const msgType = document.getElementById('msg-type').value; const filtered = templates.filter(t => t.message_type === msgType); document.getElementById('msg-template').innerHTML = '<option value="">Auto-select template</option>' + filtered.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join(''); }
 
 async function loadMessageHistory() { const response = await fetch('/api/messages/history?limit=100'); allHistory = await response.json(); filterHistory(); }
 
@@ -397,13 +397,14 @@ document.getElementById('generate-form').addEventListener('submit', async functi
     const btn = document.getElementById('generate-btn'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Generating...';
     currentContactId = document.getElementById('msg-contact').value;
     currentMessageType = document.getElementById('msg-type').value;
-    const data = { contact_id: parseInt(currentContactId), message_type: currentMessageType };
+    const data = { message_type: currentMessageType };
+    if (currentContactId) { data.contact_id = parseInt(currentContactId); }
 
     try {
         const response = await fetch('/api/messages/generate-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
         if (!response.ok) { const error = await response.json(); throw new Error(error.detail || 'Error generating message'); }
         const result = await response.json();
-        document.getElementById('msg-recipient').textContent = result.contact_name;
+        document.getElementById('msg-recipient').textContent = result.contact_name || 'General Message';
         document.getElementById('msg-content').value = result.message;
         updateCharCount();
         if (result.subject) { document.getElementById('msg-subject').value = result.subject; document.getElementById('msg-subject-container').classList.remove('hidden'); } else { document.getElementById('msg-subject-container').classList.add('hidden'); }
@@ -430,12 +431,14 @@ function updateCharCount() {
 async function copyMessage() { await navigator.clipboard.writeText(document.getElementById('msg-content').value); showToast('Copied to clipboard!'); }
 function openInLinkedIn() { if (currentLinkedInUrl) window.open(currentLinkedInUrl, '_blank'); }
 async function markAsSent() {
-    await fetch('/api/messages/save-sent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: parseInt(currentContactId), message_type: currentMessageType, message_content: document.getElementById('msg-content').value }) });
+    if (currentContactId) {
+        await fetch('/api/messages/save-sent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: parseInt(currentContactId), message_type: currentMessageType, message_content: document.getElementById('msg-content').value }) });
+        loadMessageHistory();
+    }
     showToast('Message marked as sent!');
     document.getElementById('generated-message').classList.add('hidden');
     document.getElementById('generate-form').reset();
     document.getElementById('contact-preview').classList.add('hidden');
-    loadMessageHistory();
 }
 
 function showToast(message) { const toast = document.createElement('div'); toast.className = 'toast'; toast.innerHTML = `<svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> ${message}`; document.body.appendChild(toast); setTimeout(() => toast.remove(), 3000); }

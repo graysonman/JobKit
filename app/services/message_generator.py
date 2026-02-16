@@ -51,11 +51,13 @@ PHRASE_IMPROVEMENTS = {
 
 def generate_message(
     template: MessageTemplate,
-    contact: Contact,
+    contact,
     user_profile: UserProfile
 ) -> str:
     """
     Generate a personalized message by filling in template placeholders.
+
+    Contact is optional — if None, generic placeholders are used.
 
     Available placeholders:
     - {name} - Contact's first name
@@ -70,15 +72,21 @@ def generate_message(
     """
     message = template.template
 
-    # Contact info
-    first_name = contact.name.split()[0] if contact.name else "there"
-    message = message.replace("{name}", first_name)
-    message = message.replace("{full_name}", contact.name or "")
-    message = message.replace("{company}", contact.company or "your company")
-    message = message.replace("{role}", contact.role or "your role")
+    # Contact info (use generic fallbacks when no contact)
+    if contact:
+        first_name = contact.name.split()[0] if contact.name else "there"
+        message = message.replace("{name}", first_name)
+        message = message.replace("{full_name}", contact.name or "")
+        message = message.replace("{company}", contact.company or "your company")
+        message = message.replace("{role}", contact.role or "your role")
+    else:
+        message = message.replace("{name}", "there")
+        message = message.replace("{full_name}", "")
+        message = message.replace("{company}", "your company")
+        message = message.replace("{role}", "your role")
 
     # Alumni connection
-    if contact.is_alumni and contact.school_name:
+    if contact and contact.is_alumni and contact.school_name:
         message = message.replace("{school}", contact.school_name)
     elif user_profile.school:
         message = message.replace("{school}", user_profile.school)

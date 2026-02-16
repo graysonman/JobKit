@@ -352,7 +352,7 @@ class MessageTemplateResponse(MessageTemplateBase):
 # --- Message Generation Schemas ---
 
 class MessageGenerateRequest(BaseModel):
-    contact_id: int
+    contact_id: Optional[int] = None
     template_id: Optional[int] = None
     message_type: MessageType
     custom_context: Optional[str] = Field(None, max_length=1000)
@@ -361,14 +361,14 @@ class MessageGenerateRequest(BaseModel):
 class MessageGenerateResponse(BaseModel):
     message: str
     subject: Optional[str] = None
-    contact_name: str
+    contact_name: Optional[str] = None
     message_type: MessageType
     character_count: int
     ai_generated: bool = False
 
 
 class AIMessageGenerateRequest(BaseModel):
-    contact_id: int
+    contact_id: Optional[int] = None
     message_type: MessageType
     context: Optional[str] = Field(None, max_length=1000)
 

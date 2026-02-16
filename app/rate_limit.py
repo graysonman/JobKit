@@ -10,7 +10,6 @@ from slowapi.util import get_remote_address
 limiter = Limiter(key_func=get_remote_address)
 
 # --- Rate limit constants ---
-# Tune these based on cost and abuse potential of each endpoint type.
 
 # AI-powered endpoints (cost money per Groq API call) — strictest
 RATE_LIMIT_AI = "2/minute"

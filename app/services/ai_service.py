@@ -439,12 +439,12 @@ class AIService:
             resume_summary = f"Skills: {profile.skills}"
 
         prompt = MESSAGE_GENERATION_PROMPT.format(
-            contact_name=contact.name or "there",
-            contact_company=contact.company or "your company",
-            contact_role=contact.role or "your role",
-            contact_type=contact.contact_type or "professional",
-            is_alumni="Yes" if contact.is_alumni else "No",
-            school=contact.school_name or profile.school or "",
+            contact_name=contact.name if contact and contact.name else "there",
+            contact_company=contact.company if contact and contact.company else "your company",
+            contact_role=contact.role if contact and contact.role else "your role",
+            contact_type=contact.contact_type if contact and contact.contact_type else "professional",
+            is_alumni="Yes" if contact and contact.is_alumni else "No",
+            school=(contact.school_name if contact and contact.school_name else profile.school) or "",
             my_name=profile.name or "",
             my_title=profile.current_title or "software developer",
             my_skills=profile.skills or "",
