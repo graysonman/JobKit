@@ -59,6 +59,9 @@ class AuthSettings(BaseSettings):
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
 
+    # Admin bootstrap
+    admin_email: Optional[str] = None  # JOBKIT_ADMIN_EMAIL — auto-promote this user to admin on startup
+
     # OAuth2 providers
     google_client_id: Optional[str] = None
     google_client_secret: Optional[str] = None

@@ -16,7 +16,7 @@ from app.models import (  # noqa: F401
     Contact, Company, Application,
     MessageTemplate, MessageHistory, UserProfile, Interaction
 )
-from app.auth.models import User, OAuthAccount, RefreshToken  # noqa: F401
+from app.auth.models import User, OAuthAccount, RefreshToken, AdminAuditLog  # noqa: F401
 
 config = context.config
 

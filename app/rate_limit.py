@@ -22,3 +22,6 @@ RATE_LIMIT_GENERAL = "30/minute"
 
 # Read-heavy endpoints (search, list, stats) — generous (1/sec sustained)
 RATE_LIMIT_READ = "60/minute"
+
+# Admin panel endpoints — moderate (admin traffic is low volume)
+RATE_LIMIT_ADMIN = "30/minute"

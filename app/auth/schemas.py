@@ -34,6 +34,7 @@ class UserResponse(UserBase):
     id: int
     is_active: bool
     is_verified: bool
+    is_admin: bool = False
     created_at: datetime
     has_password: bool  # True if user can login with password (vs OAuth-only)
 

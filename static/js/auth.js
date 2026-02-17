@@ -18,12 +18,14 @@ const TokenStore = {
         name:    'jobkit_user_name',
         email:   'jobkit_user_email',
         expires: 'jobkit_token_expires',
+        isAdmin: 'jobkit_is_admin',
     },
 
     getAccess()  { return localStorage.getItem(this.keys.access); },
     getRefresh() { return localStorage.getItem(this.keys.refresh); },
     getName()    { return localStorage.getItem(this.keys.name); },
     getEmail()   { return localStorage.getItem(this.keys.email); },
+    isAdmin()    { return localStorage.getItem(this.keys.isAdmin) === 'true'; },
 
     save(data) {
         // data = { access_token, refresh_token, expires_in, user? }
@@ -36,6 +38,7 @@ const TokenStore = {
         if (data.user) {
             if (data.user.name)  localStorage.setItem(this.keys.name, data.user.name);
             if (data.user.email) localStorage.setItem(this.keys.email, data.user.email);
+            localStorage.setItem(this.keys.isAdmin, data.user.is_admin ? 'true' : 'false');
         }
     },
 
@@ -307,5 +310,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const userNameEl = document.getElementById('user-display-name');
     if (userNameEl && userName) {
         userNameEl.textContent = userName;
+    }
+
+    // Show admin link if user is admin
+    const adminLink = document.getElementById('admin-link');
+    if (adminLink && TokenStore.isAdmin()) {
+        adminLink.classList.remove('hidden');
     }
 });

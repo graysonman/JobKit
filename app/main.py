@@ -88,6 +88,25 @@ def setup_database():
         logger.info("Migrations complete.")
 
 
+def bootstrap_admin():
+    """Promote user to admin if JOBKIT_ADMIN_EMAIL is set."""
+    if not settings.auth.admin_email:
+        return
+    from .database import SessionLocal
+    from .auth.models import User
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.email == settings.auth.admin_email).first()
+        if user and not user.is_admin:
+            user.is_admin = True
+            db.commit()
+            logger.info(f"Bootstrapped admin: {user.email}")
+        elif not user:
+            logger.warning(f"JOBKIT_ADMIN_EMAIL={settings.auth.admin_email} but no user found with that email")
+    finally:
+        db.close()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize database on startup."""
@@ -95,6 +114,7 @@ async def lifespan(app: FastAPI):
     os.makedirs("data", exist_ok=True)
     setup_database()
     seed_default_templates()
+    bootstrap_admin()
     logger.info("JobKit ready!")
     yield
     logger.info("Shutting down JobKit...")

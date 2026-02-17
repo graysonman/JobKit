@@ -773,6 +773,7 @@ localStorage.setItem('jobkit_refresh_token', {repr(refresh_token)});
 localStorage.setItem('jobkit_token_expires', String(Date.now() + {expires_in} * 1000));
 localStorage.setItem('jobkit_user_name', {repr(html.escape(user_name))});
 localStorage.setItem('jobkit_user_email', {repr(html.escape(user_email))});
+localStorage.setItem('jobkit_is_admin', '{"true" if user.is_admin else "false"}');
 window.location.href = '/';
 </script>
 </body></html>"""
@@ -810,6 +811,7 @@ def _user_to_response(user: User) -> UserResponse:
         name=user.name,
         is_active=user.is_active,
         is_verified=user.is_verified,
+        is_admin=user.is_admin,
         created_at=user.created_at,
         has_password=user.hashed_password is not None
     )

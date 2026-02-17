@@ -153,6 +153,60 @@ async def get_current_verified_user(
 
 
 # -----------------------------------------------------------------------------
+# Admin Authentication
+# -----------------------------------------------------------------------------
+
+async def get_current_admin_user(
+    current_user: User = Depends(get_current_active_user)
+) -> User:
+    """
+    Get the current user and verify they have admin privileges.
+
+    Dependency chain: get_current_user -> get_current_active_user -> get_current_admin_user
+
+    In single-user mode, the local user is automatically treated as admin.
+
+    Returns:
+        User: The authenticated admin user
+
+    Raises:
+        HTTPException: 403 if user is not an admin
+    """
+    if settings.auth.single_user_mode:
+        return current_user
+
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    return current_user
+
+
+def log_admin_action(
+    db: Session,
+    admin_user: User,
+    action: str,
+    target_user_id: int = None,
+    details: dict = None,
+    ip_address: str = None
+):
+    """Record an admin action to the audit log."""
+    import json
+    from .models import AdminAuditLog
+
+    log_entry = AdminAuditLog(
+        admin_user_id=admin_user.id,
+        action=action,
+        target_user_id=target_user_id,
+        details=json.dumps(details) if details else None,
+        ip_address=ip_address
+    )
+    db.add(log_entry)
+    db.commit()
+
+
+# -----------------------------------------------------------------------------
 # Optional Authentication (for gradual migration)
 # -----------------------------------------------------------------------------
 
