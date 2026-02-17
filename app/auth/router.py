@@ -721,11 +721,14 @@ async def oauth_callback(
             user_info = await client.userinfo()
         info = extract_google_user_info(dict(user_info))
     elif provider == "github":
-        resp = await client.get("user")
-        user_data = resp.json()
-        # GitHub requires separate call for emails
-        emails_resp = await client.get("user/emails")
-        emails_data = emails_resp.json()
+        access_token = token.get("access_token")
+        headers = {"Authorization": f"Bearer {access_token}", "Accept": "application/json"}
+        async with httpx.AsyncClient() as http:
+            resp = await http.get("https://api.github.com/user", headers=headers)
+            user_data = resp.json()
+            # GitHub requires separate call for emails
+            emails_resp = await http.get("https://api.github.com/user/emails", headers=headers)
+            emails_data = emails_resp.json()
         info = extract_github_user_info(user_data, emails_data)
     else:
         raise HTTPException(
