@@ -1,0 +1,153 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- KPI Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="stat-card bg-white rounded-xl p-5 border border-gray-200">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-500">Total Users</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1" id="kpi-total-users">--</p>
+            </div>
+            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+        </div>
+    </div>
+    <div class="stat-card bg-white rounded-xl p-5 border border-gray-200">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-500">Active Users (7d)</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1" id="kpi-active-users">--</p>
+            </div>
+            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+            </div>
+        </div>
+    </div>
+    <div class="stat-card bg-white rounded-xl p-5 border border-gray-200">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-500">New Signups (week)</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1" id="kpi-signups-week">--</p>
+            </div>
+            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+            </div>
+        </div>
+    </div>
+    <div class="stat-card bg-white rounded-xl p-5 border border-gray-200">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-500">Verified Rate</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1" id="kpi-verified-rate">--</p>
+            </div>
+            <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- Signups Chart -->
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="font-semibold text-gray-900">User Signups</h2>
+            <div class="flex gap-1">
+                <button class="growth-period-btn px-3 py-1 text-xs rounded-full border" data-period="7d">7d</button>
+                <button class="growth-period-btn px-3 py-1 text-xs rounded-full border bg-blue-600 text-white border-blue-600" data-period="30d">30d</button>
+                <button class="growth-period-btn px-3 py-1 text-xs rounded-full border" data-period="90d">90d</button>
+            </div>
+        </div>
+        <div style="height: 240px;">
+            <canvas id="signups-chart"></canvas>
+        </div>
+    </div>
+
+    <!-- Application Status Doughnut -->
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <h2 class="font-semibold text-gray-900 mb-4">Application Status Distribution</h2>
+        <div style="height: 240px;" class="flex items-center justify-center">
+            <canvas id="app-status-chart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Feature Adoption -->
+<div class="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+    <h2 class="font-semibold text-gray-900 mb-4">Feature Adoption</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4" id="feature-adoption">
+        <!-- Filled by JS -->
+    </div>
+</div>
+
+<!-- Quick Diagnostics -->
+<div class="bg-white rounded-xl border border-gray-200 p-5">
+    <h2 class="font-semibold text-gray-900 mb-4">Quick Diagnostics</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <a href="/admin/users?filter=unverified" class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition">
+            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-900">Unverified Users</p>
+                <p class="text-lg font-bold text-red-600" id="diag-unverified">--</p>
+            </div>
+        </a>
+        <a href="#" id="diag-empty-link" class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition">
+            <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-900">Empty Profiles</p>
+                <p class="text-lg font-bold text-orange-600" id="diag-empty">--</p>
+            </div>
+        </a>
+        <a href="#" id="diag-stuck-link" class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition">
+            <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-900">Stuck Pipelines</p>
+                <p class="text-lg font-bold text-yellow-600" id="diag-stuck">--</p>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Records Summary -->
+<div class="mt-6 bg-white rounded-xl border border-gray-200 p-5">
+    <h2 class="font-semibold text-gray-900 mb-4">Platform Records</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="text-center">
+            <p class="text-2xl font-bold text-gray-900" id="records-contacts">--</p>
+            <p class="text-sm text-gray-500">Contacts</p>
+        </div>
+        <div class="text-center">
+            <p class="text-2xl font-bold text-gray-900" id="records-applications">--</p>
+            <p class="text-sm text-gray-500">Applications</p>
+        </div>
+        <div class="text-center">
+            <p class="text-2xl font-bold text-gray-900" id="records-companies">--</p>
+            <p class="text-sm text-gray-500">Companies</p>
+        </div>
+        <div class="text-center">
+            <p class="text-2xl font-bold text-gray-900" id="records-messages">--</p>
+            <p class="text-sm text-gray-500">Messages</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    AdminApp.initDashboard();
+});
+</script>
+{% endblock %}

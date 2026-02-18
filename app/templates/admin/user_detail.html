@@ -1,0 +1,120 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}User Detail{% endblock %}
+{% block page_title %}User Detail{% endblock %}
+
+{% block content %}
+<!-- Back button -->
+<a href="/admin/users" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    Back to Users
+</a>
+
+<!-- User Info Card -->
+<div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div class="flex items-start gap-4">
+            <div class="w-14 h-14 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 text-xl font-bold" id="detail-avatar">?</div>
+            <div>
+                <h2 class="text-xl font-bold text-gray-900" id="detail-name">Loading...</h2>
+                <p class="text-sm text-gray-500" id="detail-email"></p>
+                <div class="flex flex-wrap gap-2 mt-2" id="detail-badges"></div>
+                <div class="text-xs text-gray-400 mt-2">
+                    <span>Joined: <span id="detail-joined"></span></span>
+                    <span class="mx-2">|</span>
+                    <span>Updated: <span id="detail-updated"></span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="flex flex-wrap gap-2" id="detail-actions"></div>
+    </div>
+</div>
+
+<!-- Stats cards -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+        <p class="text-2xl font-bold text-gray-900" id="detail-contacts">--</p>
+        <p class="text-sm text-gray-500">Contacts</p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+        <p class="text-2xl font-bold text-gray-900" id="detail-applications">--</p>
+        <p class="text-sm text-gray-500">Applications</p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+        <p class="text-2xl font-bold text-gray-900" id="detail-companies">--</p>
+        <p class="text-sm text-gray-500">Companies</p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+        <p class="text-2xl font-bold text-gray-900" id="detail-messages">--</p>
+        <p class="text-sm text-gray-500">Messages</p>
+    </div>
+</div>
+
+<!-- Tabbed Content -->
+<div class="bg-white rounded-xl border border-gray-200">
+    <!-- Tab buttons -->
+    <div class="border-b border-gray-200 px-4">
+        <nav class="flex gap-4 -mb-px overflow-x-auto">
+            <button class="detail-tab py-3 px-1 text-sm font-medium border-b-2 border-purple-600 text-purple-600 whitespace-nowrap" data-tab="overview">Overview</button>
+            <button class="detail-tab py-3 px-1 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap" data-tab="applications">Applications</button>
+            <button class="detail-tab py-3 px-1 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap" data-tab="contacts">Contacts</button>
+            <button class="detail-tab py-3 px-1 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap" data-tab="companies">Companies</button>
+            <button class="detail-tab py-3 px-1 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap" data-tab="messages">Messages</button>
+        </nav>
+    </div>
+
+    <!-- Tab content -->
+    <div class="p-4">
+        <div id="tab-content-overview" class="tab-content">
+            <div class="space-y-4">
+                <h3 class="font-semibold text-gray-900">Application Status Breakdown</h3>
+                <div id="detail-app-statuses" class="flex flex-wrap gap-2"></div>
+                <div class="mt-4">
+                    <h3 class="font-semibold text-gray-900 mb-2">Profile</h3>
+                    <div id="detail-profile-info" class="text-sm text-gray-600">Loading...</div>
+                </div>
+            </div>
+        </div>
+        <div id="tab-content-applications" class="tab-content hidden">
+            <div id="detail-apps-table"></div>
+            <div id="detail-apps-pagination" class="flex gap-2 mt-3"></div>
+        </div>
+        <div id="tab-content-contacts" class="tab-content hidden">
+            <div id="detail-contacts-table"></div>
+            <div id="detail-contacts-pagination" class="flex gap-2 mt-3"></div>
+        </div>
+        <div id="tab-content-companies" class="tab-content hidden">
+            <div id="detail-companies-table"></div>
+            <div id="detail-companies-pagination" class="flex gap-2 mt-3"></div>
+        </div>
+        <div id="tab-content-messages" class="tab-content hidden">
+            <div id="detail-messages-table"></div>
+            <div id="detail-messages-pagination" class="flex gap-2 mt-3"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirm-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl">
+        <h3 class="text-lg font-semibold text-gray-900 mb-2" id="confirm-title">Confirm Action</h3>
+        <p class="text-sm text-gray-600 mb-6" id="confirm-message"></p>
+        <div class="flex justify-end gap-3">
+            <button onclick="AdminApp.closeModal()" class="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+            <button id="confirm-btn" class="px-4 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700">Confirm</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Extract user ID from URL path: /admin/users/123
+    const userId = window.location.pathname.split('/').pop();
+    AdminApp.initUserDetail(userId);
+});
+</script>
+{% endblock %}

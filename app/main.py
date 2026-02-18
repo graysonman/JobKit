@@ -141,7 +141,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com; "
+            "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://cdn.jsdelivr.net; "
             "style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data:; "
             "connect-src 'self'; "
@@ -655,3 +655,25 @@ async def reset_password_page(request: Request):
 @app.get("/account")
 async def account_page(request: Request):
     return templates.TemplateResponse("account.html", {"request": request})
+
+
+# --- Admin Page Routes ---
+
+@app.get("/admin")
+async def admin_dashboard_page(request: Request):
+    return templates.TemplateResponse("admin/dashboard.html", {"request": request})
+
+
+@app.get("/admin/users")
+async def admin_users_page(request: Request):
+    return templates.TemplateResponse("admin/users.html", {"request": request})
+
+
+@app.get("/admin/users/{user_id}")
+async def admin_user_detail_page(request: Request, user_id: int):
+    return templates.TemplateResponse("admin/user_detail.html", {"request": request})
+
+
+@app.get("/admin/audit-log")
+async def admin_audit_log_page(request: Request):
+    return templates.TemplateResponse("admin/audit_log.html", {"request": request})

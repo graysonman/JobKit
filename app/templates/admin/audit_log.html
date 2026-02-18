@@ -1,0 +1,61 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Audit Log{% endblock %}
+{% block page_title %}Audit Log{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<div class="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+    <div class="flex flex-col sm:flex-row gap-3">
+        <select id="audit-action-filter" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+            <option value="">All Actions</option>
+            <option value="activate_user">Activate User</option>
+            <option value="deactivate_user">Deactivate User</option>
+            <option value="promote_user">Promote User</option>
+            <option value="demote_user">Demote User</option>
+            <option value="verify_user">Verify User</option>
+            <option value="view_user_data">View User Data</option>
+        </select>
+        <input type="number" id="audit-admin-filter" placeholder="Admin User ID" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-40">
+        <input type="number" id="audit-target-filter" placeholder="Target User ID" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-40">
+        <button onclick="AdminApp.loadAuditLog(1)" class="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700">Filter</button>
+    </div>
+</div>
+
+<!-- Audit Log Table -->
+<div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Admin</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Target</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Details</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">IP</th>
+                </tr>
+            </thead>
+            <tbody id="audit-table-body" class="divide-y divide-gray-200">
+                <tr>
+                    <td colspan="6" class="px-4 py-8 text-center text-gray-500">Loading audit log...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
+        <p class="text-sm text-gray-500" id="audit-showing">Showing 0 entries</p>
+        <div class="flex gap-2" id="audit-pagination"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    AdminApp.initAuditLog();
+});
+</script>
+{% endblock %}

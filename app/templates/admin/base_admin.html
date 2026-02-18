@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin{% endblock %} - JobKit Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%237c3aed'/><path d='M30 30h40v10H30zM30 45h30v10H30zM30 60h35v10H30z' fill='white'/></svg>">
+    <style>
+        .sidebar-link.active { background-color: rgba(255,255,255,0.1); color: #fff; }
+        .sidebar-link:hover { background-color: rgba(255,255,255,0.05); }
+        .badge-admin { background-color: #dc2626; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 600; letter-spacing: 0.05em; }
+        .stat-card { transition: box-shadow 0.15s; }
+        .stat-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .toast { position: fixed; top: 1rem; right: 1rem; z-index: 100; padding: 0.75rem 1.25rem; border-radius: 0.5rem; color: #fff; font-size: 0.875rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .toast.show { opacity: 1; pointer-events: auto; }
+        .toast-success { background-color: #16a34a; }
+        .toast-error { background-color: #dc2626; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Toast notification -->
+    <div id="admin-toast" class="toast"></div>
+
+    <!-- Mobile header (visible on small screens) -->
+    <div class="lg:hidden bg-gray-900 text-white flex items-center justify-between px-4 py-3">
+        <div class="flex items-center gap-2">
+            <svg class="w-7 h-7" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="#7c3aed"/><path d="M30 30h40v10H30zM30 45h30v10H30zM30 60h35v10H30z" fill="white"/></svg>
+            <span class="font-bold">JobKit Admin</span>
+        </div>
+        <button id="mobile-sidebar-toggle" class="p-2 rounded hover:bg-gray-800">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+    </div>
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside id="admin-sidebar" class="hidden lg:flex lg:flex-col w-64 bg-gray-900 text-gray-300 flex-shrink-0 fixed lg:sticky top-0 h-screen z-40">
+            <!-- Logo -->
+            <div class="px-5 py-5 border-b border-gray-800">
+                <div class="flex items-center gap-2">
+                    <svg class="w-8 h-8" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="#7c3aed"/><path d="M30 30h40v10H30zM30 45h30v10H30zM30 60h35v10H30z" fill="white"/></svg>
+                    <div>
+                        <div class="text-white font-bold text-lg leading-tight">JobKit</div>
+                        <div class="text-xs text-gray-500">Admin Panel</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nav links -->
+            <nav class="flex-1 px-3 py-4 space-y-1">
+                <a href="/admin" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm" data-page="dashboard">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                    Dashboard
+                </a>
+                <a href="/admin/users" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm" data-page="users">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    Users
+                </a>
+                <a href="/admin/audit-log" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm" data-page="audit-log">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Audit Log
+                </a>
+            </nav>
+
+            <!-- Bottom section -->
+            <div class="px-3 py-4 border-t border-gray-800 space-y-1">
+                <a href="/" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"/></svg>
+                    Back to JobKit
+                </a>
+            </div>
+
+            <!-- Admin user info -->
+            <div class="px-5 py-3 border-t border-gray-800">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold" id="admin-avatar">A</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm text-white truncate" id="admin-name">Admin</div>
+                        <span class="badge-admin">ADMIN</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Mobile sidebar backdrop -->
+        <div id="sidebar-backdrop" class="hidden fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"></div>
+
+        <!-- Main content -->
+        <main class="flex-1 min-w-0">
+            <!-- Top bar -->
+            <div class="bg-white border-b border-gray-200 px-6 py-4 hidden lg:flex items-center justify-between">
+                <h1 class="text-xl font-semibold text-gray-900">{% block page_title %}Dashboard{% endblock %}</h1>
+                <div class="flex items-center gap-3">
+                    <span class="text-sm text-gray-500" id="admin-email-display"></span>
+                    <span class="badge-admin">ADMIN</span>
+                </div>
+            </div>
+
+            <!-- Page content -->
+            <div class="p-4 lg:p-6">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/admin.js"></script>
+    <script>
+        // Mobile sidebar toggle
+        const sidebarToggle = document.getElementById('mobile-sidebar-toggle');
+        const sidebar = document.getElementById('admin-sidebar');
+        const backdrop = document.getElementById('sidebar-backdrop');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('hidden');
+            sidebar.classList.toggle('flex');
+            sidebar.classList.toggle('flex-col');
+            backdrop.classList.toggle('hidden');
+        }
+
+        if (sidebarToggle) sidebarToggle.addEventListener('click', toggleSidebar);
+        if (backdrop) backdrop.addEventListener('click', toggleSidebar);
+
+        // Highlight active sidebar link
+        document.addEventListener('DOMContentLoaded', () => {
+            const path = window.location.pathname;
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                const href = link.getAttribute('href');
+                if (href === path || (href === '/admin' && path === '/admin') ||
+                    (href !== '/admin' && href !== '/' && path.startsWith(href))) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
