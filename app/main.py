@@ -30,7 +30,7 @@ from .rate_limit import limiter, RATE_LIMIT_AI, RATE_LIMIT_GENERAL, RATE_LIMIT_R
 from .database import init_db, SessionLocal, get_db
 from .models import MessageTemplate, UserProfile, Contact, Application, Company, MessageHistory
 from .routers import contacts, applications, companies, messages
-from .routers import profile, resume
+from .routers import profile, resume, admin
 from .auth import router as auth_router
 from .services.message_generator import get_default_templates
 from .services.ai_service import ai_service
@@ -181,6 +181,7 @@ app.include_router(messages.router, prefix="/api/messages", tags=["messages"])
 app.include_router(profile.router, prefix="/api/profile", tags=["profile"])
 app.include_router(resume.router, prefix="/api/resume", tags=["resume"])
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 
 
 # --- API Endpoints ---
