@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block title %}Account Settings - JobKit{% endblock %}
 
@@ -99,8 +99,13 @@
             Type <strong>DELETE</strong> to confirm.
         </p>
         <input type="text" id="delete-confirm-input"
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg mb-3 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
             placeholder="Type DELETE">
+        <div id="delete-password-field">
+            <input type="password" id="delete-password-input"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                placeholder="Enter your password to confirm">
+        </div>
         <div class="flex gap-3 justify-end">
             <button onclick="hideDeleteModal()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition text-sm">
                 Cancel
@@ -115,7 +120,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ request.state.nonce }}">
     // Load current user data
     document.addEventListener('DOMContentLoaded', async () => {
         try {
@@ -278,12 +283,23 @@
             return;
         }
 
+        const passwordInput = document.getElementById('delete-password-input');
+        const password = passwordInput ? passwordInput.value : null;
+        if (passwordInput && !password) {
+            alert('Please enter your password to confirm deletion.');
+            return;
+        }
+
         const btn = document.getElementById('delete-btn');
         btn.disabled = true;
         btn.textContent = 'Deleting...';
 
         try {
-            const res = await fetch('/auth/account', { method: 'DELETE' });
+            const res = await fetch('/auth/account', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: password || null })
+            });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({ detail: 'Delete failed' }));
                 throw new Error(err.detail);
@@ -296,5 +312,19 @@
             btn.textContent = 'Delete Forever';
         }
     }
+
+    // Hide password field for OAuth-only users (no password set)
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const res = await fetch('/auth/me');
+            if (res.ok) {
+                const user = await res.json();
+                if (!user.has_password) {
+                    const field = document.getElementById('delete-password-field');
+                    if (field) field.remove();
+                }
+            }
+        } catch {}
+    });
 </script>
 {% endblock %}

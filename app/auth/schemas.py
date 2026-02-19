@@ -82,6 +82,11 @@ class PasswordChange(BaseModel):
     new_password: str = Field(..., min_length=8)
 
 
+class DeleteAccountRequest(BaseModel):
+    """Schema for account deletion — password required if account has one."""
+    password: Optional[str] = None
+
+
 class PasswordReset(BaseModel):
     """Schema for password reset request."""
     email: EmailStr

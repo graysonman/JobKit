@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -107,7 +107,7 @@
 
     <script src="/static/js/auth.js"></script>
     <script src="/static/js/admin.js"></script>
-    <script>
+    <script nonce="{{ request.state.nonce }}">
         // Mobile sidebar toggle
         const sidebarToggle = document.getElementById('mobile-sidebar-toggle');
         const sidebar = document.getElementById('admin-sidebar');

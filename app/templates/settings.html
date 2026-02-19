@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Settings - JobKit{% endblock %}
 
 {% block content %}
@@ -544,7 +544,7 @@
 <!-- Toast Container -->
 <div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
 
-<script>
+<script nonce="{{ request.state.nonce }}">
 // Profile fields for completion tracking
 const profileFields = [
     { id: 'profile-name', weight: 2, label: 'Name' },

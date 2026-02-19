@@ -1,4 +1,4 @@
-{% extends "admin/base_admin.html" %}
+﻿{% extends "admin/base_admin.html" %}
 
 {% block title %}User Detail{% endblock %}
 {% block page_title %}User Detail{% endblock %}
@@ -110,7 +110,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ request.state.nonce }}">
 document.addEventListener('DOMContentLoaded', () => {
     // Extract user ID from URL path: /admin/users/123
     const userId = window.location.pathname.split('/').pop();

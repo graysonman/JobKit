@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Messages - JobKit{% endblock %}
 
 {% block content %}
@@ -261,7 +261,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ request.state.nonce }}">
 let contacts = [];
 let templates = [];
 let allHistory = [];

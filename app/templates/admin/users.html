@@ -1,4 +1,4 @@
-{% extends "admin/base_admin.html" %}
+﻿{% extends "admin/base_admin.html" %}
 
 {% block title %}Users{% endblock %}
 {% block page_title %}User Management{% endblock %}
@@ -64,7 +64,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ request.state.nonce }}">
 document.addEventListener('DOMContentLoaded', () => {
     AdminApp.initUsers();
 });

@@ -35,7 +35,7 @@ from .schemas import (
     UserCreate, UserResponse, UserUpdate,
     Token, TokenRefresh, PasswordChange,
     RegisterResponse, LoginResponse, OAuthAccountResponse,
-    PasswordReset, PasswordResetConfirm
+    PasswordReset, PasswordResetConfirm, DeleteAccountRequest
 )
 from .service import auth_service, AuthServiceError
 from .dependencies import (
@@ -585,6 +585,7 @@ async def reset_password(
 
 @router.delete("/account")
 async def delete_account(
+    payload: DeleteAccountRequest,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
@@ -592,6 +593,7 @@ async def delete_account(
     Delete the current user's account.
 
     This is irreversible and will delete all associated data.
+    Password is required if the account has one set.
     """
     # In single-user mode, don't allow deleting the local user
     if is_single_user_mode() and current_user.email == "local@jobkit.local":
@@ -599,6 +601,19 @@ async def delete_account(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot delete the local user in single-user mode"
         )
+
+    # Require password verification for accounts that have a password
+    if current_user.hashed_password:
+        if not payload.password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Password is required to delete your account"
+            )
+        if not auth_service.verify_password(payload.password, current_user.hashed_password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Incorrect password"
+            )
 
     # Revoke all tokens first
     auth_service.revoke_all_user_tokens(current_user.id, db)
@@ -760,19 +775,18 @@ async def oauth_callback(
     # This is necessary because OAuth callbacks happen via browser redirect,
     # so we can't return JSON — we need to store tokens client-side.
     expires_in = settings.auth.access_token_expire_minutes * 60
-    user_name = user.name or ""
-    user_email = user.email or ""
-    import html
+    import json as _json
+    nonce = getattr(request.state, "nonce", "")
     html_content = f"""<!DOCTYPE html>
 <html><head><title>Signing in...</title></head>
 <body>
 <p>Signing in, please wait...</p>
-<script>
-localStorage.setItem('jobkit_access_token', {repr(access_token)});
-localStorage.setItem('jobkit_refresh_token', {repr(refresh_token)});
+<script nonce="{nonce}">
+localStorage.setItem('jobkit_access_token', {_json.dumps(access_token)});
+localStorage.setItem('jobkit_refresh_token', {_json.dumps(refresh_token)});
 localStorage.setItem('jobkit_token_expires', String(Date.now() + {expires_in} * 1000));
-localStorage.setItem('jobkit_user_name', {repr(html.escape(user_name))});
-localStorage.setItem('jobkit_user_email', {repr(html.escape(user_email))});
+localStorage.setItem('jobkit_user_name', {_json.dumps(user.name or "")});
+localStorage.setItem('jobkit_user_email', {_json.dumps(user.email or "")});
 localStorage.setItem('jobkit_is_admin', '{"true" if user.is_admin else "false"}');
 window.location.href = '/';
 </script>

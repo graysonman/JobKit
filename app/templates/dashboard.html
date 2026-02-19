@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Dashboard - JobKit{% endblock %}
 
 {% block content %}
@@ -209,7 +209,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ request.state.nonce }}">
 document.addEventListener('DOMContentLoaded', async function() {
     let hasProfile = false;
     let hasContacts = false;

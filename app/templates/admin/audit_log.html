@@ -1,4 +1,4 @@
-{% extends "admin/base_admin.html" %}
+﻿{% extends "admin/base_admin.html" %}
 
 {% block title %}Audit Log{% endblock %}
 {% block page_title %}Audit Log{% endblock %}
@@ -53,7 +53,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ request.state.nonce }}">
 document.addEventListener('DOMContentLoaded', () => {
     AdminApp.initAuditLog();
 });

@@ -16,6 +16,8 @@ import os
 import tempfile
 import json
 import logging
+import zipfile
+import io
 
 from ..database import get_db
 from ..models import UserProfile, Application
@@ -165,7 +167,16 @@ class ProfileResumeUpdateRequest(BaseModel):
 # --- Resume Upload & Parsing Endpoints ---
 
 ALLOWED_EXTENSIONS = {'.pdf', '.docx', '.doc', '.txt'}
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+MAX_FILE_SIZE = 5 * 1024 * 1024          # 5MB compressed limit
+MAX_UNCOMPRESSED_SIZE = 50 * 1024 * 1024  # 50MB uncompressed limit (zip bomb guard)
+
+# Magic bytes for each supported format — checked against actual file content
+# to prevent extension spoofing (e.g. malware.exe renamed to resume.pdf)
+MAGIC_BYTES: dict[str, bytes] = {
+    '.pdf':  b'%PDF',
+    '.docx': b'PK\x03\x04',   # DOCX is a ZIP archive
+    '.doc':  b'\xd0\xcf\x11\xe0',  # OLE2 compound document
+}
 
 
 def _serialize_resume_data(resume_data: StructuredResume) -> str:
@@ -209,13 +220,38 @@ async def upload_resume(
             detail=f"Unsupported file type: {ext}. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
         )
 
-    content = await file.read()
-
+    # Read with a hard cap — never buffers more than MAX_FILE_SIZE+1 bytes
+    # regardless of what the client sends, preventing RAM exhaustion
+    content = await file.read(MAX_FILE_SIZE + 1)
     if len(content) > MAX_FILE_SIZE:
         raise HTTPException(
             status_code=400,
-            detail=f"File too large. Maximum size: {MAX_FILE_SIZE // (1024*1024)}MB"
+            detail=f"File too large. Maximum size: {MAX_FILE_SIZE // (1024 * 1024)}MB"
         )
+
+    # Magic bytes check — validates actual file content, not just the extension
+    if ext in MAGIC_BYTES:
+        if not content.startswith(MAGIC_BYTES[ext]):
+            raise HTTPException(
+                status_code=400,
+                detail="File content does not match the declared file type"
+            )
+
+    # Zip bomb guard for DOCX/DOC (both are ZIP-based formats)
+    # A zip bomb is a tiny compressed file that expands to gigabytes on extraction
+    if ext in ('.docx', '.doc') and content.startswith(b'PK\x03\x04'):
+        try:
+            total_uncompressed = 0
+            with zipfile.ZipFile(io.BytesIO(content)) as zf:
+                for entry in zf.infolist():
+                    total_uncompressed += entry.file_size
+                    if total_uncompressed > MAX_UNCOMPRESSED_SIZE:
+                        raise HTTPException(
+                            status_code=400,
+                            detail="File rejected: compressed content exceeds safe size limit"
+                        )
+        except zipfile.BadZipFile:
+            raise HTTPException(status_code=400, detail="File is not a valid DOCX/DOC document")
 
     try:
         if ext == '.txt':

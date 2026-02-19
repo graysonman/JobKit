@@ -471,6 +471,10 @@ def demote_user(
     if user_id == admin.id:
         raise HTTPException(status_code=400, detail="Cannot demote yourself")
 
+    admin_count = db.query(User).filter(User.is_admin == True).count()
+    if admin_count <= 1:
+        raise HTTPException(status_code=400, detail="Cannot demote the last admin")
+
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
