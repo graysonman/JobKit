@@ -38,7 +38,7 @@
                 <div>
                     <div class="flex items-center justify-between mb-1">
                         <label class="block text-sm font-medium text-gray-700">Paste Job Description</label>
-                        <button type="button" onclick="pasteFromClipboard('job-description')" class="btn btn-ghost btn-sm">
+                        <button type="button" id="paste-job-btn" class="btn btn-ghost btn-sm">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                             </svg>
@@ -58,7 +58,7 @@
             <div id="analysis-results" class="mt-6 hidden">
                 <div class="flex items-center justify-between mb-3">
                     <h3 class="font-bold">Analysis Results</h3>
-                    <button onclick="saveToApplication()" class="btn btn-outline btn-sm">
+                    <button id="save-to-app-btn" class="btn btn-outline btn-sm">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                         </svg>
@@ -118,7 +118,7 @@
                     <label class="block text-sm font-medium text-gray-700">Resume Source</label>
                     <div class="flex flex-col gap-2">
                         <label class="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors" id="source-profile-label">
-                            <input type="radio" name="resume-source" value="profile" checked onchange="switchResumeSource('profile')" class="text-green-600 focus:ring-green-500">
+                            <input type="radio" name="resume-source" value="profile" checked class="text-green-600 focus:ring-green-500">
                             <div class="flex-1">
                                 <span class="font-medium">Use profile resume</span>
                                 <span class="text-xs text-green-600 ml-1">(Recommended)</span>
@@ -127,14 +127,14 @@
                             <span id="profile-resume-status" class="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600">Checking...</span>
                         </label>
                         <label class="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                            <input type="radio" name="resume-source" value="paste" onchange="switchResumeSource('paste')" class="text-green-600 focus:ring-green-500">
+                            <input type="radio" name="resume-source" value="paste" class="text-green-600 focus:ring-green-500">
                             <div class="flex-1">
                                 <span class="font-medium">Paste text manually</span>
                                 <p class="text-xs text-gray-500">Copy and paste your resume content</p>
                             </div>
                         </label>
                         <label class="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                            <input type="radio" name="resume-source" value="upload" onchange="switchResumeSource('upload')" class="text-green-600 focus:ring-green-500">
+                            <input type="radio" name="resume-source" value="upload" class="text-green-600 focus:ring-green-500">
                             <div class="flex-1">
                                 <span class="font-medium">Upload file</span>
                                 <p class="text-xs text-gray-500">PDF, DOCX, or TXT files</p>
@@ -177,13 +177,13 @@
                     <div class="flex items-center justify-between">
                         <label class="block text-sm font-medium text-gray-700">Paste Resume Text</label>
                         <div class="flex gap-2">
-                            <button type="button" onclick="pasteFromClipboard('resume-text')" class="btn btn-ghost btn-sm">
+                            <button type="button" id="paste-resume-btn" class="btn btn-ghost btn-sm">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                                 </svg>
                                 Paste
                             </button>
-                            <button type="button" onclick="saveResumeTextToProfile()" class="btn btn-ghost btn-sm">
+                            <button type="button" id="save-resume-text-btn" class="btn btn-ghost btn-sm">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
                                 </svg>
@@ -197,8 +197,7 @@
                 <!-- Upload File Panel -->
                 <div id="resume-panel-upload" class="hidden space-y-3">
                     <label class="block text-sm font-medium text-gray-700">Upload Resume File</label>
-                    <div id="upload-dropzone" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-400 transition-colors cursor-pointer"
-                         ondrop="handleResumeDrop(event)" ondragover="event.preventDefault(); this.classList.add('border-green-400', 'bg-green-50');" ondragleave="this.classList.remove('border-green-400', 'bg-green-50');">
+                    <div id="upload-dropzone" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-400 transition-colors cursor-pointer">
                         <svg class="w-10 h-10 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                         </svg>
@@ -206,7 +205,7 @@
                         <p class="text-xs text-gray-500 mb-3">or</p>
                         <label class="btn btn-outline btn-sm cursor-pointer">
                             Browse Files
-                            <input type="file" id="resume-file-input" accept=".pdf,.docx,.doc,.txt" class="hidden" onchange="handleResumeFileSelect(this)">
+                            <input type="file" id="resume-file-input" accept=".pdf,.docx,.doc,.txt" class="hidden">
                         </label>
                         <p class="text-xs text-gray-500 mt-2">PDF, DOCX, or TXT (max 5MB)</p>
                     </div>
@@ -219,8 +218,8 @@
                                 <span id="upload-filename" class="text-sm text-green-700"></span>
                             </div>
                             <div class="flex gap-2">
-                                <button type="button" onclick="saveUploadedToProfile()" class="text-xs text-green-600 hover:underline">Save to Profile</button>
-                                <button type="button" onclick="clearUpload()" class="text-xs text-gray-500 hover:text-gray-700">Clear</button>
+                                <button type="button" id="save-uploaded-btn" class="text-xs text-green-600 hover:underline">Save to Profile</button>
+                                <button type="button" id="clear-upload-btn" class="text-xs text-gray-500 hover:text-gray-700">Clear</button>
                             </div>
                         </div>
                     </div>
@@ -268,7 +267,7 @@
                 <div id="tailoring-results" class="hidden mt-4 pt-4 border-t">
                     <div class="flex items-center justify-between mb-3">
                         <h4 class="font-bold text-gray-800">Resume Tailoring Suggestions</h4>
-                        <button type="button" onclick="getTailoringSuggestions()" class="btn btn-outline btn-sm">
+                        <button type="button" id="get-tailoring-btn" class="btn btn-outline btn-sm">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                             </svg>
@@ -364,19 +363,19 @@
             </div>
             <textarea id="cover-letter-text" rows="12" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"></textarea>
             <div class="flex flex-wrap gap-2 mt-3">
-                <button onclick="copyCoverLetter()" class="btn btn-primary">
+                <button id="copy-cover-btn" class="btn btn-primary">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
                     </svg>
                     Copy to Clipboard
                 </button>
-                <button onclick="downloadCoverLetter()" class="btn btn-outline">
+                <button id="download-cover-btn" class="btn btn-outline">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                     </svg>
                     Download as Text
                 </button>
-                <button onclick="openSaveToAppModal()" class="btn btn-outline">
+                <button id="open-save-app-btn" class="btn btn-outline">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
                     </svg>
@@ -392,7 +391,7 @@
     <div class="modal-content max-w-md">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold">Save to Application</h3>
-            <button onclick="closeSaveAppModal()" class="text-gray-500 hover:text-gray-700">
+            <button id="close-save-app-btn" class="text-gray-500 hover:text-gray-700">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
@@ -416,7 +415,7 @@
                 <label for="app-include-cover" class="text-sm text-gray-700">Include cover letter in notes</label>
             </div>
             <div class="flex justify-end gap-2">
-                <button type="button" onclick="closeSaveAppModal()" class="btn btn-outline">Cancel</button>
+                <button type="button" id="cancel-save-app-btn" class="btn btn-outline">Cancel</button>
                 <button type="submit" class="btn btn-primary">Save Application</button>
             </div>
         </form>
@@ -426,777 +425,6 @@
 <!-- Toast Container -->
 <div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
 
-<script nonce="{{ request.state.nonce }}">
-let currentJobDescription = '';
-let currentAnalysis = null;
-
-// Toast Notifications
-function showToast(message, type = 'info') {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-
-    const bgColors = {
-        success: 'bg-green-500',
-        error: 'bg-red-500',
-        info: 'bg-blue-500',
-        warning: 'bg-yellow-500'
-    };
-
-    toast.className = `${bgColors[type]} text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in`;
-    toast.innerHTML = `
-        <span>${message}</span>
-        <button onclick="this.parentElement.remove()" class="ml-2 hover:opacity-75">&times;</button>
-    `;
-
-    container.appendChild(toast);
-
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transition = 'opacity 0.3s';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
-
-function setButtonLoading(button, loading) {
-    if (loading) {
-        button.disabled = true;
-        button.dataset.originalText = button.innerHTML;
-        button.innerHTML = '<span class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>Processing...';
-    } else {
-        button.disabled = false;
-        button.innerHTML = button.dataset.originalText || button.innerHTML;
-    }
-}
-
-// Paste from clipboard
-async function pasteFromClipboard(elementId) {
-    try {
-        const text = await navigator.clipboard.readText();
-        document.getElementById(elementId).value = text;
-        showToast('Pasted from clipboard', 'success');
-    } catch (e) {
-        showToast('Unable to access clipboard. Please paste manually.', 'warning');
-    }
-}
-
-// Update step indicators
-function updateSteps(completedStep) {
-    for (let i = 1; i <= 3; i++) {
-        const step = document.getElementById(`step-${i}`);
-        step.classList.remove('active', 'completed');
-        if (i < completedStep) {
-            step.classList.add('completed');
-        } else if (i === completedStep) {
-            step.classList.add('active');
-        }
-    }
-}
-
-// Unlock sections
-function unlockSections() {
-    document.getElementById('match-overlay').classList.add('hidden');
-    document.getElementById('cover-overlay').classList.add('hidden');
-}
-
-// Save resume to profile
-async function saveResumeToProfile() {
-    const resumeText = document.getElementById('resume-text').value;
-    if (!resumeText.trim()) {
-        showToast('Please enter your resume first', 'warning');
-        return;
-    }
-
-    try {
-        const response = await fetch('/api/profile/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ resume_summary: resumeText })
-        });
-
-        if (response.ok) {
-            showToast('Resume saved to profile', 'success');
-        } else {
-            throw new Error('Failed to save');
-        }
-    } catch (e) {
-        showToast('Error saving resume to profile', 'error');
-    }
-}
-
-// Save to Applications
-async function saveToApplication() {
-    const company = document.getElementById('cl-company').value || 'Unknown Company';
-    const role = document.getElementById('cl-role').value || 'Unknown Role';
-
-    document.getElementById('app-company').value = company;
-    document.getElementById('app-title').value = role;
-    document.getElementById('save-app-modal').classList.remove('hidden');
-}
-
-function openSaveToAppModal() {
-    const company = document.getElementById('cl-company').value;
-    const role = document.getElementById('cl-role').value;
-
-    document.getElementById('app-company').value = company;
-    document.getElementById('app-title').value = role;
-    document.getElementById('save-app-modal').classList.remove('hidden');
-}
-
-function closeSaveAppModal() {
-    document.getElementById('save-app-modal').classList.add('hidden');
-}
-
-document.getElementById('save-app-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    const company = document.getElementById('app-company').value;
-    const title = document.getElementById('app-title').value;
-    const url = document.getElementById('app-url').value;
-    const includeCover = document.getElementById('app-include-cover').checked;
-    const coverLetter = document.getElementById('cover-letter-text').value;
-
-    let notes = '';
-    if (includeCover && coverLetter) {
-        notes = `Cover Letter:\n\n${coverLetter}`;
-    }
-
-    try {
-        const response = await fetch('/api/applications/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                company_name: company,
-                job_title: title,
-                job_url: url || null,
-                notes: notes || null,
-                status: 'saved'
-            })
-        });
-
-        if (response.ok) {
-            showToast('Application saved successfully!', 'success');
-            closeSaveAppModal();
-        } else {
-            throw new Error('Failed to save application');
-        }
-    } catch (e) {
-        showToast('Error saving application', 'error');
-    }
-});
-
-// Download cover letter
-function downloadCoverLetter() {
-    const text = document.getElementById('cover-letter-text').value;
-    const company = document.getElementById('cl-company').value || 'Company';
-    const role = document.getElementById('cl-role').value || 'Role';
-    const filename = `Cover_Letter_${company.replace(/\s+/g, '_')}_${role.replace(/\s+/g, '_')}.txt`;
-
-    const blob = new Blob([text], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-
-    showToast('Cover letter downloaded', 'success');
-}
-
-// Update word count
-function updateWordCount() {
-    const text = document.getElementById('cover-letter-text').value;
-    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-    document.getElementById('word-count').textContent = `${words} words`;
-}
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', async function() {
-    // Add word count listener for cover letter
-    document.getElementById('cover-letter-text').addEventListener('input', updateWordCount);
-});
-
-document.getElementById('analyze-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    const submitBtn = this.querySelector('button[type="submit"]');
-    setButtonLoading(submitBtn, true);
-
-    currentJobDescription = document.getElementById('job-description').value;
-
-    try {
-        const response = await fetch('/api/resume/analyze-job-ai', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ job_description: currentJobDescription })
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Failed to analyze job description');
-        }
-
-        const raw = await response.json();
-        const result = raw.analysis || raw;
-        currentAnalysis = result;
-
-        document.getElementById('exp-level').textContent = result.experience_level;
-
-        document.getElementById('required-skills').innerHTML = (result.required_skills || [])
-            .map(s => `<span class="px-2 py-1 text-xs rounded bg-red-100 text-red-800">${s}</span>`).join('');
-
-        document.getElementById('preferred-skills').innerHTML = (result.preferred_skills || [])
-            .map(s => `<span class="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800">${s}</span>`).join('');
-
-        document.getElementById('keywords').innerHTML = (result.keywords || [])
-            .map(s => `<span class="px-2 py-1 text-xs rounded bg-gray-100 text-gray-700">${s}</span>`).join('');
-
-        document.getElementById('responsibilities').innerHTML = (result.key_responsibilities || [])
-            .map(r => `<li>${r}</li>`).join('');
-
-        document.getElementById('analysis-results').classList.remove('hidden');
-
-        // Unlock other sections
-        unlockSections();
-        updateSteps(2);
-
-        showToast('Job description analyzed successfully', 'success');
-    } catch (e) {
-        showToast(e.message || 'Error analyzing job description', 'error');
-    } finally {
-        setButtonLoading(submitBtn, false);
-    }
-});
-
-document.getElementById('match-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    if (!currentJobDescription) {
-        showToast('Please analyze a job description first', 'warning');
-        return;
-    }
-
-    const submitBtn = this.querySelector('button[type="submit"]');
-    setButtonLoading(submitBtn, true);
-
-    const resumeText = await getResumeText();
-
-    if (!resumeText || resumeText.length < 50) {
-        showToast('Please provide your resume text (at least 50 characters)', 'warning');
-        setButtonLoading(submitBtn, false);
-        return;
-    }
-
-    try {
-        const response = await fetch('/api/resume/match-resume', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                resume_text: resumeText,
-                job_description: currentJobDescription
-            })
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Failed to check resume match');
-        }
-
-        const result = await response.json();
-
-        const scorePercent = Math.round(result.match_score * 100);
-        document.getElementById('match-score').textContent = scorePercent + '%';
-        document.getElementById('match-score').className = 'text-lg font-bold ' +
-            (scorePercent >= 70 ? 'text-green-600' : scorePercent >= 50 ? 'text-yellow-600' : 'text-red-600');
-
-        const matchBar = document.getElementById('match-bar');
-        matchBar.style.width = scorePercent + '%';
-        matchBar.className = 'h-2.5 rounded-full transition-all duration-500 ' +
-            (scorePercent >= 70 ? 'bg-green-500' : scorePercent >= 50 ? 'bg-yellow-500' : 'bg-red-500');
-
-        document.getElementById('matching-skills').innerHTML = result.matching_skills
-            .map(s => `<span class="px-2 py-1 text-xs rounded bg-green-100 text-green-800">${s}</span>`).join('');
-
-        document.getElementById('missing-skills').innerHTML = result.missing_skills
-            .map(s => `<span class="px-2 py-1 text-xs rounded bg-red-100 text-red-800">${s}</span>`).join('');
-
-        document.getElementById('suggestions').innerHTML = result.suggestions
-            .map(s => `<li>${s}</li>`).join('');
-
-        document.getElementById('match-results').classList.remove('hidden');
-        updateSteps(3);
-
-        showToast('Resume match analyzed', 'success');
-
-        // Automatically get AI-powered tailoring suggestions for richer feedback
-        getTailoringSuggestions();
-    } catch (e) {
-        showToast(e.message || 'Error checking resume match', 'error');
-    } finally {
-        setButtonLoading(submitBtn, false);
-    }
-});
-
-document.getElementById('cover-letter-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    if (!currentJobDescription) {
-        showToast('Please analyze a job description first', 'warning');
-        return;
-    }
-
-    const submitBtn = this.querySelector('button[type="submit"]');
-    setButtonLoading(submitBtn, true);
-
-    const companyName = document.getElementById('cl-company').value;
-    const role = document.getElementById('cl-role').value;
-    const tone = document.getElementById('cl-tone').value;
-    const length = document.getElementById('cl-length').value;
-    const pointsText = document.getElementById('cl-points').value;
-    const customPoints = pointsText ? pointsText.split('\n').filter(p => p.trim()) : null;
-
-    try {
-        const response = await fetch('/api/resume/generate-cover-letter-ai', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                job_description: currentJobDescription,
-                company_name: companyName,
-                role: role,
-                tone: tone,
-                length: length,
-                custom_points: customPoints
-            })
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Error generating cover letter');
-        }
-
-        const result = await response.json();
-        document.getElementById('cover-letter-text').value = result.cover_letter;
-        document.getElementById('cover-letter-result').classList.remove('hidden');
-        updateWordCount();
-
-        showToast('Cover letter generated', 'success');
-    } catch (e) {
-        showToast(e.message || 'Error generating cover letter. Make sure you have set up your profile in Settings.', 'error');
-    } finally {
-        setButtonLoading(submitBtn, false);
-    }
-});
-
-async function copyCoverLetter() {
-    try {
-        const text = document.getElementById('cover-letter-text').value;
-        await navigator.clipboard.writeText(text);
-        showToast('Cover letter copied to clipboard!', 'success');
-    } catch (e) {
-        showToast('Failed to copy to clipboard', 'error');
-    }
-}
-
-// Close modal on escape
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeSaveAppModal();
-    }
-});
-
-// Close modal on backdrop click
-document.getElementById('save-app-modal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeSaveAppModal();
-    }
-});
-
-// =============================================
-// Resume Source Handling
-// =============================================
-
-let profileResumeData = null;
-let uploadedResumeText = null;
-let currentResumeSource = 'profile';
-
-function switchResumeSource(source) {
-    currentResumeSource = source;
-
-    // Hide all panels
-    document.getElementById('resume-panel-profile').classList.add('hidden');
-    document.getElementById('resume-panel-paste').classList.add('hidden');
-    document.getElementById('resume-panel-upload').classList.add('hidden');
-
-    // Show selected panel
-    document.getElementById(`resume-panel-${source}`).classList.remove('hidden');
-}
-
-async function loadProfileResume() {
-    const loading = document.getElementById('profile-resume-loading');
-    const empty = document.getElementById('profile-resume-empty');
-    const content = document.getElementById('profile-resume-content');
-    const status = document.getElementById('profile-resume-status');
-
-    loading.classList.remove('hidden');
-    empty.classList.add('hidden');
-    content.classList.add('hidden');
-
-    try {
-        const response = await fetch('/api/resume/profile-resume');
-        if (!response.ok) {
-            throw new Error('No profile');
-        }
-
-        const data = await response.json();
-        profileResumeData = data;
-
-        // Check if we have meaningful data
-        const hasData = data.summary || (data.skills && data.skills.length) || (data.experience && data.experience.length);
-
-        if (hasData) {
-            // Show preview
-            document.getElementById('profile-summary-preview').textContent = data.summary || 'No summary';
-
-            const skillsPreview = document.getElementById('profile-skills-preview');
-            skillsPreview.innerHTML = (data.skills || []).slice(0, 8)
-                .map(s => `<span class="px-2 py-0.5 text-xs rounded bg-blue-100 text-blue-800">${s}</span>`).join('');
-            if (data.skills && data.skills.length > 8) {
-                skillsPreview.innerHTML += `<span class="text-xs text-gray-500">+${data.skills.length - 8} more</span>`;
-            }
-
-            const expCount = data.experience ? data.experience.length : 0;
-            document.getElementById('profile-experience-count').textContent =
-                expCount > 0 ? `${expCount} experience entries` : '';
-
-            content.classList.remove('hidden');
-            status.textContent = 'Available';
-            status.className = 'text-xs px-2 py-0.5 rounded bg-green-100 text-green-600';
-        } else {
-            empty.classList.remove('hidden');
-            status.textContent = 'Not set up';
-            status.className = 'text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-600';
-        }
-    } catch (e) {
-        empty.classList.remove('hidden');
-        status.textContent = 'Not set up';
-        status.className = 'text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-600';
-    } finally {
-        loading.classList.add('hidden');
-    }
-}
-
-// Get resume text based on selected source
-async function getResumeText() {
-    switch (currentResumeSource) {
-        case 'profile':
-            if (profileResumeData) {
-                // Build text from structured data
-                let parts = [];
-                if (profileResumeData.summary) parts.push(profileResumeData.summary);
-                if (profileResumeData.skills && profileResumeData.skills.length) {
-                    parts.push('Skills: ' + profileResumeData.skills.join(', '));
-                }
-                if (profileResumeData.experience) {
-                    for (const exp of profileResumeData.experience) {
-                        parts.push(`${exp.title} at ${exp.company}`);
-                        if (exp.bullets) parts.push(exp.bullets.join('\n'));
-                    }
-                }
-                return parts.join('\n\n');
-            }
-            // Fallback to text endpoint
-            try {
-                const resp = await fetch('/api/profile/resume/text');
-                if (resp.ok) {
-                    const data = await resp.json();
-                    return data.text || '';
-                }
-            } catch (e) {}
-            return '';
-
-        case 'paste':
-            return document.getElementById('resume-text').value || '';
-
-        case 'upload':
-            return uploadedResumeText || '';
-
-        default:
-            return '';
-    }
-}
-
-// File upload handling
-function handleResumeDrop(e) {
-    e.preventDefault();
-    e.target.classList.remove('border-green-400', 'bg-green-50');
-
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-        processResumeFile(files[0]);
-    }
-}
-
-function handleResumeFileSelect(input) {
-    if (input.files.length > 0) {
-        processResumeFile(input.files[0]);
-    }
-}
-
-async function processResumeFile(file) {
-    const allowedTypes = ['.pdf', '.docx', '.doc', '.txt'];
-    const ext = '.' + file.name.split('.').pop().toLowerCase();
-
-    if (!allowedTypes.includes(ext)) {
-        showToast('Unsupported file type. Please use PDF, DOCX, or TXT.', 'error');
-        return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-        showToast('File too large. Maximum size is 5MB.', 'error');
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-        showToast('Parsing resume...', 'info');
-
-        const response = await fetch('/api/resume/upload-resume', {
-            method: 'POST',
-            body: formData
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Upload failed');
-        }
-
-        const result = await response.json();
-
-        // Build text from structured data
-        let textParts = [];
-        if (result.resume.summary) textParts.push(result.resume.summary);
-        if (result.resume.skills && result.resume.skills.length) {
-            textParts.push('Skills: ' + result.resume.skills.join(', '));
-        }
-        if (result.resume.experience) {
-            for (const exp of result.resume.experience) {
-                textParts.push(`${exp.title} at ${exp.company}`);
-                if (exp.bullets) textParts.push(exp.bullets.join('\n'));
-            }
-        }
-        uploadedResumeText = textParts.join('\n\n');
-
-        // Show success
-        document.getElementById('upload-filename').textContent = file.name;
-        document.getElementById('upload-result').classList.remove('hidden');
-        document.getElementById('upload-dropzone').classList.add('hidden');
-
-        showToast('Resume parsed successfully!', 'success');
-    } catch (e) {
-        showToast('Error parsing resume: ' + e.message, 'error');
-    }
-}
-
-function clearUpload() {
-    uploadedResumeText = null;
-    document.getElementById('upload-result').classList.add('hidden');
-    document.getElementById('upload-dropzone').classList.remove('hidden');
-    document.getElementById('resume-file-input').value = '';
-}
-
-async function saveUploadedToProfile() {
-    if (!uploadedResumeText) {
-        showToast('No resume to save', 'warning');
-        return;
-    }
-
-    try {
-        // Parse the uploaded text and save to profile
-        const parseResp = await fetch('/api/resume/parse-resume-text', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ resume_text: uploadedResumeText })
-        });
-
-        if (!parseResp.ok) throw new Error('Parse failed');
-
-        const parsed = await parseResp.json();
-
-        const saveResp = await fetch('/api/resume/profile-resume', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(parsed)
-        });
-
-        if (saveResp.ok) {
-            showToast('Resume saved to profile!', 'success');
-            loadProfileResume();
-        } else {
-            throw new Error('Save failed');
-        }
-    } catch (e) {
-        showToast('Error saving to profile', 'error');
-    }
-}
-
-async function saveResumeTextToProfile() {
-    const text = document.getElementById('resume-text').value;
-    if (!text.trim()) {
-        showToast('Please enter resume text first', 'warning');
-        return;
-    }
-
-    try {
-        // Parse and save
-        const parseResp = await fetch('/api/resume/parse-resume-text', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ resume_text: text })
-        });
-
-        if (!parseResp.ok) throw new Error('Parse failed');
-
-        const parsed = await parseResp.json();
-
-        const saveResp = await fetch('/api/resume/profile-resume', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(parsed)
-        });
-
-        if (saveResp.ok) {
-            showToast('Resume saved to profile!', 'success');
-            loadProfileResume();
-        } else {
-            throw new Error('Save failed');
-        }
-    } catch (e) {
-        showToast('Error saving to profile', 'error');
-    }
-}
-
-// Tailoring suggestions
-async function getTailoringSuggestions() {
-    if (!currentJobDescription) {
-        showToast('Please analyze a job description first', 'warning');
-        return;
-    }
-
-    const loadingEl = document.getElementById('tailoring-loading');
-    const contentEl = document.getElementById('tailoring-content');
-
-    loadingEl.classList.remove('hidden');
-    contentEl.classList.add('hidden');
-
-    try {
-        const resumeText = await getResumeText();
-        if (!resumeText) {
-            throw new Error('No resume available');
-        }
-
-        const response = await fetch('/api/resume/tailor-resume-ai', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                job_description: currentJobDescription,
-                use_profile_resume: false,
-                resume_text: resumeText
-            })
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Failed to get tailoring suggestions');
-        }
-
-        const raw = await response.json();
-        const result = raw.analysis || raw;
-
-        // Skills to add
-        const skillsToAdd = document.getElementById('skills-to-add');
-        if (result.skills_to_add && result.skills_to_add.length) {
-            skillsToAdd.querySelector('div').innerHTML = result.skills_to_add
-                .map(s => `<span class="px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">${s}</span>`).join('');
-            skillsToAdd.classList.remove('hidden');
-        } else {
-            skillsToAdd.classList.add('hidden');
-        }
-
-        // Skills to emphasize
-        const skillsToEmphasize = document.getElementById('skills-to-emphasize');
-        if (result.skills_to_emphasize && result.skills_to_emphasize.length) {
-            skillsToEmphasize.querySelector('div').innerHTML = result.skills_to_emphasize
-                .map(s => `<span class="px-2 py-1 text-xs rounded bg-green-100 text-green-800">${s}</span>`).join('');
-            skillsToEmphasize.classList.remove('hidden');
-        } else {
-            skillsToEmphasize.classList.add('hidden');
-        }
-
-        // Detailed suggestions
-        const suggestionsEl = document.getElementById('tailoring-suggestions');
-        if (result.suggestions && result.suggestions.length) {
-            suggestionsEl.querySelector('div').innerHTML = result.suggestions
-                .map(s => {
-                    const section = s.section || 'General';
-                    const priority = s.priority || 'medium';
-                    const suggestion = s.suggestion || s.suggested || 'No suggestion provided';
-                    const current = s.current || null;
-                    const example = s.example || null;
-                    const reason = s.reason || null;
-
-                    const priorityColors = {
-                        high: 'border-red-200 bg-red-50',
-                        medium: 'border-yellow-200 bg-yellow-50',
-                        low: 'border-gray-200 bg-gray-50'
-                    };
-                    const priorityBadge = {
-                        high: 'bg-red-100 text-red-700',
-                        medium: 'bg-yellow-100 text-yellow-700',
-                        low: 'bg-gray-100 text-gray-700'
-                    };
-                    return `
-                        <div class="p-3 rounded border ${priorityColors[priority] || priorityColors.medium}">
-                            <div class="flex items-start justify-between">
-                                <span class="text-sm font-medium">${section}</span>
-                                <span class="text-xs px-1.5 py-0.5 rounded ${priorityBadge[priority] || priorityBadge.medium}">${priority}</span>
-                            </div>
-                            <p class="text-sm text-gray-600 mt-1">${suggestion}</p>
-                            ${current ? `
-                                <div class="mt-2 p-2 bg-red-50 rounded border border-red-200">
-                                    <span class="text-xs font-medium text-red-600">Current (replace this):</span>
-                                    <p class="text-sm text-red-800 mt-0.5 line-through">"${current}"</p>
-                                </div>
-                            ` : ''}
-                            ${example ? `
-                                <div class="mt-2 p-2 bg-green-50 rounded border border-green-200">
-                                    <span class="text-xs font-medium text-green-600">${current ? 'Replace with:' : 'Add this:'}</span>
-                                    <p class="text-sm text-green-800 mt-0.5 font-medium">"${example}"</p>
-                                </div>
-                            ` : ''}
-                            ${reason ? `<p class="text-xs text-gray-500 mt-2 italic">${reason}</p>` : ''}
-                        </div>
-                    `;
-                }).join('');
-            suggestionsEl.classList.remove('hidden');
-        } else {
-            suggestionsEl.classList.add('hidden');
-        }
-
-        contentEl.classList.remove('hidden');
-        showToast('Tailoring suggestions loaded', 'success');
-    } catch (e) {
-        showToast(e.message || 'Error getting tailoring suggestions', 'error');
-    } finally {
-        loadingEl.classList.add('hidden');
-    }
-}
-
-// Initialize resume source on load
-document.addEventListener('DOMContentLoaded', function() {
-    loadProfileResume();
-    switchResumeSource('profile');
-    document.getElementById('tailoring-results').classList.remove('hidden');
-});
-</script>
 {% endblock %}
+
+{% block scripts %}<script src="/static/js/resume.js"></script>{% endblock %}

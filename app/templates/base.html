@@ -117,7 +117,7 @@
                             Admin Panel
                         </a>
                         <div class="border-t border-gray-100 my-1"></div>
-                        <button onclick="Auth.logout()" class="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                        <button id="logout-btn-desktop" class="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                             </svg>
@@ -196,7 +196,7 @@
             </a>
             <!-- Mobile Sign Out (multi-user mode) -->
             <div id="mobile-signout" class="hidden border-t border-gray-200 mt-2 pt-2">
-                <button onclick="Auth.logout()" class="flex items-center gap-3 px-3 py-3 text-red-600 hover:bg-red-50 rounded-lg w-full">
+                <button id="logout-btn-mobile" class="flex items-center gap-3 px-3 py-3 text-red-600 hover:bg-red-50 rounded-lg w-full">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                     </svg>
@@ -233,78 +233,7 @@
 
     <script src="/static/js/auth.js"></script>
     <script src="/static/js/app.js"></script>
-    <script nonce="{{ request.state.nonce }}">
-        // --- User menu toggle (multi-user mode) ---
-        (function() {
-            const menuBtn = document.getElementById('user-menu-btn');
-            const dropdown = document.getElementById('user-dropdown');
-            if (menuBtn && dropdown) {
-                menuBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    dropdown.classList.toggle('hidden');
-                });
-                document.addEventListener('click', () => dropdown.classList.add('hidden'));
-            }
-
-            // Show user menu or keyboard hint based on auth mode
-            document.addEventListener('DOMContentLoaded', async () => {
-                const status = await Auth.getStatus();
-                if (status.single_user_mode) {
-                    const hint = document.getElementById('single-user-hint');
-                    if (hint) hint.classList.remove('hidden');
-                } else {
-                    const userMenu = document.getElementById('user-menu-container');
-                    if (userMenu) userMenu.classList.remove('hidden');
-                    userMenu.classList.add('flex');
-                    const mobileSignout = document.getElementById('mobile-signout');
-                    if (mobileSignout) mobileSignout.classList.remove('hidden');
-                }
-            });
-        })();
-
-        // Mobile menu toggle
-        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-        const mobileMenuClose = document.getElementById('mobile-menu-close');
-        const mobileMenu = document.getElementById('mobile-menu');
-        const mobileMenuBackdrop = document.getElementById('mobile-menu-backdrop');
-
-        function openMobileMenu() {
-            mobileMenu.classList.add('open');
-            mobileMenuBackdrop.classList.add('open');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeMobileMenu() {
-            mobileMenu.classList.remove('open');
-            mobileMenuBackdrop.classList.remove('open');
-            document.body.style.overflow = '';
-        }
-
-        mobileMenuBtn.addEventListener('click', openMobileMenu);
-        mobileMenuClose.addEventListener('click', closeMobileMenu);
-        mobileMenuBackdrop.addEventListener('click', closeMobileMenu);
-
-        // Close on Escape
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && mobileMenu.classList.contains('open')) {
-                closeMobileMenu();
-            }
-        });
-
-        // Highlight active mobile nav link
-        document.addEventListener('DOMContentLoaded', function() {
-            const currentPath = window.location.pathname;
-            const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
-
-            mobileNavLinks.forEach(link => {
-                const linkPath = link.getAttribute('href');
-                if (linkPath === currentPath || (currentPath === '/' && linkPath === '/')) {
-                    link.classList.add('bg-blue-50', 'text-blue-600', 'font-medium');
-                    link.classList.remove('text-gray-700');
-                }
-            });
-        });
-    </script>
+    <script src="/static/js/nav.js"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

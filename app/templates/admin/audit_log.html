@@ -18,7 +18,7 @@
         </select>
         <input type="number" id="audit-admin-filter" placeholder="Admin User ID" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-40">
         <input type="number" id="audit-target-filter" placeholder="Target User ID" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-40">
-        <button onclick="AdminApp.loadAuditLog(1)" class="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700">Filter</button>
+        <button id="audit-filter-btn" class="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700">Filter</button>
     </div>
 </div>
 
@@ -52,10 +52,4 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
-<script nonce="{{ request.state.nonce }}">
-document.addEventListener('DOMContentLoaded', () => {
-    AdminApp.initAuditLog();
-});
-</script>
-{% endblock %}
+{% block scripts %}{% endblock %}

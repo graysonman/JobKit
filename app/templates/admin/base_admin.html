@@ -107,34 +107,6 @@
 
     <script src="/static/js/auth.js"></script>
     <script src="/static/js/admin.js"></script>
-    <script nonce="{{ request.state.nonce }}">
-        // Mobile sidebar toggle
-        const sidebarToggle = document.getElementById('mobile-sidebar-toggle');
-        const sidebar = document.getElementById('admin-sidebar');
-        const backdrop = document.getElementById('sidebar-backdrop');
-
-        function toggleSidebar() {
-            sidebar.classList.toggle('hidden');
-            sidebar.classList.toggle('flex');
-            sidebar.classList.toggle('flex-col');
-            backdrop.classList.toggle('hidden');
-        }
-
-        if (sidebarToggle) sidebarToggle.addEventListener('click', toggleSidebar);
-        if (backdrop) backdrop.addEventListener('click', toggleSidebar);
-
-        // Highlight active sidebar link
-        document.addEventListener('DOMContentLoaded', () => {
-            const path = window.location.pathname;
-            document.querySelectorAll('.sidebar-link').forEach(link => {
-                const href = link.getAttribute('href');
-                if (href === path || (href === '/admin' && path === '/admin') ||
-                    (href !== '/admin' && href !== '/' && path.startsWith(href))) {
-                    link.classList.add('active');
-                }
-            });
-        });
-    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

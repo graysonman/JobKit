@@ -144,10 +144,4 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
-<script nonce="{{ request.state.nonce }}">
-document.addEventListener('DOMContentLoaded', () => {
-    AdminApp.initDashboard();
-});
-</script>
-{% endblock %}
+{% block scripts %}{% endblock %}

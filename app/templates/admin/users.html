@@ -63,10 +63,4 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
-<script nonce="{{ request.state.nonce }}">
-document.addEventListener('DOMContentLoaded', () => {
-    AdminApp.initUsers();
-});
-</script>
-{% endblock %}
+{% block scripts %}{% endblock %}

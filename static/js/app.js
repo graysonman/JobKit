@@ -172,7 +172,7 @@ document.addEventListener('keydown', function(e) {
 document.addEventListener('keydown', function(e) {
     // Alt + N = New (context-dependent)
     if (e.altKey && e.key === 'n') {
-        const addButton = document.querySelector('[onclick*="openAddModal"]');
+        const addButton = document.getElementById('add-modal-btn');
         if (addButton) {
             e.preventDefault();
             addButton.click();

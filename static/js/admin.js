@@ -754,3 +754,65 @@ const AdminApp = {
         });
     },
 };
+
+// =============================================================================
+// Admin Sidebar (from base_admin.html) — only runs on admin pages
+// =============================================================================
+(function() {
+    const sidebar = document.getElementById('admin-sidebar');
+    if (!sidebar) return;
+
+    // Mobile sidebar toggle
+    const sidebarToggle = document.getElementById('mobile-sidebar-toggle');
+    const backdrop = document.getElementById('sidebar-backdrop');
+
+    function toggleSidebar() {
+        sidebar.classList.toggle('hidden');
+        sidebar.classList.toggle('flex');
+        sidebar.classList.toggle('flex-col');
+        backdrop.classList.toggle('hidden');
+    }
+
+    if (sidebarToggle) sidebarToggle.addEventListener('click', toggleSidebar);
+    if (backdrop) backdrop.addEventListener('click', toggleSidebar);
+
+    // Highlight active sidebar link
+    document.addEventListener('DOMContentLoaded', () => {
+        const path = window.location.pathname;
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            const href = link.getAttribute('href');
+            if (href === path || (href === '/admin' && path === '/admin') ||
+                (href !== '/admin' && href !== '/' && path.startsWith(href))) {
+                link.classList.add('active');
+            }
+        });
+    });
+})();
+
+// =========================================================================
+// Auto-Init: detect admin page by URL path and call the right init.
+// Replaces per-template inline <script> blocks so admin.js needs no nonce.
+// =========================================================================
+document.addEventListener('DOMContentLoaded', () => {
+    const path = window.location.pathname;
+
+    if (path === '/admin' || path === '/admin/') {
+        AdminApp.initDashboard();
+
+    } else if (/^\/admin\/users\/\d+/.test(path)) {
+        const userId = path.split('/').pop();
+        AdminApp.initUserDetail(userId);
+        // Wire up modal cancel button (was onclick="AdminApp.closeModal()")
+        const cancelBtn = document.getElementById('confirm-cancel-btn');
+        if (cancelBtn) cancelBtn.addEventListener('click', () => AdminApp.closeModal());
+
+    } else if (path === '/admin/users') {
+        AdminApp.initUsers();
+
+    } else if (path === '/admin/audit-log' || path === '/admin/audit_log') {
+        AdminApp.initAuditLog();
+        // Wire up filter button (was onclick="AdminApp.loadAuditLog(1)")
+        const filterBtn = document.getElementById('audit-filter-btn');
+        if (filterBtn) filterBtn.addEventListener('click', () => AdminApp.loadAuditLog(1));
+    }
+});

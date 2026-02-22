@@ -5,7 +5,7 @@
 <div class="space-y-6">
     <div class="flex items-center justify-between">
         <h1 class="text-3xl font-bold text-gray-900">Settings</h1>
-        <button onclick="openProfilePreview()" class="btn btn-outline">
+        <button id="preview-profile-btn" class="btn btn-outline">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
@@ -31,7 +31,7 @@
         <form id="profile-form">
             <!-- Basic Info Section -->
             <div class="collapsible">
-                <button type="button" class="collapsible-header" onclick="toggleSection(this)" aria-expanded="true">
+                <button type="button" class="collapsible-header" aria-expanded="true">
                     <span class="flex items-center">
                         <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
@@ -96,7 +96,7 @@
 
             <!-- Education & Experience Section -->
             <div class="collapsible border-t">
-                <button type="button" class="collapsible-header" onclick="toggleSection(this)" aria-expanded="true">
+                <button type="button" class="collapsible-header" aria-expanded="true">
                     <span class="flex items-center">
                         <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path d="M12 14l9-5-9-5-9 5 9 5z"/>
@@ -148,7 +148,7 @@
 
             <!-- Job Search Section -->
             <div class="collapsible border-t">
-                <button type="button" class="collapsible-header" onclick="toggleSection(this)" aria-expanded="true">
+                <button type="button" class="collapsible-header" aria-expanded="true">
                     <span class="flex items-center">
                         <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
@@ -193,7 +193,7 @@
 
             <!-- Messaging Section -->
             <div class="collapsible border-t">
-                <button type="button" class="collapsible-header" onclick="toggleSection(this)" aria-expanded="true">
+                <button type="button" class="collapsible-header" aria-expanded="true">
                     <span class="flex items-center">
                         <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
@@ -228,7 +228,7 @@
 
             <!-- Resume Management Section -->
             <div class="collapsible border-t">
-                <button type="button" class="collapsible-header" onclick="toggleSection(this)" aria-expanded="false">
+                <button type="button" class="collapsible-header" aria-expanded="false">
                     <span class="flex items-center">
                         <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -251,7 +251,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                                         </svg>
                                         Upload Resume
-                                        <input type="file" id="resume-file-input" accept=".pdf,.docx,.doc,.txt" class="hidden" onchange="handleResumeUpload(this)">
+                                        <input type="file" id="resume-file-input" accept=".pdf,.docx,.doc,.txt" class="hidden">
                                     </label>
                                     <span id="resume-upload-status" class="text-sm text-gray-500">PDF, DOCX, or TXT (max 5MB)</span>
                                 </div>
@@ -269,13 +269,13 @@
                                         placeholder="Paste your resume text here..."></textarea>
                                 </div>
                                 <div class="flex gap-2">
-                                    <button type="button" onclick="parseResumeText()" class="btn btn-outline btn-sm">
+                                    <button type="button" id="parse-resume-btn" class="btn btn-outline btn-sm">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                                         </svg>
                                         Parse Text
                                     </button>
-                                    <button type="button" onclick="clearResumePaste()" class="btn btn-ghost btn-sm">Clear</button>
+                                    <button type="button" id="clear-resume-paste-btn" class="btn btn-ghost btn-sm">Clear</button>
                                 </div>
                             </div>
                         </div>
@@ -285,14 +285,14 @@
                             <div class="flex items-center justify-between">
                                 <h3 class="text-sm font-semibold text-gray-700">Parsed Resume Data</h3>
                                 <div class="flex gap-2">
-                                    <button type="button" onclick="previewResume()" class="btn btn-ghost btn-sm">
+                                    <button type="button" id="preview-resume-btn" class="btn btn-ghost btn-sm">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                         </svg>
                                         Preview
                                     </button>
-                                    <button type="button" onclick="exportResumeText()" class="btn btn-ghost btn-sm">
+                                    <button type="button" id="export-resume-btn" class="btn btn-ghost btn-sm">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                                         </svg>
@@ -306,8 +306,7 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Summary</label>
                                 <textarea id="resume-summary" rows="3"
                                     class="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                    placeholder="Professional summary..."
-                                    onchange="markResumeChanged()"></textarea>
+                                    placeholder="Professional summary..."></textarea>
                             </div>
 
                             <!-- Skills -->
@@ -317,9 +316,8 @@
                                 <div class="flex gap-2">
                                     <input type="text" id="resume-skill-input"
                                         class="flex-1 border rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="Add a skill..."
-                                        onkeypress="if(event.key==='Enter'){event.preventDefault();addResumeSkill();}">
-                                    <button type="button" onclick="addResumeSkill()" class="btn btn-outline btn-sm">Add</button>
+                                        placeholder="Add a skill...">
+                                    <button type="button" id="add-resume-skill-btn" class="btn btn-outline btn-sm">Add</button>
                                 </div>
                             </div>
 
@@ -327,7 +325,7 @@
                             <div>
                                 <div class="flex items-center justify-between mb-2">
                                     <label class="text-sm font-medium text-gray-700">Experience</label>
-                                    <button type="button" onclick="addExperienceEntry()" class="btn btn-ghost btn-sm">
+                                    <button type="button" id="add-experience-btn" class="btn btn-ghost btn-sm">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                                         </svg>
@@ -341,7 +339,7 @@
                             <div>
                                 <div class="flex items-center justify-between mb-2">
                                     <label class="text-sm font-medium text-gray-700">Education</label>
-                                    <button type="button" onclick="addEducationEntry()" class="btn btn-ghost btn-sm">
+                                    <button type="button" id="add-education-btn" class="btn btn-ghost btn-sm">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                                         </svg>
@@ -354,7 +352,7 @@
                             <!-- Save Button -->
                             <div class="pt-4 border-t flex items-center justify-between">
                                 <span id="resume-save-status" class="text-sm text-gray-500"></span>
-                                <button type="button" onclick="saveResumeToProfile()" class="btn btn-primary">
+                                <button type="button" id="save-resume-btn" class="btn btn-primary">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                     </svg>
@@ -399,13 +397,13 @@
                 <p class="text-sm text-gray-600 mb-3">Download your data for backup or transfer.</p>
 
                 <div class="flex flex-wrap gap-2 mb-3">
-                    <button onclick="exportAllData('json')" class="btn btn-primary btn-sm">
+                    <button id="export-all-json-btn" class="btn btn-primary btn-sm">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                         </svg>
                         Export All (JSON)
                     </button>
-                    <button onclick="exportAllData('csv')" class="btn btn-outline btn-sm">
+                    <button id="export-all-csv-btn" class="btn btn-outline btn-sm">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                         </svg>
@@ -415,11 +413,11 @@
 
                 <details class="text-sm">
                     <summary class="cursor-pointer text-gray-600 hover:text-gray-800 py-2">Export individual data types</summary>
-                    <div class="mt-2 flex flex-wrap gap-2 pl-4">
-                        <button onclick="exportData('contacts', 'json')" class="btn btn-ghost btn-sm">Contacts</button>
-                        <button onclick="exportData('applications', 'json')" class="btn btn-ghost btn-sm">Applications</button>
-                        <button onclick="exportData('companies', 'json')" class="btn btn-ghost btn-sm">Companies</button>
-                        <button onclick="exportData('templates', 'json')" class="btn btn-ghost btn-sm">Templates</button>
+                    <div id="export-individual-container" class="mt-2 flex flex-wrap gap-2 pl-4">
+                        <button data-type="contacts" data-format="json" class="btn btn-ghost btn-sm">Contacts</button>
+                        <button data-type="applications" data-format="json" class="btn btn-ghost btn-sm">Applications</button>
+                        <button data-type="companies" data-format="json" class="btn btn-ghost btn-sm">Companies</button>
+                        <button data-type="templates" data-format="json" class="btn btn-ghost btn-sm">Templates</button>
                     </div>
                 </details>
             </div>
@@ -435,7 +433,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                         </svg>
                         Choose File
-                        <input type="file" id="import-file" accept=".json" class="hidden" onchange="handleImportFile(this)">
+                        <input type="file" id="import-file" accept=".json" class="hidden">
                     </label>
                     <span id="import-filename" class="text-sm text-gray-500">No file selected</span>
                 </div>
@@ -443,8 +441,8 @@
                     <p class="text-sm font-medium mb-2">Import Preview:</p>
                     <ul id="import-preview-list" class="text-sm text-gray-600 space-y-1 mb-3"></ul>
                     <div class="flex gap-2">
-                        <button onclick="confirmImport()" class="btn btn-primary btn-sm">Import Data</button>
-                        <button onclick="cancelImport()" class="btn btn-ghost btn-sm">Cancel</button>
+                        <button id="confirm-import-btn" class="btn btn-primary btn-sm">Import Data</button>
+                        <button id="cancel-import-btn" class="btn btn-ghost btn-sm">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -454,20 +452,20 @@
                 <h3 class="font-medium text-red-600 mb-2">Danger Zone</h3>
                 <p class="text-sm text-gray-600 mb-3">These actions cannot be undone. Make sure to export your data first.</p>
 
-                <div class="flex flex-wrap gap-2">
-                    <button onclick="openClearModal('contacts')" class="btn btn-sm border border-red-300 text-red-600 bg-white hover:bg-red-50">
+                <div id="danger-zone-container" class="flex flex-wrap gap-2">
+                    <button data-clear-type="contacts" class="btn btn-sm border border-red-300 text-red-600 bg-white hover:bg-red-50">
                         Clear Contacts
                     </button>
-                    <button onclick="openClearModal('applications')" class="btn btn-sm border border-red-300 text-red-600 bg-white hover:bg-red-50">
+                    <button data-clear-type="applications" class="btn btn-sm border border-red-300 text-red-600 bg-white hover:bg-red-50">
                         Clear Applications
                     </button>
-                    <button onclick="openClearModal('companies')" class="btn btn-sm border border-red-300 text-red-600 bg-white hover:bg-red-50">
+                    <button data-clear-type="companies" class="btn btn-sm border border-red-300 text-red-600 bg-white hover:bg-red-50">
                         Clear Companies
                     </button>
-                    <button onclick="openClearModal('history')" class="btn btn-sm border border-red-300 text-red-600 bg-white hover:bg-red-50">
+                    <button data-clear-type="history" class="btn btn-sm border border-red-300 text-red-600 bg-white hover:bg-red-50">
                         Clear History
                     </button>
-                    <button onclick="openClearModal('all')" class="btn btn-danger btn-sm">
+                    <button data-clear-type="all" class="btn btn-danger btn-sm">
                         Clear All Data
                     </button>
                 </div>
@@ -481,7 +479,7 @@
     <div class="modal-content max-w-lg">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold">Profile Preview</h3>
-            <button onclick="closeProfilePreview()" class="text-gray-500 hover:text-gray-700">
+            <button id="profile-preview-close-btn" class="text-gray-500 hover:text-gray-700">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
@@ -501,7 +499,7 @@
         </div>
 
         <div class="mt-4 flex justify-end">
-            <button onclick="closeProfilePreview()" class="btn btn-outline">Close</button>
+            <button id="profile-preview-close2-btn" class="btn btn-outline">Close</button>
         </div>
     </div>
 </div>
@@ -533,8 +531,8 @@
         </div>
 
         <div class="flex justify-end gap-2">
-            <button onclick="closeConfirmModal()" class="btn btn-outline">Cancel</button>
-            <button id="confirm-action-btn" onclick="executeConfirmedAction()" class="btn btn-danger">
+            <button id="confirm-cancel-btn" class="btn btn-outline">Cancel</button>
+            <button id="confirm-action-btn" class="btn btn-danger">
                 Delete
             </button>
         </div>
@@ -544,1004 +542,6 @@
 <!-- Toast Container -->
 <div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
 
-<script nonce="{{ request.state.nonce }}">
-// Profile fields for completion tracking
-const profileFields = [
-    { id: 'profile-name', weight: 2, label: 'Name' },
-    { id: 'profile-email', weight: 1, label: 'Email' },
-    { id: 'profile-phone', weight: 0.5, label: 'Phone' },
-    { id: 'profile-location', weight: 0.5, label: 'Location' },
-    { id: 'profile-linkedin', weight: 1, label: 'LinkedIn' },
-    { id: 'profile-title', weight: 2, label: 'Title' },
-    { id: 'profile-school', weight: 1, label: 'School' },
-    { id: 'profile-grad-year', weight: 0.5, label: 'Graduation Year' },
-    { id: 'profile-experience', weight: 1, label: 'Experience' },
-    { id: 'profile-skills', weight: 2, label: 'Skills' },
-    { id: 'profile-roles', weight: 1.5, label: 'Target Roles' },
-    { id: 'profile-preferred-locations', weight: 0.5, label: 'Preferred Locations' },
-    { id: 'profile-salary', weight: 0.5, label: 'Salary Expectations' },
-    { id: 'profile-pitch', weight: 2, label: 'Elevator Pitch' },
-    { id: 'profile-resume', weight: 2, label: 'Resume Summary' }
-];
-
-// Auto-save debounce
-let saveTimeout = null;
-let pendingChanges = false;
-
-// Import data storage
-let importData = null;
-
-// Current confirmation action
-let pendingAction = null;
-
-// Initialize
-document.addEventListener('DOMContentLoaded', function() {
-    loadProfile();
-    loadLastBackupDate();
-    setupAutoSave();
-});
-
-async function loadProfile() {
-    try {
-        const response = await fetch('/api/profile/');
-        if (response.ok) {
-            const profile = await response.json();
-            document.getElementById('profile-name').value = profile.name || '';
-            document.getElementById('profile-email').value = profile.email || '';
-            document.getElementById('profile-phone').value = profile.phone_number || '';
-            document.getElementById('profile-location').value = profile.location || '';
-            document.getElementById('profile-linkedin').value = profile.linkedin_url || '';
-            document.getElementById('profile-title').value = profile.current_title || '';
-            document.getElementById('profile-school').value = profile.school || '';
-            document.getElementById('profile-grad-year').value = profile.graduation_year || '';
-            document.getElementById('profile-experience').value = profile.years_experience || '';
-            document.getElementById('profile-skills').value = profile.skills || '';
-            document.getElementById('profile-roles').value = profile.target_roles || '';
-            document.getElementById('profile-preferred-locations').value = profile.preferred_locations || '';
-            document.getElementById('profile-salary').value = profile.salary_expectations || '';
-            document.getElementById('profile-pitch').value = profile.elevator_pitch || '';
-            document.getElementById('profile-resume').value = profile.resume_summary || '';
-        }
-    } catch (e) {
-        // Profile doesn't exist yet
-    }
-    updateCompletionIndicator();
-}
-
-function setupAutoSave() {
-    const form = document.getElementById('profile-form');
-    const inputs = form.querySelectorAll('input, textarea');
-
-    inputs.forEach(input => {
-        input.addEventListener('input', () => {
-            pendingChanges = true;
-            updateSaveStatus('saving');
-            updateCompletionIndicator();
-
-            clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(saveProfile, 1500);
-        });
-    });
-
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        clearTimeout(saveTimeout);
-        await saveProfile();
-    });
-}
-
-async function saveProfile() {
-    const data = {
-        name: document.getElementById('profile-name').value,
-        email: document.getElementById('profile-email').value || null,
-        phone_number: document.getElementById('profile-phone').value || null,
-        location: document.getElementById('profile-location').value || null,
-        linkedin_url: document.getElementById('profile-linkedin').value || null,
-        current_title: document.getElementById('profile-title').value || null,
-        school: document.getElementById('profile-school').value || null,
-        graduation_year: parseInt(document.getElementById('profile-grad-year').value) || null,
-        years_experience: parseInt(document.getElementById('profile-experience').value) || null,
-        skills: document.getElementById('profile-skills').value || null,
-        target_roles: document.getElementById('profile-roles').value || null,
-        preferred_locations: document.getElementById('profile-preferred-locations').value || null,
-        salary_expectations: document.getElementById('profile-salary').value || null,
-        elevator_pitch: document.getElementById('profile-pitch').value || null,
-        resume_summary: document.getElementById('profile-resume').value || null
-    };
-
-    try {
-        await fetch('/api/profile/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        pendingChanges = false;
-        updateSaveStatus('saved');
-    } catch (e) {
-        updateSaveStatus('error');
-    }
-}
-
-function updateSaveStatus(status) {
-    const statusEl = document.getElementById('save-status');
-    const textEl = document.getElementById('save-text');
-
-    switch (status) {
-        case 'saving':
-            textEl.innerHTML = '<span class="inline-block w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></span>Saving...';
-            statusEl.className = 'flex items-center text-sm text-blue-600';
-            break;
-        case 'saved':
-            textEl.innerHTML = '<svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>All changes saved';
-            statusEl.className = 'flex items-center text-sm text-green-600';
-            break;
-        case 'error':
-            textEl.innerHTML = '<svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>Error saving';
-            statusEl.className = 'flex items-center text-sm text-red-600';
-            break;
-    }
-}
-
-function updateCompletionIndicator() {
-    let filledWeight = 0;
-    let totalWeight = 0;
-    const missing = [];
-
-    profileFields.forEach(field => {
-        totalWeight += field.weight;
-        const el = document.getElementById(field.id);
-        if (el && el.value.trim()) {
-            filledWeight += field.weight;
-        } else if (field.weight >= 1.5) {
-            missing.push(field.label);
-        }
-    });
-
-    const percent = Math.round((filledWeight / totalWeight) * 100);
-    document.getElementById('completion-percent').textContent = percent + '%';
-    document.getElementById('completion-bar').style.width = percent + '%';
-
-    // Update color based on completion
-    const bar = document.getElementById('completion-bar');
-    if (percent < 40) {
-        bar.style.backgroundColor = 'var(--color-red-500, #ef4444)';
-    } else if (percent < 70) {
-        bar.style.backgroundColor = 'var(--color-yellow-500, #eab308)';
-    } else {
-        bar.style.backgroundColor = 'var(--color-green-500, #22c55e)';
-    }
-
-    // Update hint
-    const hint = document.getElementById('completion-hint');
-    if (percent === 100) {
-        hint.textContent = 'Your profile is complete!';
-    } else if (missing.length > 0) {
-        hint.textContent = `Consider adding: ${missing.slice(0, 3).join(', ')}${missing.length > 3 ? '...' : ''}`;
-    } else {
-        hint.textContent = 'Complete your profile to personalize messages.';
-    }
-}
-
-function toggleSection(button) {
-    const content = button.nextElementSibling;
-    const icon = button.querySelector('.collapsible-icon');
-    const isExpanded = content.classList.contains('expanded');
-
-    if (isExpanded) {
-        content.classList.remove('expanded');
-        icon.style.transform = 'rotate(-90deg)';
-        button.setAttribute('aria-expanded', 'false');
-    } else {
-        content.classList.add('expanded');
-        icon.style.transform = 'rotate(0deg)';
-        button.setAttribute('aria-expanded', 'true');
-    }
-}
-
-// Profile Preview
-function openProfilePreview() {
-    const name = document.getElementById('profile-name').value || '[Your Name]';
-    const title = document.getElementById('profile-title').value || '[Your Title]';
-    const school = document.getElementById('profile-school').value;
-    const skills = document.getElementById('profile-skills').value || '[Your Skills]';
-    const pitch = document.getElementById('profile-pitch').value || '[Your elevator pitch will appear here]';
-
-    // Connection request example
-    let connectionText = `Hi [Contact Name], I'm ${name}`;
-    if (title) connectionText += `, a ${title}`;
-    if (school) connectionText += ` and ${school} alum`;
-    connectionText += `. I noticed you work at [Company] and would love to connect!`;
-
-    // InMail example
-    let inmailText = `Hi [Contact Name],\n\nI came across your profile and was impressed by your work at [Company]. ${pitch}\n\nI'd love to learn more about opportunities on your team. Would you have time for a brief chat?\n\nBest,\n${name}`;
-
-    document.getElementById('preview-connection').textContent = connectionText;
-    document.getElementById('preview-inmail').style.whiteSpace = 'pre-line';
-    document.getElementById('preview-inmail').textContent = inmailText;
-
-    document.getElementById('profile-preview-modal').classList.remove('hidden');
-}
-
-function closeProfilePreview() {
-    document.getElementById('profile-preview-modal').classList.add('hidden');
-}
-
-// Export Functions
-function loadLastBackupDate() {
-    const lastBackup = localStorage.getItem('jobkit_last_backup');
-    if (lastBackup) {
-        document.getElementById('last-backup-info').classList.remove('hidden');
-        const date = new Date(lastBackup);
-        document.getElementById('last-backup-date').textContent = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-    }
-}
-
-async function exportAllData(format) {
-    showToast('Preparing export...', 'info');
-
-    try {
-        const [contacts, applications, companies, templates, profile] = await Promise.all([
-            fetch('/api/contacts/').then(r => r.json()),
-            fetch('/api/applications/').then(r => r.json()),
-            fetch('/api/companies/').then(r => r.json()),
-            fetch('/api/templates/').then(r => r.json()),
-            fetch('/api/profile/').then(r => r.ok ? r.json() : null)
-        ]);
-
-        const allData = { contacts, applications, companies, templates, profile, exportDate: new Date().toISOString() };
-
-        if (format === 'json') {
-            downloadFile(JSON.stringify(allData, null, 2), 'jobkit_backup.json', 'application/json');
-        } else if (format === 'csv') {
-            // Create a zip-like structure with multiple CSVs
-            const zip = {
-                'contacts.csv': arrayToCSV(contacts),
-                'applications.csv': arrayToCSV(applications),
-                'companies.csv': arrayToCSV(companies)
-            };
-            // Download each as separate file
-            for (const [filename, content] of Object.entries(zip)) {
-                downloadFile(content, filename, 'text/csv');
-            }
-        }
-
-        localStorage.setItem('jobkit_last_backup', new Date().toISOString());
-        loadLastBackupDate();
-        showToast('Export complete!', 'success');
-    } catch (e) {
-        showToast('Export failed: ' + e.message, 'error');
-    }
-}
-
-async function exportData(type, format) {
-    try {
-        const response = await fetch(`/api/${type}/`);
-        const data = await response.json();
-
-        if (format === 'csv') {
-            downloadFile(arrayToCSV(data), `${type}_export.csv`, 'text/csv');
-        } else {
-            downloadFile(JSON.stringify(data, null, 2), `${type}_export.json`, 'application/json');
-        }
-        showToast(`${type} exported successfully!`, 'success');
-    } catch (e) {
-        showToast('Export failed: ' + e.message, 'error');
-    }
-}
-
-function arrayToCSV(arr) {
-    if (!arr || arr.length === 0) return '';
-    const headers = Object.keys(arr[0]);
-    const rows = arr.map(obj =>
-        headers.map(h => {
-            let val = obj[h];
-            if (val === null || val === undefined) return '';
-            if (typeof val === 'object') val = JSON.stringify(val);
-            val = String(val).replace(/"/g, '""');
-            return val.includes(',') || val.includes('"') || val.includes('\n') ? `"${val}"` : val;
-        }).join(',')
-    );
-    return [headers.join(','), ...rows].join('\n');
-}
-
-function downloadFile(content, filename, type) {
-    const blob = new Blob([content], { type });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${filename.replace('.', '_' + new Date().toISOString().split('T')[0] + '.')}`;
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
-// Import Functions
-function handleImportFile(input) {
-    const file = input.files[0];
-    if (!file) return;
-
-    document.getElementById('import-filename').textContent = file.name;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            importData = JSON.parse(e.target.result);
-            showImportPreview(importData);
-        } catch (err) {
-            showToast('Invalid JSON file', 'error');
-            importData = null;
-        }
-    };
-    reader.readAsText(file);
-}
-
-function showImportPreview(data) {
-    const list = document.getElementById('import-preview-list');
-    list.innerHTML = '';
-
-    const counts = {
-        contacts: data.contacts?.length || 0,
-        applications: data.applications?.length || 0,
-        companies: data.companies?.length || 0,
-        templates: data.templates?.length || 0,
-        profile: data.profile ? 1 : 0
-    };
-
-    for (const [type, count] of Object.entries(counts)) {
-        if (count > 0) {
-            const li = document.createElement('li');
-            li.textContent = `${count} ${type}`;
-            list.appendChild(li);
-        }
-    }
-
-    if (data.exportDate) {
-        const li = document.createElement('li');
-        li.className = 'text-gray-400';
-        li.textContent = `Exported: ${new Date(data.exportDate).toLocaleDateString()}`;
-        list.appendChild(li);
-    }
-
-    document.getElementById('import-preview').classList.remove('hidden');
-}
-
-async function confirmImport() {
-    if (!importData) return;
-
-    showToast('Importing data...', 'info');
-
-    try {
-        // Import contacts
-        if (importData.contacts) {
-            for (const contact of importData.contacts) {
-                delete contact.id;
-                await fetch('/api/contacts/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(contact)
-                });
-            }
-        }
-
-        // Import companies
-        if (importData.companies) {
-            for (const company of importData.companies) {
-                delete company.id;
-                await fetch('/api/companies/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(company)
-                });
-            }
-        }
-
-        // Import applications
-        if (importData.applications) {
-            for (const app of importData.applications) {
-                delete app.id;
-                await fetch('/api/applications/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(app)
-                });
-            }
-        }
-
-        // Import templates
-        if (importData.templates) {
-            for (const template of importData.templates) {
-                delete template.id;
-                await fetch('/api/templates/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(template)
-                });
-            }
-        }
-
-        // Import profile
-        if (importData.profile) {
-            await fetch('/api/profile/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(importData.profile)
-            });
-            loadProfile();
-        }
-
-        showToast('Import complete!', 'success');
-        cancelImport();
-    } catch (e) {
-        showToast('Import failed: ' + e.message, 'error');
-    }
-}
-
-function cancelImport() {
-    importData = null;
-    document.getElementById('import-file').value = '';
-    document.getElementById('import-filename').textContent = 'No file selected';
-    document.getElementById('import-preview').classList.add('hidden');
-}
-
-// Clear Data Functions
-function openClearModal(type) {
-    const titles = {
-        contacts: 'Clear All Contacts',
-        applications: 'Clear All Applications',
-        companies: 'Clear All Companies',
-        history: 'Clear Message History',
-        all: 'Clear All Data'
-    };
-
-    const messages = {
-        contacts: 'This will permanently delete all your contacts.',
-        applications: 'This will permanently delete all your job applications.',
-        companies: 'This will permanently delete all your saved companies.',
-        history: 'This will permanently delete all your message history.',
-        all: 'This will permanently delete ALL your data including contacts, applications, companies, and message history.'
-    };
-
-    document.getElementById('confirm-title').textContent = titles[type];
-    document.getElementById('confirm-message').textContent = messages[type];
-
-    // Require typing confirmation for "all"
-    const inputWrapper = document.getElementById('confirm-input-wrapper');
-    const confirmBtn = document.getElementById('confirm-action-btn');
-
-    if (type === 'all') {
-        inputWrapper.classList.remove('hidden');
-        document.getElementById('confirm-text-required').textContent = 'DELETE';
-        document.getElementById('confirm-input').value = '';
-        confirmBtn.disabled = true;
-
-        document.getElementById('confirm-input').oninput = function() {
-            confirmBtn.disabled = this.value !== 'DELETE';
-        };
-    } else {
-        inputWrapper.classList.add('hidden');
-        confirmBtn.disabled = false;
-    }
-
-    pendingAction = type;
-    document.getElementById('confirm-modal').classList.remove('hidden');
-}
-
-function closeConfirmModal() {
-    document.getElementById('confirm-modal').classList.add('hidden');
-    pendingAction = null;
-}
-
-async function executeConfirmedAction() {
-    if (!pendingAction) return;
-
-    const type = pendingAction;
-    closeConfirmModal();
-
-    showToast('Deleting data...', 'info');
-
-    try {
-        if (type === 'all' || type === 'contacts') {
-            const contacts = await fetch('/api/contacts/').then(r => r.json());
-            for (const c of contacts) {
-                await fetch(`/api/contacts/${c.id}`, { method: 'DELETE' });
-            }
-        }
-
-        if (type === 'all' || type === 'applications') {
-            const apps = await fetch('/api/applications/').then(r => r.json());
-            for (const a of apps) {
-                await fetch(`/api/applications/${a.id}`, { method: 'DELETE' });
-            }
-        }
-
-        if (type === 'all' || type === 'companies') {
-            const companies = await fetch('/api/companies/').then(r => r.json());
-            for (const c of companies) {
-                await fetch(`/api/companies/${c.id}`, { method: 'DELETE' });
-            }
-        }
-
-        if (type === 'all' || type === 'history') {
-            const history = await fetch('/api/history/').then(r => r.json());
-            for (const h of history) {
-                await fetch(`/api/history/${h.id}`, { method: 'DELETE' });
-            }
-        }
-
-        showToast('Data cleared successfully', 'success');
-
-        if (type === 'all') {
-            setTimeout(() => location.reload(), 1000);
-        }
-    } catch (e) {
-        showToast('Error clearing data: ' + e.message, 'error');
-    }
-}
-
-// Toast Notifications
-function showToast(message, type = 'info') {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-
-    const bgColors = {
-        success: 'bg-green-500',
-        error: 'bg-red-500',
-        info: 'bg-blue-500',
-        warning: 'bg-yellow-500'
-    };
-
-    toast.className = `${bgColors[type]} text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in`;
-    toast.innerHTML = `
-        <span>${message}</span>
-        <button onclick="this.parentElement.remove()" class="ml-2 hover:opacity-75">&times;</button>
-    `;
-
-    container.appendChild(toast);
-
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transition = 'opacity 0.3s';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
-
-// Close modals on escape
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeProfilePreview();
-        closeConfirmModal();
-    }
-});
-
-// Close modals on backdrop click
-document.querySelectorAll('.modal-backdrop').forEach(modal => {
-    modal.addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeProfilePreview();
-            closeConfirmModal();
-        }
-    });
-});
-
-// =============================================
-// Resume Management Functions
-// =============================================
-
-let resumeData = null;
-let resumeChanged = false;
-
-// Handle file upload
-async function handleResumeUpload(input) {
-    const file = input.files[0];
-    if (!file) return;
-
-    const statusEl = document.getElementById('resume-upload-status');
-    statusEl.innerHTML = '<span class="text-blue-600">Uploading...</span>';
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-        const response = await fetch('/api/resume/upload-resume?save_to_profile=false', {
-            method: 'POST',
-            body: formData
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Upload failed');
-        }
-
-        const result = await response.json();
-        resumeData = result.resume;
-        displayParsedResume(resumeData);
-        statusEl.innerHTML = `<span class="text-green-600">✓ ${file.name} parsed</span>`;
-        showToast('Resume parsed successfully!', 'success');
-    } catch (e) {
-        statusEl.innerHTML = `<span class="text-red-600">Error: ${e.message}</span>`;
-        showToast('Failed to parse resume: ' + e.message, 'error');
-    }
-
-    input.value = ''; // Reset file input
-}
-
-// Parse pasted text
-async function parseResumeText() {
-    const text = document.getElementById('resume-paste-text').value.trim();
-    if (!text || text.length < 50) {
-        showToast('Please paste more resume text (at least 50 characters)', 'warning');
-        return;
-    }
-
-    try {
-        const response = await fetch('/api/resume/parse-resume-text', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ resume_text: text })
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Parse failed');
-        }
-
-        resumeData = await response.json();
-        displayParsedResume(resumeData);
-        showToast('Resume text parsed successfully!', 'success');
-    } catch (e) {
-        showToast('Failed to parse resume: ' + e.message, 'error');
-    }
-}
-
-function clearResumePaste() {
-    document.getElementById('resume-paste-text').value = '';
-}
-
-// Display parsed resume data
-function displayParsedResume(data) {
-    document.getElementById('resume-parsed-section').classList.remove('hidden');
-
-    // Summary
-    document.getElementById('resume-summary').value = data.summary || '';
-
-    // Skills
-    renderSkillsTags(data.skills || []);
-
-    // Experience
-    renderExperienceList(data.experience || []);
-
-    // Education
-    renderEducationList(data.education || []);
-
-    resumeChanged = false;
-    updateResumeSaveStatus('');
-}
-
-function renderSkillsTags(skills) {
-    const container = document.getElementById('resume-skills-container');
-    container.innerHTML = '';
-
-    skills.forEach((skill, index) => {
-        const tag = document.createElement('span');
-        tag.className = 'inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm';
-        tag.innerHTML = `
-            ${skill}
-            <button type="button" onclick="removeResumeSkill(${index})" class="hover:text-blue-600">&times;</button>
-        `;
-        container.appendChild(tag);
-    });
-}
-
-function addResumeSkill() {
-    const input = document.getElementById('resume-skill-input');
-    const skill = input.value.trim();
-    if (!skill) return;
-
-    if (!resumeData) resumeData = { skills: [] };
-    if (!resumeData.skills) resumeData.skills = [];
-
-    if (!resumeData.skills.includes(skill)) {
-        resumeData.skills.push(skill);
-        renderSkillsTags(resumeData.skills);
-        markResumeChanged();
-    }
-
-    input.value = '';
-}
-
-function removeResumeSkill(index) {
-    if (resumeData && resumeData.skills) {
-        resumeData.skills.splice(index, 1);
-        renderSkillsTags(resumeData.skills);
-        markResumeChanged();
-    }
-}
-
-function renderExperienceList(experiences) {
-    const container = document.getElementById('resume-experience-list');
-    container.innerHTML = '';
-
-    experiences.forEach((exp, index) => {
-        const div = document.createElement('div');
-        div.className = 'border rounded-lg p-3 bg-gray-50';
-        div.innerHTML = `
-            <div class="flex items-start justify-between mb-2">
-                <div class="flex-1 grid grid-cols-2 gap-2">
-                    <input type="text" value="${escapeHtml(exp.title || '')}"
-                        class="border rounded px-2 py-1 text-sm"
-                        placeholder="Title"
-                        onchange="updateExperience(${index}, 'title', this.value)">
-                    <input type="text" value="${escapeHtml(exp.company || '')}"
-                        class="border rounded px-2 py-1 text-sm"
-                        placeholder="Company"
-                        onchange="updateExperience(${index}, 'company', this.value)">
-                </div>
-                <button type="button" onclick="removeExperience(${index})" class="ml-2 text-red-500 hover:text-red-700">&times;</button>
-            </div>
-            <div class="grid grid-cols-3 gap-2 mb-2">
-                <input type="text" value="${escapeHtml(exp.start_date || '')}"
-                    class="border rounded px-2 py-1 text-sm"
-                    placeholder="Start Date"
-                    onchange="updateExperience(${index}, 'start_date', this.value)">
-                <input type="text" value="${escapeHtml(exp.end_date || '')}"
-                    class="border rounded px-2 py-1 text-sm"
-                    placeholder="End Date"
-                    onchange="updateExperience(${index}, 'end_date', this.value)">
-                <input type="text" value="${escapeHtml(exp.location || '')}"
-                    class="border rounded px-2 py-1 text-sm"
-                    placeholder="Location"
-                    onchange="updateExperience(${index}, 'location', this.value)">
-            </div>
-            <div>
-                <label class="text-xs text-gray-500">Bullets (one per line)</label>
-                <textarea rows="3" class="w-full border rounded px-2 py-1 text-sm"
-                    placeholder="• Achievement or responsibility"
-                    onchange="updateExperienceBullets(${index}, this.value)">${(exp.bullets || []).join('\n')}</textarea>
-            </div>
-        `;
-        container.appendChild(div);
-    });
-}
-
-function addExperienceEntry() {
-    if (!resumeData) resumeData = { experience: [] };
-    if (!resumeData.experience) resumeData.experience = [];
-
-    resumeData.experience.push({
-        title: '',
-        company: '',
-        start_date: '',
-        end_date: '',
-        location: '',
-        bullets: []
-    });
-
-    renderExperienceList(resumeData.experience);
-    markResumeChanged();
-}
-
-function updateExperience(index, field, value) {
-    if (resumeData && resumeData.experience && resumeData.experience[index]) {
-        resumeData.experience[index][field] = value;
-        markResumeChanged();
-    }
-}
-
-function updateExperienceBullets(index, text) {
-    if (resumeData && resumeData.experience && resumeData.experience[index]) {
-        resumeData.experience[index].bullets = text.split('\n').filter(b => b.trim());
-        markResumeChanged();
-    }
-}
-
-function removeExperience(index) {
-    if (resumeData && resumeData.experience) {
-        resumeData.experience.splice(index, 1);
-        renderExperienceList(resumeData.experience);
-        markResumeChanged();
-    }
-}
-
-function renderEducationList(education) {
-    const container = document.getElementById('resume-education-list');
-    container.innerHTML = '';
-
-    education.forEach((edu, index) => {
-        const div = document.createElement('div');
-        div.className = 'border rounded-lg p-3 bg-gray-50';
-        div.innerHTML = `
-            <div class="flex items-start justify-between">
-                <div class="flex-1 grid grid-cols-2 gap-2">
-                    <input type="text" value="${escapeHtml(edu.school || '')}"
-                        class="border rounded px-2 py-1 text-sm"
-                        placeholder="School"
-                        onchange="updateEducation(${index}, 'school', this.value)">
-                    <input type="text" value="${escapeHtml(edu.degree || '')}"
-                        class="border rounded px-2 py-1 text-sm"
-                        placeholder="Degree (e.g., B.S.)"
-                        onchange="updateEducation(${index}, 'degree', this.value)">
-                    <input type="text" value="${escapeHtml(edu.field || '')}"
-                        class="border rounded px-2 py-1 text-sm"
-                        placeholder="Field of Study"
-                        onchange="updateEducation(${index}, 'field', this.value)">
-                    <input type="text" value="${escapeHtml(edu.year || '')}"
-                        class="border rounded px-2 py-1 text-sm"
-                        placeholder="Year"
-                        onchange="updateEducation(${index}, 'year', this.value)">
-                </div>
-                <button type="button" onclick="removeEducation(${index})" class="ml-2 text-red-500 hover:text-red-700">&times;</button>
-            </div>
-        `;
-        container.appendChild(div);
-    });
-}
-
-function addEducationEntry() {
-    if (!resumeData) resumeData = { education: [] };
-    if (!resumeData.education) resumeData.education = [];
-
-    resumeData.education.push({
-        school: '',
-        degree: '',
-        field: '',
-        year: ''
-    });
-
-    renderEducationList(resumeData.education);
-    markResumeChanged();
-}
-
-function updateEducation(index, field, value) {
-    if (resumeData && resumeData.education && resumeData.education[index]) {
-        resumeData.education[index][field] = value;
-        markResumeChanged();
-    }
-}
-
-function removeEducation(index) {
-    if (resumeData && resumeData.education) {
-        resumeData.education.splice(index, 1);
-        renderEducationList(resumeData.education);
-        markResumeChanged();
-    }
-}
-
-function markResumeChanged() {
-    resumeChanged = true;
-    updateResumeSaveStatus('unsaved');
-}
-
-function updateResumeSaveStatus(status) {
-    const el = document.getElementById('resume-save-status');
-    switch (status) {
-        case 'unsaved':
-            el.innerHTML = '<span class="text-yellow-600">Unsaved changes</span>';
-            break;
-        case 'saving':
-            el.innerHTML = '<span class="text-blue-600">Saving...</span>';
-            break;
-        case 'saved':
-            el.innerHTML = '<span class="text-green-600">✓ Saved to profile</span>';
-            break;
-        default:
-            el.innerHTML = '';
-    }
-}
-
-async function saveResumeToProfile() {
-    if (!resumeData) {
-        showToast('No resume data to save', 'warning');
-        return;
-    }
-
-    // Update summary from textarea
-    resumeData.summary = document.getElementById('resume-summary').value;
-
-    updateResumeSaveStatus('saving');
-
-    try {
-        const response = await fetch('/api/resume/profile-resume', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(resumeData)
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Save failed');
-        }
-
-        resumeChanged = false;
-        updateResumeSaveStatus('saved');
-        showToast('Resume saved to profile!', 'success');
-
-        // Also update the resume summary textarea in the Messaging section
-        if (resumeData.summary) {
-            document.getElementById('profile-resume').value = resumeData.summary;
-        }
-        if (resumeData.skills && resumeData.skills.length > 0) {
-            document.getElementById('profile-skills').value = resumeData.skills.join(', ');
-        }
-    } catch (e) {
-        updateResumeSaveStatus('unsaved');
-        showToast('Failed to save resume: ' + e.message, 'error');
-    }
-}
-
-async function previewResume() {
-    try {
-        const response = await fetch('/api/profile/resume/text');
-        if (!response.ok) throw new Error('No resume data');
-
-        const data = await response.json();
-        const text = data.text || 'No resume data available';
-
-        // Create a simple preview modal
-        const modal = document.createElement('div');
-        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-        modal.innerHTML = `
-            <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-auto m-4">
-                <div class="sticky top-0 bg-white border-b px-4 py-3 flex items-center justify-between">
-                    <h3 class="font-semibold">Resume Preview</h3>
-                    <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">&times;</button>
-                </div>
-                <pre class="p-4 text-sm whitespace-pre-wrap font-mono">${escapeHtml(text)}</pre>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    } catch (e) {
-        showToast('No resume data to preview', 'warning');
-    }
-}
-
-async function exportResumeText() {
-    try {
-        const response = await fetch('/api/profile/resume/text');
-        if (!response.ok) throw new Error('No resume data');
-
-        const data = await response.json();
-        const text = data.text || '';
-
-        const blob = new Blob([text], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'resume_export.txt';
-        a.click();
-        URL.revokeObjectURL(url);
-
-        showToast('Resume exported!', 'success');
-    } catch (e) {
-        showToast('Failed to export resume', 'error');
-    }
-}
-
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// Load existing resume data on page load
-async function loadExistingResume() {
-    try {
-        const response = await fetch('/api/resume/profile-resume');
-        if (response.ok) {
-            const data = await response.json();
-            if (data && (data.summary || data.experience?.length || data.skills?.length)) {
-                resumeData = data;
-                displayParsedResume(data);
-            }
-        }
-    } catch (e) {
-        // No existing resume data
-    }
-}
-
-// Add to DOMContentLoaded
-document.addEventListener('DOMContentLoaded', function() {
-    loadExistingResume();
-});
-</script>
 {% endblock %}
+
+{% block scripts %}<script src="/static/js/settings.js"></script>{% endblock %}
