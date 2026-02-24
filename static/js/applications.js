@@ -425,7 +425,7 @@ function getStatusBg(status) {
 
 async function updateStatus(id, status) {
     await fetch(`/api/applications/${id}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
     });
@@ -545,7 +545,7 @@ async function submitForm() {
         };
 
         const url = id ? `/api/applications/${id}` : '/api/applications/';
-        const method = id ? 'PUT' : 'POST';
+        const method = id ? 'PATCH' : 'POST';
 
         const response = await fetch(url, {
             method: method,

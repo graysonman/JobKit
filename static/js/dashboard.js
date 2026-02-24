@@ -80,7 +80,7 @@ async function snoozeFollowUp(contactId) {
         const dateStr = snoozeDate.toISOString().split('T')[0];
 
         await fetch(`/api/contacts/${contactId}`, {
-            method: 'PUT',
+            method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ next_follow_up: dateStr })
         });
@@ -97,7 +97,7 @@ async function markFollowUpDone(contactId) {
         const today = new Date().toISOString().split('T')[0];
 
         await fetch(`/api/contacts/${contactId}`, {
-            method: 'PUT',
+            method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 last_contacted: today,

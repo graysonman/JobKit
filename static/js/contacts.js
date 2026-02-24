@@ -343,7 +343,7 @@ async function bulkUpdateStatus() {
 
     const promises = Array.from(selectedContacts).map(id =>
         fetch(`/api/contacts/${id}`, {
-            method: 'PUT',
+            method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ connection_status: status })
         })
