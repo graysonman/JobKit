@@ -1,6 +1,9 @@
 # JobKit
 
-A personal toolkit for managing your job search. Track applications, build your network, and get AI-powered help with cover letters, outreach messages, and resume tailoring — all in one place.
+JobKit is a self-hosted job search management tool with a full authentication system, PostgreSQL backend, and LLM-powered tools for cover letters, outreach, and resume tailoring. Built with FastAPI, SQLAlchemy, and Alembic deployable locally or to any Docker host. Also live at jobkit.info
+
+<img width="1302" height="493" alt="image" src="https://github.com/user-attachments/assets/ac31b59b-0816-4f01-bf60-f7e396fd1505" />
+
 
 ## What It Does
 
@@ -9,6 +12,10 @@ A personal toolkit for managing your job search. Track applications, build your 
 **Track Your Network** — Store contacts with their company, role, and LinkedIn. Know who to follow up with, who referred you, and when you last reached out.
 
 **Help With Applications** — AI-powered tools analyze job descriptions, generate tailored cover letters, craft networking messages, and suggest resume improvements based on your actual experience.
+
+## Purpose
+
+I built JobKit because I was managing my own job search across spreadsheets, notes apps, and browser tabs and it was a mess. I wanted one tool that connected my applications, contacts, and outreach — and used AI to actually help, not just autocomplete.
 
 ## Features
 
